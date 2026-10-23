@@ -24,9 +24,11 @@ function observar(teste, emitir) {
   return () => ouvintes.delete(f);
 }
 
+const PERFIL = new URLSearchParams(location.search).get('perfil');
 function meuUid() {
-  let u = sessionStorage.getItem('mosaico-ensaio-uid');
-  if (!u) { u = 'u' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('mosaico-ensaio-uid', u); }
+  const k = 'mosaico-ensaio-uid' + (PERFIL ? '-' + PERFIL : '');
+  let u = sessionStorage.getItem(k);
+  if (!u) { u = 'u' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem(k, u); }
   return u;
 }
 

@@ -36,6 +36,7 @@ export function aviso(alvo, texto, tipo = 'info') {
 
 /** Janela explicativa com botão "Entendi" — uma vez por chave nesta sessão. */
 export function explicar(chave, titulo, texto) {
+  if (window.MOSAICO_SEM_EXPLICACAO) return;   // piloto automático do simulador
   try { if (sessionStorage.getItem('mosaico-explicado:' + chave)) return; } catch {}
   const d = h('dialog', { class: 'explica' },
     h('h2', {}, titulo),

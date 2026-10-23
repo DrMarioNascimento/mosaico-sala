@@ -3,13 +3,32 @@ import { backend } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, explicar, escalaVisual } from './ui.js';
 
 const b = await backend();
-const SESSAO = 'mosaico-participante';
+const params = new URLSearchParams(location.search);
+// Simulador de aula: ?perfil=N cria um participante independente; &auto liga o piloto automático.
+const PERFIL = params.get('perfil');
+const SESSAO = 'mosaico-participante' + (PERFIL ? '-' + PERFIL : '');
+let auto = !!PERFIL && params.has('auto');
 let uid = null, codigo = null, sala = null, meuNome = '';
 const pacotes = {}, inscricoes = {};
 const rascunhos = {};
-let chaveRenderizada = '';
+let chaveRenderizada = '', autoTimer = null;
 
-$('codigo').value = new URLSearchParams(location.search).get('sala') || '';
+$('codigo').value = params.get('sala') || '';
+
+if (PERFIL) {
+  const barra = h('div', { class: 'aviso', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', margin: '8px 0' } },
+    h('strong', {}, 'Simulado ' + PERFIL),
+    h('label', { style: { margin: 0, display: 'flex', gap: '6px', alignItems: 'center' } },
+      h('input', { type: 'checkbox', id: 'autoPiloto', checked: auto, onchange: e => definirAuto(e.target.checked) }), 'Piloto automático'));
+  document.querySelector('main').prepend(barra);
+  window.MOSAICO_SEM_EXPLICACAO = auto;
+}
+function definirAuto(v) {
+  auto = !!v; window.MOSAICO_SEM_EXPLICACAO = auto;
+  const c = document.getElementById('autoPiloto'); if (c) c.checked = auto;
+  if (auto) agendarAuto(); else clearTimeout(autoTimer);
+}
+window.mosaicoAuto = definirAuto;   // o simulador liga/desliga todos de uma vez
 
 $('entrar').onclick = async () => {
   const c = $('codigo').value.trim(), n = $('nome').value.trim().replace(/\s+/g, ' ');
@@ -33,12 +52,19 @@ $('entrar').onclick = async () => {
   }
 };
 
-// Retomar depois de recarregar a página
+// Retomar depois de recarregar a página (ou entrar sozinho, no simulador)
 (async () => {
   let salvo = null; try { salvo = JSON.parse(sessionStorage.getItem(SESSAO) || 'null'); } catch {}
-  if (!salvo) return;
-  uid = await b.identificar();
-  if (await b.lerMembro(salvo.codigo, uid)) { meuNome = salvo.nome; conectar(salvo.codigo); }
+  if (salvo) {
+    uid = await b.identificar();
+    if (await b.lerMembro(salvo.codigo, uid)) { meuNome = salvo.nome; conectar(salvo.codigo); return; }
+  }
+  if (PERFIL && $('codigo').value) {
+    uid = await b.identificar();
+    const existente = await b.lerMembro($('codigo').value, uid).catch(() => null);
+    $('nome').value = existente?.nome || params.get('nome') || 'Simulado ' + PERFIL;
+    $('entrar').click();
+  }
 })();
 
 function conectar(c) {
@@ -80,6 +106,32 @@ function render() {
   if (chave === chaveRenderizada) return;   // evita apagar o que está sendo escolhido/digitado
   chaveRenderizada = chave;
   renderTarefa();
+  agendarAuto();
+}
+
+// ---------- piloto automático (simulador) ----------
+// Age como uma pessoa: espera alguns segundos, escolhe uma opção ao acaso,
+// marca as peças exigidas, escreve uma justificativa curta e confirma o envio.
+function agendarAuto() {
+  clearTimeout(autoTimer);
+  if (auto) autoTimer = setTimeout(autoAgir, 2500 + Math.random() * 5000);
+}
+function autoAgir() {
+  if (!auto) return;
+  const escolher = l => l[Math.floor(Math.random() * l.length)];
+  for (const btn of $('tarefa').querySelectorAll('button.primario:not(:disabled)')) {
+    const caixa = btn.parentElement;
+    const radios = [...caixa.querySelectorAll(':scope > .opcoes input[type=radio]')];
+    if (!radios.length) continue;
+    const r = escolher(radios); r.checked = true; r.dispatchEvent(new Event('change'));
+    const caixas = [...caixa.querySelectorAll(':scope > .peca input[type=checkbox]')];
+    caixas.slice(0, 2).forEach(c => { c.checked = true; c.dispatchEvent(new Event('change')); });
+    const ta = caixa.querySelector(':scope > textarea');
+    if (ta) { ta.value = 'Escolha feita pelo participante simulado.'; ta.dispatchEvent(new Event('input')); }
+    btn.click(); setTimeout(() => btn.click(), 400);
+  }
+  // Se algo falhou (ex.: conexão), tenta de novo em alguns segundos.
+  setTimeout(() => { if (auto && $('tarefa').querySelector('button.primario:not(:disabled)')) agendarAuto(); }, 4000);
 }
 
 function enviados() {

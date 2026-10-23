@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MOSAICO · Sala</title>
+<meta name="description" content="Atividades em grupo com informação fracionada, cooperação e meta coletiva.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/mosaico.css">
+<style>
+  .hero { padding: 56px 0 24px; }
+  .hero .marca { font-size: 2.4rem; }
+  .hero p { font-size: 1.15rem; color: var(--texto-2); max-width: 34em; }
+  .entradas { display: grid; gap: 14px; }
+  @media (min-width: 640px) { .entradas { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<main class="pagina">
+  <section class="hero">
+    <h1 class="marca"><span class="ladrilhos"><i></i><i></i><i></i><i></i></span>MOSAICO</h1>
+    <p>Cada grupo tem uma parte. Ninguém tem o quadro completo. Juntem as peças e superem a meta.</p>
+  </section>
+  <section class="entradas">
+    <div class="cartao">
+      <h2>Participar</h2>
+      <p class="sutil">Entre com o código que aparece no telão. Não precisa de cadastro.</p>
+      <a class="btn primario bloco" id="lnkParticipar" href="participar.html">Entrar com código</a>
+    </div>
+    <div class="cartao">
+      <h2>Conduzir</h2>
+      <p class="sutil">Prepare a atividade, abra a sala e conduza pelo celular.</p>
+      <a class="btn bloco" id="lnkConduzir" href="conduzir.html">Área de condução</a>
+      <div class="linha-botoes"><a class="btn discreto bloco" id="lnkTelao" href="telao.html">Abrir telão</a></div>
+    </div>
+  </section>
+  <section class="cartao">
+    <h2>Ensaiar sem internet</h2>
+    <p class="sutil">O modo ensaio roda tudo neste navegador. Abra a condução, o telão e participantes em abas diferentes e teste a aula sozinho, com participantes simulados.</p>
+    <a class="btn bloco" href="conduzir.html?ensaio=1">Abrir condução em modo ensaio</a>
+  </section>
+  <p class="sutil" style="text-align:center;margin-top:32px">Prof. Mário César Nascimento, PhD ©</p>
+</main>
+</body>
+</html>

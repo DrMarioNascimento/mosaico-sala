@@ -10,7 +10,11 @@ import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup } from 
 import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp, Timestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
 
-const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app);
+// ?perfil=N (simulador de aula): cada "celular" simulado usa uma instância própria do Firebase,
+// com login anônimo próprio — vira um participante diferente, e se mantém ao recarregar.
+const PERFIL = new URLSearchParams(location.search).get('perfil');
+const app = PERFIL ? initializeApp(firebaseConfig, 'perfil-' + PERFIL.replace(/\W/g, '')) : initializeApp(firebaseConfig);
+const auth = getAuth(app), db = getFirestore(app);
 const sala = c => doc(db, 'rooms', c);
 const google = u => !!u?.providerData.some(p => p.providerId === 'google.com');
 
