@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "ciclista-altitude",
+  "titulo": "A ciclista que voltou da altitude",
+  "publico": "Graduação em Educação Física e Fisioterapia — Fisiologia do Exercício",
+  "duracaoMin": 50,
+  "regime": "simulacao",
+  "perguntaCentral": "Por que, de volta ao nível do mar, a ciclista não teve o ganho de desempenho esperado com 14 dias de treino em altitude?",
+  "objetivos": [
+    "Diferenciar aumento da concentração de hemoglobina de aumento da massa total de hemoglobina.",
+    "Relacionar a redução do volume plasmático na altitude à hemoconcentração dos primeiros dias.",
+    "Explicar por que a resposta eritropoética depende da reserva de ferro.",
+    "Distinguir efeitos agudos da hipóxia (desempenho em altitude) de adaptações crônicas (desempenho no retorno)."
+  ],
+  "introducao": "Uma ciclista amadora de 58 kg passou 14 dias treinando numa cidade a 2.400 m de altitude, esperando voltar mais rápida. Dois dias depois do retorno ao nível do mar, fez o mesmo teste de 20 minutos que tinha feito antes da viagem. A potência não melhorou. Cada grupo tem uma parte dos registros. Nenhum grupo tem o quadro completo.",
+
+  "fontes": [
+    {
+      "id": "f_gore2013",
+      "descricao": "Gore CJ et al. Altitude training and haemoglobin mass from the optimised carbon monoxide rebreathing method determined by a meta-analysis. Br J Sports Med, 2013.",
+      "localizacao": "Resultados: ganho de massa de hemoglobina por 100 h de exposição",
+      "trecho": "Referência para a ordem de grandeza do ganho esperado (cerca de 1% a cada 100 h acima de ~2.000 m)."
+    },
+    {
+      "id": "f_govus2015",
+      "descricao": "Govus AD et al. Pre-altitude serum ferritin levels and daily oral iron supplement dose mediate iron parameter and hemoglobin mass responses to altitude exposure. PLoS One, 2015.",
+      "localizacao": "Resultados e discussão: relação entre ferritina pré-altitude e resposta da massa de hemoglobina",
+      "trecho": "Referência para a dependência da resposta eritropoética em relação à reserva de ferro."
+    },
+    {
+      "id": "f_sawka2000",
+      "descricao": "Sawka MN et al. Blood volume: importance and adaptations to exercise training, environmental stresses, and trauma/sickness. Med Sci Sports Exerc, 2000.",
+      "localizacao": "Seção sobre exposição à altitude: volume plasmático",
+      "trecho": "Referência para a redução do volume plasmático nos primeiros dias de altitude."
+    },
+    {
+      "id": "f_dill1974",
+      "descricao": "Dill DB, Costill DL. Calculation of percentage changes in volumes of blood, plasma, and red cells in dehydration. J Appl Physiol, 1974.",
+      "localizacao": "Equação de variação percentual do volume plasmático a partir de hemoglobina e hematócrito",
+      "trecho": "Base do cálculo de variação do volume plasmático usado na peça do Laboratório de Sangue."
+    }
+  ],
+
+  "grupos": [
+    { "id": "g_sangue",     "nome": "Laboratório de Sangue",        "ordemAlocacao": 1, "funcao": "Concentração de hemoglobina, hematócrito e volume plasmático" },
+    { "id": "g_medula",     "nome": "Medula e Ferro",               "ordemAlocacao": 2, "funcao": "Eritropoetina, reticulócitos e reserva de ferro" },
+    { "id": "g_ar",         "nome": "Ar e Ventilação",              "ordemAlocacao": 3, "funcao": "Pressão de oxigênio, saturação e sono" },
+    { "id": "g_desempenho", "nome": "Desempenho e Treino",          "ordemAlocacao": 4, "funcao": "Potência nos testes, carga de treino e recuperação" },
+    { "id": "g_massa",      "nome": "Massa de Hemoglobina",         "ordemAlocacao": 5, "funcao": "Massa total de hemoglobina, massa corporal e hidratação" }
+  ],
+
+  "etapas": [
+    {
+      "id": "e_investigacao",
+      "ordem": 1,
+      "titulo": "Investigação por fragmentos",
+      "typeId": "investigacao_fragmentos",
+      "typeVersion": "1.0.0",
+      "tempoMin": 15,
+      "instrucao": "Leiam as peças do seu grupo. Escolham a hipótese que as SUAS peças sustentam melhor e marquem quais peças usaram. Vocês ainda não têm o quadro completo.",
+      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "meta" },
+      "config": {
+        "pergunta": "Com as peças que vocês têm, qual explicação parece mais provável?",
+        "hipotesesCandidatas": [
+          { "id": "h_ferro",         "texto": "Faltou reserva de ferro para produzir mais hemácias; a hemoglobina subiu no exame porque o plasma diminuiu, não porque havia mais hemoglobina." },
+          { "id": "h_ventilacao",    "texto": "A ventilação não se adaptou à altitude e a falta de oxigênio no sangue continuou limitando o desempenho." },
+          { "id": "h_overtraining",  "texto": "Excesso de treino e sono ruim causaram fadiga acumulada." },
+          { "id": "h_desidratacao",  "texto": "A ciclista ficou desidratada, o que reduziu o volume de sangue e o débito cardíaco." },
+          { "id": "h_tardio",        "texto": "A adaptação funcionou, mas o ganho de desempenho só aparece semanas depois do retorno." }
+        ],
+        "minEvidencias": 2,
+        "justificativa": "opcional"
+      }
+    },
+    {
+      "id": "e_comparacao",
+      "ordem": 2,
+      "titulo": "Juntando o mosaico",
+      "typeId": "comparar_hipoteses",
+      "typeVersion": "1.0.0",
+      "tempoMin": 15,
+      "instrucao": "Agora vocês veem a hipótese e as peças que cada grupo escolheu. Discutam e decidam qual explicação integra TODOS os registros.",
+      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "meta" },
+      "config": {
+        "pergunta": "Considerando as peças de todos os grupos, qual explicação integra o conjunto?",
+        "hipotesesCandidatas": [
+          { "id": "h_ferro",         "texto": "Faltou reserva de ferro para produzir mais hemácias; a hemoglobina subiu no exame porque o plasma diminuiu, não porque havia mais hemoglobina." },
+          { "id": "h_ventilacao",    "texto": "A ventilação não se adaptou à altitude e a falta de oxigênio no sangue continuou limitando o desempenho." },
+          { "id": "h_overtraining",  "texto": "Excesso de treino e sono ruim causaram fadiga acumulada." },
+          { "id": "h_desidratacao",  "texto": "A ciclista ficou desidratada, o que reduziu o volume de sangue e o débito cardíaco." },
+          { "id": "h_tardio",        "texto": "A adaptação funcionou, mas o ganho de desempenho só aparece semanas depois do retorno." }
+        ],
+        "aceitaParcial": false,
+        "justificativa": "obrigatoria"
+      }
+    },
+    {
+      "id": "e_transferencia_1",
+      "ordem": 3,
+      "titulo": "Transferência: o primeiro exame",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 4,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": { "organizacao": "individual", "envio": "individual", "competicao": "meta" },
+      "config": {
+        "enunciado": "Um atleta chega a uma cidade a 2.300 m. No terceiro dia, a concentração de hemoglobina dele está mais alta que ao nível do mar. Qual é a principal causa dessa subida tão rápida?",
+        "alternativas": [
+          { "id": "a", "texto": "Redução do volume plasmático, que concentra as hemácias já existentes." },
+          { "id": "b", "texto": "Produção de novas hemácias estimulada pela eritropoetina." },
+          { "id": "c", "texto": "Aumento da afinidade da hemoglobina pelo oxigênio." },
+          { "id": "d", "texto": "Liberação de hemácias armazenadas no baço, como ocorre em cavalos." }
+        ]
+      }
+    },
+    {
+      "id": "e_transferencia_2",
+      "ordem": 4,
+      "titulo": "Transferência: a próxima viagem",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 4,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": { "organizacao": "individual", "envio": "individual", "competicao": "meta" },
+      "config": {
+        "enunciado": "Uma remadora com ferritina de 20 ng/mL vai treinar três semanas a 2.300 m buscando aumentar a massa de hemoglobina. Qual conduta é mais coerente com o caso da ciclista?",
+        "alternativas": [
+          { "id": "a", "texto": "Encaminhar antes da viagem para avaliação e correção da reserva de ferro, com acompanhamento profissional." },
+          { "id": "b", "texto": "Aumentar o volume de treino na altitude para estimular mais a medula." },
+          { "id": "c", "texto": "Beber mais água na altitude para elevar a concentração de hemoglobina." },
+          { "id": "d", "texto": "Nada específico: a concentração de hemoglobina vai subir de qualquer forma." }
+        ]
+      }
+    }
+  ],
+
+  "pecas": [
+    { "id": "p_sangue_hb", "etapaId": "e_investigacao", "destinatarios": ["g_sangue"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Hemoglobina no sangue: 13,2 g/dL ao nível do mar antes da viagem; 14,3 g/dL no 3º dia em altitude; 14,0 g/dL no 14º dia; 13,4 g/dL dois dias após o retorno." },
+    { "id": "p_sangue_ht", "etapaId": "e_investigacao", "destinatarios": ["g_sangue"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Hematócrito: 39,5% antes da viagem; 42,6% no 3º dia em altitude; 40,0% dois dias após o retorno." },
+    { "id": "p_sangue_vp", "etapaId": "e_investigacao", "destinatarios": ["g_sangue"], "origem": { "natureza": "sintetico", "fonteId": "f_dill1974" },
+      "conteudo": "Usando hemoglobina e hematócrito (equação de Dill e Costill), a variação estimada do volume plasmático entre o nível do mar e o 3º dia em altitude foi de cerca de −12%." },
+
+    { "id": "p_medula_epo", "etapaId": "e_investigacao", "destinatarios": ["g_medula"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Eritropoetina no sangue: cerca de 2,1 vezes o valor basal no 2º dia em altitude; cerca de 1,2 vez o basal no 14º dia." },
+    { "id": "p_medula_ferritina", "etapaId": "e_investigacao", "destinatarios": ["g_medula"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Ferritina medida três dias antes da viagem: 18 ng/mL. A ciclista não fazia acompanhamento nutricional nem suplementação." },
+    { "id": "p_medula_reticulo", "etapaId": "e_investigacao", "destinatarios": ["g_medula"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Reticulócitos: 1,0% antes da viagem e 1,1% no 7º dia em altitude. Conteúdo de hemoglobina dos reticulócitos no 7º dia: 26 pg (referência do laboratório: 28 pg ou mais)." },
+
+    { "id": "p_ar_pressao", "etapaId": "e_investigacao", "destinatarios": ["g_ar"], "origem": { "natureza": "sintetico" },
+      "conteudo": "A 2.400 m, a pressão parcial de oxigênio do ar inspirado fica perto de 109 mmHg, contra cerca de 149 mmHg ao nível do mar." },
+    { "id": "p_ar_spo2", "etapaId": "e_investigacao", "destinatarios": ["g_ar"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Saturação de O2 em repouso: 93% no 2º dia e 95% no 10º dia em altitude. Durante esforço intenso no 3º dia: 87%. Ao nível do mar, após o retorno: 98%." },
+    { "id": "p_ar_sono", "etapaId": "e_investigacao", "destinatarios": ["g_ar"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Nas três primeiras noites, saturação média durante o sono de 88%, com despertares frequentes e respiração irregular. Na segunda semana, média de 91% e sono descrito como normal." },
+
+    { "id": "p_desemp_potencia", "etapaId": "e_investigacao", "destinatarios": ["g_desempenho"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Potência média no teste de 20 minutos: 232 W ao nível do mar antes da viagem; 205 W no 3º dia em altitude; 214 W no 13º dia em altitude; 229 W dois dias após o retorno ao nível do mar." },
+    { "id": "p_desemp_treino", "etapaId": "e_investigacao", "destinatarios": ["g_desempenho"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Treino semanal: 9 h antes da viagem; 8 h na 1ª semana em altitude, com intensidade reduzida de propósito; 9 h na 2ª semana. Percepção de esforço média nas sessões: 13 a 14 na escala de 6 a 20." },
+    { "id": "p_desemp_recuperacao", "etapaId": "e_investigacao", "destinatarios": ["g_desempenho"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Diário da atleta: sono médio de 7 h por noite na 2ª semana, sem dor muscular persistente, humor estável e vontade de treinar mantida." },
+
+    { "id": "p_massa_hbmass", "etapaId": "e_investigacao", "destinatarios": ["g_massa"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Massa total de hemoglobina (método de reinalação de monóxido de carbono): 640 g antes da viagem e 643 g dois dias após o retorno." },
+    { "id": "p_massa_referencia", "etapaId": "e_investigacao", "destinatarios": ["g_massa"], "origem": { "natureza": "parafrase", "fonteId": "f_gore2013" },
+      "conteudo": "Em atletas expostos a altitudes acima de cerca de 2.000 m, uma meta-análise encontrou ganho médio de massa de hemoglobina perto de 1% a cada 100 horas de exposição." },
+    { "id": "p_massa_hidratacao", "etapaId": "e_investigacao", "destinatarios": ["g_massa"], "origem": { "natureza": "sintetico" },
+      "conteudo": "Massa corporal: 58,0 kg antes da viagem e 57,8 kg após o retorno. Densidade urinária: 1,012 no 3º dia em altitude e 1,010 após o retorno (faixa considerada hidratada)." }
+  ],
+
+  "conexoes": [
+    {
+      "id": "c_hipoteses",
+      "de":   { "etapaId": "e_investigacao", "portId": "hipotese_grupo" },
+      "para": { "etapaId": "e_comparacao",   "portId": "hipoteses_recebidas" },
+      "agregacao": "colecao_uma_por_grupo_planejado"
+    }
+  ],
+
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence o desafio se acertar pelo menos 60% das respostas individuais de transferência.",
+    "etapas": ["e_transferencia_1", "e_transferencia_2"],
+    "limiar": 0.6
+  },
+
+  "docente": {
+    "respostas": {
+      "e_comparacao": {
+        "corretaId": "h_ferro",
+        "explicacao": "A eritropoetina subiu (o sinal existiu), mas a ferritina de 18 ng/mL, os reticulócitos quase sem aumento e o baixo conteúdo de hemoglobina dos reticulócitos indicam produção limitada por ferro. A massa total de hemoglobina ficou praticamente igual (+0,5%), quando o esperado para cerca de 336 h seria algo próximo de 3% a 4%. A concentração subiu no 3º dia por redução de cerca de 12% do volume plasmático, e voltou ao normal no retorno. Ventilação e sono se adaptaram (saturação melhorou), o treino não foi excessivo e a hidratação estava adequada."
+      },
+      "e_transferencia_1": {
+        "corretaId": "a",
+        "explicacao": "Nos primeiros dias, o volume plasmático cai e concentra as hemácias existentes. Produzir novas hemácias leva semanas; a contração esplênica tem papel pequeno em humanos e não explica uma subida sustentada por dias."
+      },
+      "e_transferencia_2": {
+        "corretaId": "a",
+        "explicacao": "Sem reserva de ferro adequada, o estímulo da altitude não se converte em mais massa de hemoglobina. Avaliar e corrigir a reserva antes da viagem, com acompanhamento profissional, é a conduta coerente. Beber mais água diluiria o sangue, e aumentar o treino não supre a falta de substrato."
+      }
+    },
+    "guia": [
+      "Abertura (3 min): leia a introdução no telão. Reforce que nenhum grupo tem o quadro completo.",
+      "Investigação (15 min): espere escolhas diferentes. Laboratório de Sangue tende a escolher 'adaptação tardia' (viu a hemoglobina subir); Ar e Ventilação tende a escolher 'ventilação'. Isso é esperado e desejável.",
+      "Juntando o mosaico (15 min): incentive os grupos a procurar a peça que derruba cada hipótese. Pergunta-guia: 'se a hemoglobina subiu, por que a massa total não subiu?'",
+      "Transferência (8 min): individual, conta para a meta.",
+      "Fechamento (5 min): mostre a cadeia: hipóxia → EPO ↑ → medula sem ferro → reticulócitos sem resposta → massa de hemoglobina igual; e, em paralelo, plasma ↓ → concentração ↑ temporária."
+    ],
+    "pontosDeDiscussao": [
+      "Concentração (g/dL) é diferente de quantidade total (g).",
+      "A queda do volume plasmático na altitude é uma resposta fisiológica, não sinônimo de desidratação.",
+      "O desempenho EM altitude cai pela menor pressão de O2; o ganho NO RETORNO depende de adaptação hematológica."
+    ]
+  },
+
+  "pendencias": [
+    "Os valores do caso são sintéticos, construídos dentro de faixas descritas na literatura. Requer revisão docente antes da aplicação.",
+    "Conferir as quatro referências bibliográficas listadas em fontes (autores, ano e localização) antes de citá-las em aula."
+  ]
+}
