@@ -2,6 +2,9 @@
    Material de participantes por grupo + material de quem conduz em separado.
    Sem códigos visíveis nas peças. */
 
+import { formaDoGrupo, urlIcone } from './ui.js';
+
+const icone = (a, gid, tam = 44) => `<img src="${new URL(urlIcone(formaDoGrupo(a, gid).forma), location.href).href}" alt="" width="${tam}" height="${tam}" style="vertical-align:middle;margin-right:8px">`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ordem = a => [...a.etapas].sort((x, y) => x.ordem - y.ordem);
 
@@ -19,7 +22,7 @@ export function gerarImpressao(a) {
       for (const g of [...a.grupos].sort((x, y) => x.ordemAlocacao - y.ordemAlocacao)) {
         const pecas = a.pecas.filter(p => p.etapaId === e.id && p.destinatarios.includes(g.id));
         partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · Grupo ${esc(g.nome)}</p>
-          <h2>${esc(g.nome)}</h2>${g.funcao ? `<p class="sutil">${esc(g.funcao)}</p>` : ''}
+          <h2>${icone(a, g.id)}${esc(g.nome)}</h2>${g.funcao ? `<p class="sutil">${esc(g.funcao)}</p>` : ''}
           <p>${esc(e.instrucao || '')}</p>
           ${pecas.map(p => `<div class="peca">${esc(p.conteudo)}<span class="marcar">☐ usar como evidência</span></div>`).join('')}
           <h3>${esc(cfg.pergunta || '')}</h3>
@@ -30,7 +33,7 @@ export function gerarImpressao(a) {
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · uma folha por grupo</p><h2>${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || '')}</p>
         <table><thead><tr><th>Grupo</th><th>Hipótese escolhida</th><th>Evidências citadas</th></tr></thead>
-        <tbody>${a.grupos.map(g => `<tr><td>${esc(g.nome)}</td><td></td><td></td></tr>`).join('')}</tbody></table>
+        <tbody>${a.grupos.map(g => `<tr><td>${icone(a, g.id, 22)}${esc(g.nome)}</td><td></td><td></td></tr>`).join('')}</tbody></table>
         <h3>${esc(cfg.pergunta || '')}</h3>
         <ul class="caixas">${(cfg.hipotesesCandidatas || []).map(hp => `<li>☐ ${esc(hp.texto)}</li>`).join('')}</ul>
         <p class="linhas">Justificativa do grupo:</p></section>`);

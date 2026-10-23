@@ -1,6 +1,6 @@
 /* MOSAICO · Tela de quem participa (celular) */
 import { backend } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, explicar, escalaVisual } from './ui.js';
+import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual } from './ui.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
@@ -142,7 +142,7 @@ function enviados() {
 function renderStatus() {
   const s = sala, g = grupoDe(s), p = s.progresso;
   const partes = [];
-  if (g) partes.push(h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(s.publico.grupos, g) } }), nomeGrupo(s, g)));
+  if (g) partes.push(chipGrupo(s.publico.grupos, g, nomeGrupo(s, g)));
   if (s.fase === 'etapa' && p) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   limpar($('status'), partes.length ? h('div', { class: 'linha-botoes' }, partes) : null);
 }
@@ -188,9 +188,10 @@ function cartaoGrupo(s, g, comExplicacao) {
   const membros = s.composicao[g] || [], rep = s.representantes?.[g];
   if (comExplicacao) explicar('grupo-' + g, 'Encontre seu grupo', [`Você está no grupo ${nomeGrupo(s, g)}.`, rep === uid ? 'Você foi indicado para enviar as decisões do grupo.' : `Quem envia as decisões do grupo é ${nomeDe(s, rep)}.`, 'Procure os colegas do seu grupo e sentem juntos.']);
   return h('div', { class: 'grupo cartao', style: { '--cor': corDoGrupo(s.publico.grupos, g) } },
-    h('h2', {}, nomeGrupo(s, g)),
+    h('div', { class: 'grupo-destaque' }, iconeGrupo(s.publico.grupos, g, 96)),
+    h('h2', { style: { textAlign: 'center' } }, nomeGrupo(s, g)),
     h('p', { class: 'sutil' }, s.publico.grupos.find(x => x.id === g)?.funcao || ''),
-    h('ul', {}, membros.map(u => h('li', {}, nomeDe(s, u) + (u === uid ? ' (você)' : ''), u === rep && h('span', { class: 'rep' }, 'REPRESENTANTE')))));
+    h('ul', {}, membros.map(u => h('li', { class: u === rep ? 'eh-rep' : null }, nomeDe(s, u) + (u === uid ? ' (você)' : ''), u === rep && h('span', { class: 'rep' }, 'REPRESENTANTE')))));
 }
 
 function rascunho(chave) { return rascunhos[chave] ||= { escolha: null, evidencias: new Set(), justificativa: '' }; }
@@ -214,7 +215,7 @@ function tarefaGrupo(pk, g, possoEnviar) {
     for (const c of pk.contribuicoes || []) {
       const hip = (cfg.hipotesesCandidatas || []).find(x => x.id === c.hipoteseId);
       caixa.append(h('div', { class: 'grupo', style: { '--cor': corDoGrupo(s.publico.grupos, c.grupoId), marginBottom: '12px' } },
-        h('h3', {}, c.grupoNome + (c.autoria?.contingencia ? ' (tarefa coberta)' : '')),
+        h('h3', { class: 'titulo-grupo' }, iconeGrupo(s.publico.grupos, c.grupoId, 28), c.grupoNome + (c.autoria?.contingencia ? ' (tarefa coberta)' : '')),
         h('p', {}, h('strong', {}, 'Hipótese: '), hip?.texto || '—'),
         c.justificativa && h('p', { class: 'sutil' }, '“' + c.justificativa + '”'),
         (c.evidencias || []).length ? h('div', {}, h('small', {}, 'Evidências citadas:'), c.evidencias.map(e => h('div', { class: 'peca' }, e.conteudo))) : h('small', {}, 'Nenhuma evidência citada.')));

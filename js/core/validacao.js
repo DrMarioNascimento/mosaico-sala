@@ -43,7 +43,8 @@ export function validarAtividade(a) {
   }
   const { fontes, grupos, etapas, pecas } = mapas;
 
-  // Grupos planejados (ADR-001)
+  // Grupos planejados (ADR-001) — no máximo 10: um ícone/forma distinto para cada grupo
+  if (a.grupos.length > 10) d.push(erro('grupos', `São ${a.grupos.length} grupos; o máximo é 10 (um ícone diferente para cada).`));
   const ordens = a.grupos.map(g => g.ordemAlocacao);
   a.grupos.forEach((g, i) => {
     if (typeof g.nome !== 'string' || !g.nome.trim()) d.push(erro(`grupos[${i}].nome`, 'Grupo sem nome visível.'));
@@ -153,9 +154,27 @@ export function validarAtividade(a) {
     });
   }
 
+  // LGPD: casos devem ser fictícios. Avisa (não bloqueia) quando um texto parece ter dado pessoal real.
+  const textos = [['introducao', a.introducao], ['perguntaCentral', a.perguntaCentral],
+    ...a.pecas.map((p, i) => [`pecas[${i}].conteudo`, p.conteudo]),
+    ...a.etapas.map((e, i) => [`etapas[${i}]`, [e.instrucao, e.config?.pergunta, e.config?.enunciado, ...(e.config?.hipotesesCandidatas || e.config?.alternativas || []).map(o => o.texto)].join(' ')])];
+  for (const [local, t] of textos) {
+    const tipo = dadoPessoal(t);
+    if (tipo) d.push(aviso(local, `Parece conter ${tipo}. Use casos fictícios, sem dados de pessoas reais.`));
+  }
+
   if (Array.isArray(a.pendencias) && a.pendencias.length)
     d.push(info('pendencias', `${a.pendencias.length} pendência(s) registrada(s) pela montagem para revisão docente.`));
   return d;
+}
+
+/** Detecta padrões de dado pessoal: CPF, e-mail, telefone celular brasileiro. */
+export function dadoPessoal(texto) {
+  const t = String(texto || '');
+  if (/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/.test(t)) return 'um CPF';
+  if (/[\w.+-]+@[\w-]+\.[\w.]{2,}/.test(t)) return 'um e-mail';
+  if (/(\(\d{2}\)\s?|\b\d{2}\s)9\d{4}-?\d{4}\b/.test(t)) return 'um telefone';
+  return null;
 }
 
 export const temErros = diags => diags.some(x => x.severidade === 'erro');

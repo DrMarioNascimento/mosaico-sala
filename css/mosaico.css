@@ -137,7 +137,9 @@ dialog.explica .btn { width: 100%; margin-top: 8px; }
 .codigo { font-family: var(--fonte-titulo); font-weight: 900; letter-spacing: .12em; font-size: 2rem; }
 
 /* Telão (TV) */
-body.telao { font-size: clamp(18px, 1.6vw, 30px); overflow: hidden; }
+body.telao { font-size: clamp(15px, min(1.55vw, 2.75vh), 72px); overflow: hidden; }
+.btn-tela-cheia { min-height: 0; width: 2.2em; height: 2.2em; padding: 0; font-size: .8em; }
+body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .35; }
 .telao-palco { height: 100vh; padding: 3vh 4vw; display: grid; grid-template-rows: auto 1fr auto; gap: 2vh; }
 .telao-palco header { display: flex; justify-content: space-between; align-items: center; }
 .telao-palco h1 { font-size: 2.4em; }
@@ -157,3 +159,58 @@ body.telao { font-size: clamp(18px, 1.6vw, 30px); overflow: hidden; }
 
 /* Impressão */
 @media print { .nao-imprimir { display: none !important; } }
+
+/* =====================================================================
+   Identidade 3D (23/10/2026): logo em peças de quebra-cabeça, ícones 3D
+   por grupo e profundidade em cartões, botões, chips e opções.
+   ===================================================================== */
+.marca .logo { width: 1.9em; height: 1.9em; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
+.marca { gap: .5em; }
+
+/* cartões com volume */
+.cartao, .grupo {
+  background: linear-gradient(180deg, #1d2740 0%, #172034 100%);
+  border: 1px solid #2c3a57;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 6px 0 #0d1220, 0 14px 28px rgba(0,0,0,.35);
+}
+.cartao.destaque { border-color: var(--acento); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 6px 0 #6b3510, 0 14px 30px rgba(255,138,61,.18); }
+.grupo { border-top: 0; position: relative; }
+.grupo::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 6px; border-radius: var(--raio) var(--raio) 0 0; background: var(--cor, #888); box-shadow: 0 0 18px var(--cor, transparent); }
+
+/* botões que afundam ao toque */
+.btn { box-shadow: 0 1px 0 rgba(255,255,255,.10) inset, 0 4px 0 #0c111d; transition: transform .06s, box-shadow .06s; }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(255,255,255,.10) inset, 0 1px 0 #0c111d; }
+.btn.primario { background: linear-gradient(180deg, #ffa25c 0%, #ff8a3d 55%, #f5741f 100%); box-shadow: 0 1px 0 rgba(255,255,255,.45) inset, 0 4px 0 #a84a10, 0 8px 18px rgba(255,138,61,.25); }
+.btn.primario:active:not(:disabled) { box-shadow: 0 1px 0 rgba(255,255,255,.45) inset, 0 1px 0 #a84a10; }
+.btn.perigo { box-shadow: 0 4px 0 #5a1b1b; }
+.btn.discreto { box-shadow: none; }
+
+/* ícones e etiquetas de grupo */
+.icone-grupo { object-fit: contain; flex: none; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
+.chip { padding: 4px 14px 4px 6px; background: linear-gradient(180deg, #24304b, #1b2439); border: 1px solid #33425f; box-shadow: 0 3px 0 #0c111d; }
+.chip i { display: none; }
+.titulo-grupo { display: flex; align-items: center; gap: .45em; }
+.grupo-destaque { display: flex; justify-content: center; margin: 4px 0 8px; }
+.grupo-destaque .icone-grupo { animation: flutuar 3.2s ease-in-out infinite; }
+@keyframes flutuar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .grupo-destaque .icone-grupo { animation: none; } .btn { transition: none; } }
+
+/* opções e peças com profundidade */
+.opcao { box-shadow: 0 3px 0 #0c111d; transition: transform .06s; }
+.opcao:has(input:checked) { box-shadow: 0 3px 0 #6b3510, 0 0 0 1px var(--acento) inset; }
+.opcao:active { transform: translateY(2px); }
+.peca { box-shadow: 0 3px 0 #b9ab92, 0 10px 18px rgba(0,0,0,.35); }
+
+/* abas da condução em relevo */
+.abas button[aria-selected=true] { background: linear-gradient(180deg, #26324f, #1d2740); box-shadow: inset 0 -3px 0 var(--acento), 0 3px 0 #0c111d; }
+
+/* telão: ícones maiores e cartões de grupo com o mesmo volume */
+.telao .chip { gap: .5em; }
+.telao .chip .icone-grupo { width: 1.6em; height: 1.6em; }
+.telao .titulo-grupo .icone-grupo { width: 2.2em; height: 2.2em; }
+.telao .marca .logo { width: 2.2em; height: 2.2em; }
+.telao .escala-barras span { box-shadow: 0 3px 0 #0c111d; }
+
+/* representante: nome e etiqueta na cor da equipe */
+.grupo li.eh-rep { color: var(--cor, var(--acento)); font-weight: 700; }
+.grupo li .rep { color: var(--cor, var(--acento)); border: 1px solid var(--cor, var(--acento)); border-radius: 999px; padding: 1px 8px; }

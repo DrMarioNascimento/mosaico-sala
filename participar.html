@@ -7,12 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="css/mosaico.css">
 </head>
 <body>
 <header class="topo">
   <div class="barra">
-    <span class="marca"><span class="ladrilhos"><i></i><i></i><i></i><i></i></span>MOSAICO</span>
+    <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">MOSAICO</span>
     <span class="status" id="identidade"></span>
   </div>
 </header>
@@ -25,6 +27,7 @@
     <input id="nome" maxlength="30" autocomplete="given-name" placeholder="Como quer ser chamado">
     <div class="linha-botoes"><button class="btn primario bloco" id="entrar">Entrar</button></div>
     <p class="aviso" id="avisoEntrada" hidden></p>
+    <p class="sutil" style="font-size:.88rem;margin-top:10px">Privacidade: seu nome é usado só durante esta atividade e é apagado quando a sala é encerrada. Não é preciso cadastro.</p>
   </section>
   <section id="jogo" hidden>
     <div id="status"></div>

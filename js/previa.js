@@ -1,0 +1,45 @@
+/* MOSAICO · Ver como fica (aberta pelo Planejamento)
+   Tudo em modo ensaio, neste navegador: a condução (celular), o telão e uma turma
+   simulada entram na mesma sala, já com a atividade que está sendo editada. */
+import { link, EM_ENSAIO } from './backend.js';
+
+if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio', '1'); location.replace(u.href); }
+const $ = id => document.getElementById(id);
+let codigo = null;
+
+function limparEnsaio() {
+  // começa limpo: apaga salas de ensaio antigas deste navegador
+  for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('mosaico-ensaio:rooms/')) localStorage.removeItem(k); }
+  Object.keys(sessionStorage).filter(k => k.startsWith('mosaico-participante') || k.startsWith('mosaico-ensaio')).forEach(k => sessionStorage.removeItem(k));
+}
+
+function iniciar() {
+  limparEnsaio(); codigo = null;
+  $('telao').innerHTML = ''; $('turma').innerHTML = '<p class="sutil">Os participantes aparecem assim que a sala abrir.</p>';
+  $('conducao').src = link('conduzir.html', { previa: '1', t: Date.now() });
+  $('info').textContent = 'Abrindo a sala de ensaio…';
+}
+
+function ajustarTelao() { const f = $('telao').querySelector('iframe'); if (f) f.style.transform = `scale(${$('telao').clientWidth / 1280})`; }
+addEventListener('resize', ajustarTelao);
+
+addEventListener('message', async e => {
+  if (e.origin !== location.origin || e.data?.tipo !== 'mosaico-previa-sala' || codigo) return;
+  codigo = e.data.codigo;
+  const t = document.createElement('iframe'); t.src = link('telao.html', { sala: codigo }); t.title = 'Telão';
+  $('telao').replaceChildren(t); ajustarTelao();
+  $('turma').replaceChildren();
+  const n = Math.min(20, Math.max(1, Number($('qtd').value) || 8));
+  for (let i = 1; i <= n; i++) {
+    const caixa = document.createElement('div'); caixa.className = 'pv-cel';
+    const f = document.createElement('iframe'); f.title = 'Participante ' + i;
+    f.src = link('participar.html', { sala: codigo, perfil: String(i), ...($('auto').checked ? { auto: '1' } : {}) });
+    caixa.append(f); $('turma').append(caixa);
+    await new Promise(r => setTimeout(r, 250));
+  }
+  $('info').textContent = `Sala ${codigo} com ${n} participantes simulados. No celular da esquerda: Grupos → Sortear, depois Condução → Iniciar etapa.`;
+});
+
+$('auto').onchange = e => { for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} } };
+$('recomecar').onclick = iniciar;
+iniciar();

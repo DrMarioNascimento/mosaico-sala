@@ -1,0 +1,642 @@
+/* MOSAICO · Painel de quem conduz (celular)
+   O "cérebro" da sala: só este aparelho tem o material docente.
+   Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
+
+import { backend, link, EM_ENSAIO } from './backend.js';
+import { $, h, limpar, aviso, corDoGrupo, escalaVisual, contagemRegressiva } from './ui.js';
+import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
+import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
+import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
+import { etapasOrdenadas, projecaoGrupo, prontidaoEtapa, calcularMeta, escalaDesempenho, montarResultado, registrarContingencia } from './core/motor.js';
+import { obterTipo } from './core/tipos.js';
+import { gerarPrompt } from './core/prompt.js';
+import { abrirImpressao } from './imprimir.js';
+
+const b = await backend();
+const GUARDA = 'mosaico-conducao', PENDENTES = 'mosaico-salas-pendentes';
+const E = { conta: null, atividade: null, diags: [], importacao: [], dispensadas: new Set(), codigo: null, sala: null, membros: [], envios: [], contingencias: [], aba: 'atividade', promptGerado: '' };
+let inscricoes = [], relogio = null;
+
+// ---------------- persistência local ----------------
+function salvar() {
+  try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias })); } catch {}
+}
+function lerGuardado() { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch { return null; } }
+function pendentes() { try { return JSON.parse(localStorage.getItem(PENDENTES) || '[]'); } catch { return []; } }
+function marcarPendente(c, sim) { try { const l = pendentes().filter(x => x !== c); if (sim) l.push(c); localStorage.setItem(PENDENTES, JSON.stringify(l.slice(-20))); } catch {} }
+
+const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); if (t) $('avisoGeral').scrollIntoView({ block: 'nearest' }); };
+
+// ---------------- entrada ----------------
+$('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio, sem internet)' : 'Entrar com Google';
+$('entrarGoogle').onclick = () => {
+  const p = b.entrarGoogle();     // sem await antes: o iPhone exige o pop-up direto no toque
+  $('entrarGoogle').disabled = true;
+  p.then(iniciar).catch(e => {
+    $('entrarGoogle').disabled = false;
+    const m = { 'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups e tente de novo.', 'auth/popup-closed-by-user': 'Login cancelado.', 'auth/unauthorized-domain': 'Abra pelo endereço oficial do MOSAICO para entrar com Google.', 'auth/operation-not-allowed': 'Ative o login Google no Authentication do projeto mosaico-sala.' };
+    aviso($('avisoLogin'), m[e.code] || 'Não foi possível entrar. Confira a internet.', 'erro');
+  });
+};
+(async () => { const c = await b.contaAtual(); if (c) iniciar(c); })();
+
+async function iniciar(conta) {
+  E.conta = conta;
+  $('login').hidden = true; $('abas').hidden = false;
+  const g = lerGuardado();
+  if (g?.atividade) { E.atividade = g.atividade; E.dispensadas = new Set(g.dispensadas || []); E.contingencias = g.contingencias || []; revalidar(); }
+  if (g?.codigo) {
+    try {
+      const s = await b.lerSala(g.codigo);
+      if (s && s.owner === conta.uid && s.status === 'open') conectarSala(g.codigo);
+      else { E.codigo = null; salvar(); }
+    } catch { E.codigo = null; }
+  }
+  mostrarAba(E.codigo ? 'conducao' : 'atividade');
+  renderTudo();
+  faxina();
+}
+
+// ---------------- abas ----------------
+$('abas').addEventListener('click', e => { const a = e.target.closest('button')?.dataset.aba; if (a) mostrarAba(a); });
+function mostrarAba(nome) {
+  E.aba = nome;
+  for (const btn of $('abas').querySelectorAll('button')) btn.setAttribute('aria-selected', String(btn.dataset.aba === nome));
+  for (const n of ['atividade', 'sala', 'grupos', 'conducao']) $('aba-' + n).hidden = n !== nome;
+  aviso($('avisoGeral'), '');
+  window.scrollTo({ top: 0 });
+}
+function renderTudo() { renderAtividade(); renderSala(); renderGrupos(); renderConducao(); renderTopo(); }
+
+// ---------------- auxiliares da atividade ----------------
+const A = () => E.atividade;
+const etapa = id => A().etapas.find(e => e.id === id);
+const nomeGrupo = id => A().grupos.find(g => g.id === id)?.nome || id;
+const nomeDe = uid => E.sala?.nomes?.[uid] || (uid === E.conta?.uid ? 'quem conduz' : '—');
+const grupoDoUid = uid => Object.entries(E.sala?.composicao || {}).find(([, m]) => m.includes(uid))?.[0] || null;
+const chip = g => h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(A(), g) } }), nomeGrupo(g));
+
+function revalidar() { E.diags = A() ? validarAtividade(A()) : []; }
+
+function publico() {
+  const a = A();
+  return {
+    titulo: a.titulo, introducao: a.introducao || '', perguntaCentral: a.perguntaCentral || '',
+    grupos: a.grupos.map(g => ({ id: g.id, nome: g.nome, funcao: g.funcao || '', ordemAlocacao: g.ordemAlocacao })),
+    etapas: etapasOrdenadas(a).map(e => ({ id: e.id, titulo: e.titulo, ordem: e.ordem, typeId: e.typeId, organizacao: e.participacao.organizacao })),
+    meta: a.meta && a.meta.ativa !== false ? { descricao: a.meta.descricao || '', limiar: a.meta.limiar } : null
+  };
+}
+
+function aceitar(obj, origem) {
+  const d = validarAtividade(obj);
+  if (temErros(d)) { E.importacao = d; renderAtividade(); return false; }
+  E.atividade = obj; E.importacao = []; E.dispensadas = new Set(); E.contingencias = [];
+  revalidar(); salvar(); renderTudo();
+  avisoGeral(`Atividade “${obj.titulo}” carregada${origem ? ' (' + origem + ')' : ''}.`, 'ok');
+  return true;
+}
+
+function ajustar(fn) {
+  fn(A()); revalidar(); salvar(); renderAtividade(); renderTopo();
+  if (E.codigo) b.atualizarSala(E.codigo, { publico: publico() }).catch(falha);
+}
+
+function falha(e) {
+  console.error(e);
+  const negado = e?.code === 'permission-denied' || /permission/i.test(e?.message || '');
+  avisoGeral(negado ? 'O servidor recusou a operação. Confira se sua conta está na lista de quem conduz e se as regras do Firestore foram publicadas.' : 'Falha de conexão: ' + (e?.message || e), 'erro');
+}
+
+// =====================================================================
+// ABA ATIVIDADE
+// =====================================================================
+function renderAtividade() {
+  const alvo = $('aba-atividade');
+  if (!A()) return limpar(alvo, cartaoCarregar());
+  const a = A(), salaAberta = !!E.codigo;
+  const naoErros = E.diags.filter(d => d.severidade !== 'erro');
+  const sugestoes = sugerirEquilibrio(a, { dispensadas: E.dispensadas });
+  const gram = avisoGramatica(a);
+
+  limpar(alvo,
+    h('div', { class: 'cartao' },
+      h('h1', {}, a.titulo),
+      h('p', { class: 'sutil' }, [a.publico, a.duracaoMin && a.duracaoMin + ' min', `${a.grupos.length} grupos`, `${a.etapas.length} etapas`].filter(Boolean).join(' · ')),
+      a.perguntaCentral && h('p', {}, h('strong', {}, 'Pergunta central: '), a.perguntaCentral),
+      h('div', { class: 'linha-botoes' },
+        h('button', { class: 'btn', onclick: () => abrirImpressao(a) }, 'Versão para imprimir'),
+        h('button', { class: 'btn', onclick: () => baixar(a) }, 'Baixar arquivo'),
+        h('button', { class: 'btn discreto', disabled: salaAberta, title: salaAberta ? 'Encerre a sala para trocar' : null, onclick: () => { E.atividade = null; E.diags = []; salvar(); renderTudo(); } }, 'Trocar atividade'))),
+
+    (naoErros.length || gram) && h('div', { class: 'cartao' }, h('h2', {}, 'Revisão'),
+      gram && h('p', { class: 'aviso' }, gram.mensagem),
+      listaDiag(naoErros)),
+
+    sugestoes.length && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
+      h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
+      h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
+        h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar'))))),
+
+    h('div', { class: 'cartao' }, h('h2', {}, 'Etapas'),
+      etapasOrdenadas(a).map(e => {
+        const t = obterTipo(e.typeId, e.typeVersion);
+        return h('div', { class: 'cartao', style: { margin: '10px 0', padding: '14px' } },
+          h('h3', {}, `${e.titulo}`),
+          h('p', { class: 'sutil' }, `${t?.nome || e.typeId} · ${e.participacao.organizacao === 'grupos' ? 'em grupos' : 'individual'}`),
+          h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
+            h('div', {}, h('label', { for: 'tempo-' + e.id }, 'Tempo (min)'),
+              h('input', { id: 'tempo-' + e.id, type: 'number', min: 1, max: 120, value: e.tempoMin ?? '', onchange: ev => ajustar(x => { const v = Number(ev.target.value); x.etapas.find(y => y.id === e.id).tempoMin = v > 0 ? v : undefined; }) })),
+            h('div', {}, h('label', { for: 'comp-' + e.id }, 'Competição'),
+              h('select', { id: 'comp-' + e.id, onchange: ev => ajustar(x => { x.etapas.find(y => y.id === e.id).participacao.competicao = ev.target.value; }) },
+                (t?.participacao.competicao || []).map(c => h('option', { value: c, selected: e.participacao.competicao === c }, { desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos' }[c] || c))))));
+      })),
+
+    h('div', { class: 'cartao' }, h('h2', {}, 'Grupos e meta'),
+      a.grupos.slice().sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).map(g => h('div', {},
+        h('label', { for: 'gn-' + g.id }, h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(a, g.id) } }), `Posição ${g.ordemAlocacao}`)),
+        h('input', { id: 'gn-' + g.id, maxlength: 40, value: g.nome, onchange: ev => { const v = ev.target.value.trim(); if (v) ajustar(x => { x.grupos.find(y => y.id === g.id).nome = v; }); } }))),
+      a.meta && h('div', {},
+        h('label', { for: 'metaLimiar' }, 'Meta da turma'),
+        h('select', { id: 'metaLimiar', onchange: ev => ajustar(x => { if (ev.target.value === 'off') x.meta.ativa = false; else { x.meta.ativa = true; x.meta.limiar = Number(ev.target.value); } }) },
+          h('option', { value: 'off', selected: a.meta.ativa === false }, 'Sem meta'),
+          [0.4, 0.5, 0.6, 0.8].map(v => h('option', { value: v, selected: a.meta.ativa !== false && a.meta.limiar === v }, `${v * 100}% de acertos`))),
+        h('p', { class: 'sutil' }, a.meta.descricao || ''))),
+
+    h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Material de quem conduz')),
+      (a.docente?.guia || []).length && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
+      h('h3', {}, 'Respostas esperadas'),
+      etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
+        const r = a.docente.respostas[e.id];
+        const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
+        return h('div', { style: { marginBottom: '12px' } }, h('strong', {}, e.titulo + ': '), op?.texto || r.corretaId, h('p', { class: 'sutil' }, r.explicacao || ''));
+      }),
+      (a.pendencias || []).length && h('div', {}, h('h3', {}, 'Pendências'), h('ul', {}, a.pendencias.map(x => h('li', {}, x))))));
+}
+
+function listaDiag(ds) {
+  return h('ul', { class: 'diag' }, ds.map(d => h('li', { class: d.severidade }, d.mensagem, h('code', {}, d.local))));
+}
+
+function cartaoCarregar() {
+  const arquivo = h('input', { type: 'file', accept: '.json,application/json', id: 'arquivoJson' });
+  arquivo.onchange = async () => { const f = arquivo.files[0]; if (!f) return; importarTexto(await f.text(), f.name); };
+  const colado = h('textarea', { id: 'jsonColado', placeholder: 'Ou cole aqui o JSON devolvido pela IA' });
+  const cfg = { publico: '', duracaoMin: 50, numeroGrupos: 5, regime: 'fiel', preferencias: '' };
+  const saida = h('textarea', { readonly: true, hidden: !E.promptGerado }, E.promptGerado);
+
+  return h('div', {},
+    h('div', { class: 'cartao' }, h('h1', {}, 'Escolha a atividade'),
+      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: usarPiloto }, 'Usar o caso piloto: a ciclista que voltou da altitude'))),
+    h('div', { class: 'cartao' }, h('h2', {}, 'Importar atividade'),
+      h('label', { for: 'arquivoJson' }, 'Arquivo .json'), arquivo,
+      h('label', { for: 'jsonColado' }, 'Texto colado'), colado,
+      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => importarTexto(colado.value, 'texto colado') }, 'Importar texto colado')),
+      E.importacao.length && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
+    h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Montar com uma IA externa')),
+      h('p', { class: 'sutil' }, 'Gere o prompt, cole na IA de sua preferência junto com o seu material e importe o JSON que ela devolver.'),
+      h('label', { for: 'pPublico' }, 'Público'), h('input', { id: 'pPublico', placeholder: 'Ex.: Graduação em Fisioterapia, 3º período', oninput: e => cfg.publico = e.target.value }),
+      h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
+        h('div', {}, h('label', { for: 'pDur' }, 'Duração (min)'), h('input', { id: 'pDur', type: 'number', value: 50, oninput: e => cfg.duracaoMin = Number(e.target.value) || 50 })),
+        h('div', {}, h('label', { for: 'pGr' }, 'Grupos'), h('input', { id: 'pGr', type: 'number', min: 1, max: 12, value: 5, oninput: e => cfg.numeroGrupos = Math.min(12, Math.max(1, Number(e.target.value) || 5)) }))),
+      h('label', { for: 'pReg' }, 'Regime'),
+      h('select', { id: 'pReg', onchange: e => cfg.regime = e.target.value },
+        h('option', { value: 'fiel' }, 'Fiel ao material (não inventa dados)'),
+        h('option', { value: 'simulacao' }, 'Simulação (permite dados sintéticos marcados)')),
+      h('label', { for: 'pPref' }, 'Preferências por etapa (opcional)'),
+      h('textarea', { id: 'pPref', placeholder: 'Ex.: começar com investigação em grupos, terminar com 2 questões individuais', oninput: e => cfg.preferencias = e.target.value }),
+      h('div', { class: 'linha-botoes' },
+        h('button', { class: 'btn primario', onclick: async () => {
+          let exemplo = null; try { exemplo = await (await fetch('casos/ciclista-altitude.json')).json(); } catch {}
+          E.promptGerado = gerarPrompt({ ...cfg, organizacao: 'grupos', exemplo });
+          saida.value = E.promptGerado; saida.hidden = false;
+        } }, 'Gerar prompt'),
+        h('button', { class: 'btn', onclick: async () => { try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); avisoGeral('Selecione e copie o texto do prompt.'); } } }, 'Copiar')),
+      saida));
+}
+
+async function usarPiloto() {
+  try { aceitar(await (await fetch('casos/ciclista-altitude.json', { cache: 'no-cache' })).json(), 'caso piloto'); }
+  catch (e) { avisoGeral('Não foi possível carregar o caso piloto: ' + e.message, 'erro'); }
+}
+function importarTexto(texto, origem) {
+  const r = lerJsonImportado(texto);
+  if (!r.atividade) { E.importacao = r.diagnosticos; return renderAtividade(); }
+  aceitar(r.atividade, origem);
+}
+function baixar(a) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
+  const l = h('a', { href: url, download: (a.id || 'atividade') + '.json' }); document.body.append(l); l.click(); l.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30e3);
+}
+
+// =====================================================================
+// ABA SALA
+// =====================================================================
+function renderSala() {
+  const alvo = $('aba-sala');
+  if (!A()) return limpar(alvo, h('div', { class: 'cartao' }, h('p', {}, 'Escolha uma atividade primeiro.')));
+  if (!E.codigo) return limpar(alvo, h('div', { class: 'cartao' },
+    h('h1', {}, 'Abrir sala'),
+    h('p', {}, 'Cria um código e um QR Code para os participantes entrarem sem cadastro. Ao encerrar, todos os dados da sala são apagados.'),
+    h('button', { class: 'btn primario bloco', disabled: temErros(E.diags), onclick: abrirSala }, 'Abrir sala')));
+  const s = E.sala;
+  if (!s) return limpar(alvo, h('div', { class: 'cartao' }, h('p', {}, 'Conectando à sala…')));
+  const urlP = link('participar.html', { sala: E.codigo }), urlT = link('telao.html', { sala: E.codigo });
+  const qr = h('div', { class: 'qr' }); qr.innerHTML = window.MosaicoQR.svg(urlP, { nivel: 'M', margem: 2, rotulo: 'QR Code para entrar na sala' });
+  const nomes = Object.entries(s.nomes || {}).sort((x, y) => x[1].localeCompare(y[1]));
+
+  let armado = false;
+  const btnEncerrar = h('button', { class: 'btn perigo bloco', onclick: async () => {
+    if (!armado) { armado = true; btnEncerrar.textContent = 'Toque de novo para encerrar e apagar tudo'; setTimeout(() => { armado = false; btnEncerrar.textContent = 'Encerrar sala'; }, 6000); return; }
+    btnEncerrar.disabled = true; await encerrarSala();
+  } }, 'Encerrar sala');
+
+  limpar(alvo,
+    h('div', { class: 'cartao' },
+      h('p', { class: 'sutil' }, 'Código da sala'), h('div', { class: 'codigo' }, E.codigo),
+      h('div', { style: { margin: '14px 0' } }, qr),
+      h('div', { class: 'linha-botoes' },
+        h('button', { class: 'btn', onclick: async () => { try { await navigator.clipboard.writeText(urlP); avisoGeral('Link copiado.', 'ok'); } catch { avisoGeral(urlP); } } }, 'Copiar link de entrada'),
+        h('a', { class: 'btn', href: urlT, target: '_blank', rel: 'noopener' }, 'Abrir telão')),
+      h('p', { class: 'sutil' }, 'No PC da sala, abra o telão e digite o código, ou use o botão acima.'),
+      h('details', {}, h('summary', {}, 'Testar sem participantes (simulador no PC)'),
+        h('p', { class: 'sutil' }, 'Abra no PC o endereço abaixo: ele mostra o telão e vários celulares simulados entrando nesta sala. Você conduz por aqui normalmente.'),
+        h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo })))),
+      h('button', { class: 'btn bloco', onclick: () => b.atualizarSala(E.codigo, { entradaAberta: !s.entradaAberta }).catch(falha) }, s.entradaAberta ? 'Fechar a entrada' : 'Reabrir a entrada'),
+      h('p', { class: 'sutil' }, s.entradaAberta ? 'Entrada aberta: novos participantes podem entrar. Depois da formação dos grupos, quem chega vai para o grupo com menos pessoas.' : 'Entrada fechada.')),
+    h('div', { class: 'cartao' }, h('h2', {}, `${nomes.length} participante(s)`),
+      nomes.length ? h('ul', {}, nomes.map(([u, n]) => h('li', {}, n, ' ', grupoDoUid(u) && chip(grupoDoUid(u))))) : h('p', { class: 'sutil' }, 'Ninguém entrou ainda.')),
+    EM_ENSAIO && h('div', { class: 'cartao' }, h('h2', {}, 'Ensaio'),
+      h('p', { class: 'sutil' }, 'Abra a tela de participante em outras abas ou acrescente participantes simulados.'),
+      h('div', { class: 'linha-botoes' },
+        h('button', { class: 'btn', onclick: () => simularEntradas(5) }, '+5 simulados'),
+        h('button', { class: 'btn', onclick: () => simularEntradas(1) }, '+1 simulado'),
+        h('a', { class: 'btn', href: urlP, target: '_blank' }, 'Abrir aba de participante'))),
+    h('div', { class: 'cartao' }, btnEncerrar, h('p', { class: 'sutil' }, 'Encerrar apaga participantes, envios e a sala. Os resultados não ficam guardados.')));
+}
+
+async function abrirSala() {
+  try {
+    const codigo = await b.criarSala({
+      owner: E.conta.uid, status: 'open', entradaAberta: true, fase: 'lobby', publico: publico(),
+      nomes: {}, composicao: {}, representantes: {}, executores: {}, leitoresExtra: {},
+      etapaAtual: null, etapaInfo: null, progresso: null, escala: null, encerradas: [], final: null
+    });
+    E.contingencias = []; E.envios = [];
+    marcarPendente(codigo, true);
+    conectarSala(codigo); salvar(); renderTudo();
+  } catch (e) { falha(e); }
+}
+
+function conectarSala(codigo) {
+  E.codigo = codigo;
+  inscricoes.forEach(f => f()); inscricoes = [];
+  inscricoes.push(b.observarSala(codigo, s => {
+    E.sala = s;
+    if (!s) { E.codigo = null; salvar(); avisoGeral('A sala não existe mais.', 'alerta'); }
+    renderSala(); renderGrupos(); renderConducao(); renderTopo();
+    sincronizarProgresso();
+  }, falha));
+  inscricoes.push(b.observarMembros(codigo, aoMudarMembros, falha));
+  inscricoes.push(b.observarEnvios(codigo, lista => { E.envios = lista; renderConducao(); sincronizarProgresso(); }, falha));
+  clearInterval(relogio); relogio = setInterval(() => { const r = document.getElementById('relogioConducao'); if (r && E.sala?.etapaInfo) r.textContent = contagemRegressiva(E.sala.etapaInfo.inicio, E.sala.etapaInfo.tempoMin); }, 1000);
+}
+
+async function aoMudarMembros(lista) {
+  E.membros = lista;
+  const s = E.sala; if (!s) return;
+  const patch = {}, nomes = { ...(s.nomes || {}) };
+  let mudou = false;
+  for (const m of lista) if (nomes[m.uid] !== m.nome) { nomes[m.uid] = m.nome; mudou = true; }
+  if (mudou) patch.nomes = nomes;
+  if (s.fase !== 'lobby') {
+    // Entrada tardia: vai para o grupo com menor ocupação (desempate pela ordem de alocação).
+    let comp = { ...s.composicao }; const reps = { ...s.representantes }, entrou = [];
+    for (const m of lista) {
+      if (Object.values(comp).some(arr => arr.includes(m.uid))) continue;
+      const g = grupoParaEntradaTardia(A().grupos, comp);
+      comp = { ...comp, [g]: [...(comp[g] || []), m.uid] };
+      if (!reps[g]) reps[g] = m.uid;
+      entrou.push(`${m.nome} → ${nomeGrupo(g)}`);
+    }
+    if (entrou.length) { patch.composicao = comp; patch.representantes = reps; avisoGeral('Entrada tardia: ' + entrou.join(', '), 'info'); }
+  }
+  if (Object.keys(patch).length) await b.atualizarSala(E.codigo, patch).catch(falha);
+}
+
+async function encerrarSala() {
+  const c = E.codigo;
+  inscricoes.forEach(f => f()); inscricoes = [];
+  try { await b.apagarSala(c); marcarPendente(c, false); avisoGeral('Sala encerrada. Nenhum dado dos participantes ficou guardado.', 'ok'); }
+  catch (e) {
+    try { await b.atualizarSala(c, { status: 'closed' }); } catch {}
+    avisoGeral('Sala encerrada, mas os dados não puderam ser apagados agora. Eles serão apagados na próxima vez que você entrar aqui.', 'alerta');
+  }
+  E.codigo = null; E.sala = null; E.envios = []; E.membros = []; E.contingencias = [];
+  salvar(); renderTudo();
+}
+
+/** Salas que ficaram abertas (aba fechada, internet caiu) são apagadas quando a mesma pessoa volta. */
+async function faxina() {
+  for (const c of pendentes()) {
+    if (c === E.codigo) continue;
+    try {
+      const s = await b.lerSala(c);
+      if (!s || s.owner !== E.conta.uid) { marcarPendente(c, false); continue; }
+      const criada = typeof s.createdAt === 'number' ? s.createdAt : s.createdAt?.toMillis?.() || 0;
+      if (s.status === 'closed' || Date.now() - criada > 6 * 3600e3) { await b.apagarSala(c); marcarPendente(c, false); }
+    } catch (e) { console.warn('faxina', c, e); }
+  }
+}
+
+// =====================================================================
+// ABA GRUPOS
+// =====================================================================
+function renderGrupos() {
+  const alvo = $('aba-grupos'), s = E.sala;
+  if (!A() || !E.codigo || !s) return limpar(alvo, h('div', { class: 'cartao' }, h('p', {}, 'Abra a sala primeiro.')));
+  const a = A(), n = Object.keys(s.nomes || {}).length;
+  const comecou = !!s.etapaAtual || (s.encerradas || []).length > 0;
+
+  if (s.fase === 'lobby') {
+    const vagas = n ? calcularVagas(a.grupos, n) : [];
+    return limpar(alvo, h('div', { class: 'cartao' },
+      h('h1', {}, 'Formar grupos'),
+      h('p', {}, `${n} participante(s) para ${a.grupos.length} grupos planejados.`),
+      n > 0 && h('p', { class: 'sutil' }, 'Tamanhos: ' + vagas.map(v => `${nomeGrupo(v.grupoId)} ${v.vagas}`).join(' · ')),
+      n > 0 && n < a.grupos.length && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Há menos participantes que grupos: alguns grupos ficarão vazios. Os grupos não são removidos; durante as etapas você poderá pedir a outro grupo para cobrir a tarefa.'),
+      h('button', { class: 'btn primario bloco', disabled: !n, onclick: formarGrupos }, 'Sortear grupos equilibrados')));
+  }
+
+  const diag = diagnosticarComposicao(a.grupos, s.composicao || {});
+  limpar(alvo,
+    !diag.equilibrada && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, `Composição desequilibrada (diferença de ${diag.diferenca} pessoas entre grupos). Isso é permitido; confira se é o que você quer.`),
+    diag.gruposVazios.length > 0 && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Sem participantes: ' + diag.gruposVazios.map(nomeGrupo).join(', ') + '. Na etapa, use “Pedir a outro grupo” ou “Registrar pela condução”.'),
+    h('div', { class: 'grade-grupos' }, [...a.grupos].sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).map(g => {
+      const membros = s.composicao?.[g.id] || [], rep = s.representantes?.[g.id];
+      return h('div', { class: 'grupo', style: { '--cor': corDoGrupo(a, g.id) } },
+        h('h3', {}, g.nome, h('small', {}, ` · ${membros.length}`)),
+        membros.length ? h('ul', {}, membros.map(u => h('li', {},
+          h('span', {}, nomeDe(u), u === rep && h('span', { class: 'rep' }, ' REP')),
+          h('span', { style: { display: 'flex', gap: '6px' } },
+            u !== rep && h('button', { class: 'btn pequeno discreto', title: 'Tornar representante', 'aria-label': 'Tornar ' + nomeDe(u) + ' representante', onclick: () => b.atualizarSala(E.codigo, { representantes: { ...s.representantes, [g.id]: u } }).catch(falha) }, '★'),
+            h('select', { 'aria-label': 'Mover ' + nomeDe(u), onchange: ev => mover(u, ev.target.value) },
+              a.grupos.map(x => h('option', { value: x.id, selected: x.id === g.id }, x.nome)))))))
+          : h('p', { class: 'sutil' }, 'Sem participantes'));
+    })),
+    h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', disabled: comecou, onclick: formarGrupos }, 'Sortear de novo')),
+    comecou && h('p', { class: 'sutil' }, 'A atividade já começou: o sorteio não pode ser refeito, mas você pode mover pessoas.'));
+}
+
+async function formarGrupos() {
+  const uids = Object.keys(E.sala.nomes || {});
+  if (!uids.length) return avisoGeral('Ninguém entrou ainda.', 'alerta');
+  const r = distribuir(A().grupos, uids);
+  const reps = {};
+  for (const g of A().grupos) if (r.composicao[g.id].length) reps[g.id] = r.composicao[g.id][0];
+  await b.atualizarSala(E.codigo, { composicao: r.composicao, representantes: reps, executores: {}, leitoresExtra: {}, fase: 'grupos' }).catch(falha);
+  mostrarAba('grupos');
+}
+
+async function mover(uid, destino) {
+  const s = E.sala, origem = grupoDoUid(uid);
+  if (origem === destino) return;
+  const comp = moverParticipante(s.composicao, uid, destino), reps = { ...s.representantes };
+  if (reps[origem] === uid) { if (comp[origem].length) reps[origem] = comp[origem][0]; else delete reps[origem]; }
+  if (!reps[destino]) reps[destino] = uid;
+  await b.atualizarSala(E.codigo, { composicao: comp, representantes: reps }).catch(falha);
+}
+
+// =====================================================================
+// ABA CONDUÇÃO
+// =====================================================================
+function resultados() {
+  return E.envios.map(e => montarResultado({
+    etapaId: e.etapaId,
+    grupoPlanejadoId: e.escopo === 'grupo' ? e.grupoId : null,
+    participanteId: e.escopo === 'participante' ? e.autor : null,
+    autoria: { tipo: e.autor === E.conta.uid ? 'conducao' : e.escopo, uid: e.autor, grupoId: grupoDoUid(e.autor), contingencia: !!e.contingencia },
+    dados: e.dados
+  }));
+}
+
+function calcularProgresso() {
+  const s = E.sala; if (!s || s.fase !== 'etapa' || !A()) return null;
+  const e = etapa(s.etapaAtual); if (!e) return null;
+  const envs = E.envios.filter(x => x.etapaId === e.id);
+  if (e.participacao.organizacao === 'individual') {
+    const por = {}; envs.filter(x => x.escopo === 'participante').forEach(x => { por[x.autor] = true; });
+    return { enviados: Object.keys(por).length, esperados: Object.keys(s.nomes || {}).length, porGrupo: {}, porParticipante: por };
+  }
+  const por = {}; envs.filter(x => x.escopo === 'grupo').forEach(x => { por[x.grupoId] = true; });
+  const esperados = A().grupos.filter(g => (s.composicao?.[g.id] || []).length || s.executores?.[g.id] || por[g.id]).length;
+  return { enviados: Object.keys(por).length, esperados, porGrupo: por, porParticipante: {} };
+}
+async function sincronizarProgresso() {
+  const p = calcularProgresso();
+  if (p && JSON.stringify(p) !== JSON.stringify(E.sala.progresso)) await b.atualizarSala(E.codigo, { progresso: p }).catch(falha);
+}
+
+function renderConducao() {
+  const alvo = $('aba-conducao'), s = E.sala;
+  if (!A() || !E.codigo || !s) return limpar(alvo, h('div', { class: 'cartao' }, h('p', {}, 'Abra a sala e forme os grupos primeiro.')));
+  if (s.fase === 'lobby') return limpar(alvo, h('div', { class: 'cartao' }, h('p', {}, 'Forme os grupos na aba Grupos para começar.'), h('button', { class: 'btn primario', onclick: () => mostrarAba('grupos') }, 'Ir para Grupos')));
+
+  const encerradas = new Set(s.encerradas || []);
+  const seq = etapasOrdenadas(A());
+  const proxima = !s.etapaAtual ? seq.find(e => !encerradas.has(e.id)) : null;
+  const res = resultados();
+
+  limpar(alvo,
+    seq.map(e => {
+      const t = obterTipo(e.typeId, e.typeVersion);
+      const atual = s.etapaAtual === e.id && s.fase === 'etapa', feita = encerradas.has(e.id);
+      const caixa = h('div', { class: 'cartao' + (atual ? ' destaque' : '') },
+        h('div', { class: 'etapa-linha' }, h('div', {}, h('h3', {}, e.titulo), h('div', { class: 'tipo' }, `${t?.nome} · ${e.participacao.organizacao === 'grupos' ? 'grupos' : 'individual'}${e.tempoMin ? ' · ' + e.tempoMin + ' min' : ''}`)),
+          h('span', { class: 'estado ' + (feita ? 'ok' : atual ? 'pend' : '') }, feita ? 'encerrada' : atual ? 'em andamento' : '')));
+      if (atual) caixa.append(painelEtapaAtual(e));
+      else if (proxima?.id === e.id && s.fase !== 'final') caixa.append(painelProxima(e, res));
+      if (feita || atual) caixa.append(resumoEnvios(e));
+      return caixa;
+    }),
+    s.fase !== 'final' && !s.etapaAtual && seq.every(e => encerradas.has(e.id)) && h('div', { class: 'cartao destaque' },
+      h('h2', {}, 'Todas as etapas encerradas'),
+      h('p', {}, 'Revelar mostra o resultado da meta e as explicações no telão e nos celulares.'),
+      h('button', { class: 'btn primario bloco', onclick: revelarFinal }, 'Revelar resultado final')),
+    s.fase === 'final' && h('div', { class: 'cartao destaque' }, h('h2', {}, 'Resultado revelado'),
+      s.final?.meta && h('p', {}, `${s.final.meta.acertos} de ${s.final.meta.total} acertos · meta ${Math.round(s.final.meta.limiar * 100)}% · ${s.final.meta.atingida ? 'atingida' : 'não atingida'}`),
+      h('p', { class: 'sutil' }, 'Quando terminar a discussão, encerre a sala na aba Sala.')),
+    EM_ENSAIO && s.fase === 'etapa' && h('div', { class: 'cartao' }, h('h3', {}, 'Ensaio'), h('button', { class: 'btn', onclick: pilotoAutomatico }, 'Simulados enviam agora')));
+}
+
+function painelEtapaAtual(e) {
+  const s = E.sala, p = s.progresso || {};
+  const caixa = h('div', {});
+  caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin)), ' · ', `${p.enviados ?? 0} de ${p.esperados ?? 0} ${e.participacao.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
+  if (e.participacao.organizacao === 'grupos') {
+    caixa.append(h('ul', { class: 'diag' }, A().grupos.map(g => {
+      const ok = p.porGrupo?.[g.id], vazio = !(s.composicao?.[g.id] || []).length, cobre = s.executores?.[g.id];
+      return h('li', { class: ok ? 'info' : 'aviso' }, chip(g.id), ' ',
+        h('span', { class: 'estado ' + (ok ? 'ok' : vazio && !cobre ? 'vazio' : 'pend') }, ok ? 'enviou' : cobre ? `coberto por ${nomeGrupo(grupoDoUid(cobre))}` : vazio ? 'sem participantes' : 'pendente'),
+        !ok && h('div', { class: 'linha-botoes' },
+          h('button', { class: 'btn pequeno', onclick: () => dialogoCobrir(e, g.id) }, 'Pedir a outro grupo'),
+          h('button', { class: 'btn pequeno', onclick: () => dialogoRegistrar(e, g.id) }, 'Registrar pela condução')));
+    })));
+  }
+  let armado = false;
+  const faltam = (p.esperados ?? 0) - (p.enviados ?? 0);
+  const btn = h('button', { class: 'btn primario bloco', onclick: () => {
+    if (faltam > 0 && !armado) { armado = true; btn.textContent = `Ainda faltam ${faltam}. Toque de novo para encerrar assim mesmo`; setTimeout(() => { armado = false; btn.textContent = 'Encerrar etapa'; }, 6000); return; }
+    encerrarEtapa();
+  } }, 'Encerrar etapa');
+  caixa.append(btn);
+  return caixa;
+}
+
+function painelProxima(e, res) {
+  const pr = prontidaoEtapa(A(), e.id, res, E.contingencias);
+  const caixa = h('div', {});
+  const vazios = e.participacao.organizacao === 'grupos' ? A().grupos.filter(g => !(E.sala.composicao?.[g.id] || []).length) : [];
+  if (vazios.length) caixa.append(h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Sem participantes: ' + vazios.map(g => g.nome).join(', ') + '. Durante a etapa, peça a outro grupo para cobrir ou registre pela condução.'));
+  if (!pr.pronta) {
+    const falt = pr.conferencia?.faltantes || [];
+    caixa.append(h('p', { class: 'aviso', 'data-tipo': 'alerta' }, pr.motivo + (falt.length ? ' Faltam: ' + falt.map(f => nomeGrupo(f.grupoId)).join(', ') + '.' : '')),
+      h('p', { class: 'sutil' }, 'Você pode seguir registrando a ausência: os outros grupos verão só as contribuições que existem.'),
+      h('button', { class: 'btn bloco', onclick: () => {
+        for (const f of falt) E.contingencias.push(registrarContingencia({ etapaId: f.etapaId, grupoPlanejadoId: f.grupoId, tipo: 'aceitar_parcial_registrado', observacao: 'Ausência aceita por quem conduz' }));
+        salvar(); renderConducao();
+      } }, 'Registrar ausência e liberar'));
+    return caixa;
+  }
+  if (pr.parcial) caixa.append(h('p', { class: 'aviso' }, pr.motivo));
+  caixa.append(h('button', { class: 'btn primario bloco', onclick: () => iniciarEtapa(e) }, 'Iniciar etapa'));
+  return caixa;
+}
+
+function resumoEnvios(e) {
+  const envs = E.envios.filter(x => x.etapaId === e.id);
+  if (!envs.length) return h('span');
+  const correta = A().docente?.respostas?.[e.id]?.corretaId;
+  if (e.participacao.organizacao === 'individual') {
+    const n = envs.length, ac = correta ? envs.filter(x => x.dados?.alternativaId === correta).length : null;
+    return h('p', { class: 'sutil' }, `${n} resposta(s)` + (ac !== null ? ` · ${ac} correta(s) (${Math.round(100 * ac / n)}%) — só você vê` : ''));
+  }
+  const opcoes = e.config?.hipotesesCandidatas || [];
+  return h('details', {}, h('summary', {}, `Envios (${envs.length}) — só você vê`),
+    h('ul', { class: 'diag' }, envs.map(x => {
+      const hip = opcoes.find(o => o.id === x.dados?.hipoteseId);
+      return h('li', { class: correta ? (x.dados?.hipoteseId === correta ? 'info' : 'aviso') : 'info' },
+        chip(x.grupoId), ' ', hip?.texto || '—',
+        x.contingencia && h('small', {}, ` (contingência: ${x.autor === E.conta.uid ? 'registrado pela condução' : 'executado por ' + nomeGrupo(grupoDoUid(x.autor))})`),
+        x.dados?.justificativa && h('p', { class: 'sutil' }, '“' + x.dados.justificativa + '”'));
+    })));
+}
+
+async function iniciarEtapa(e) {
+  const res = resultados();
+  const pr = prontidaoEtapa(A(), e.id, res, E.contingencias);
+  if (!pr.pronta) return avisoGeral(pr.motivo, 'alerta');
+  try {
+    if (e.participacao.organizacao === 'grupos') for (const g of A().grupos) await b.gravarPacote(E.codigo, g.id, projecaoGrupo(A(), e.id, g.id, res));
+    else await b.gravarPacote(E.codigo, 'individual', projecaoGrupo(A(), e.id, null, res));
+    await b.atualizarSala(E.codigo, {
+      fase: 'etapa', etapaAtual: e.id, executores: {}, leitoresExtra: {}, progresso: null,
+      etapaInfo: { titulo: e.titulo, ordem: e.ordem, organizacao: e.participacao.organizacao, tempoMin: e.tempoMin ?? null, inicio: Date.now(), instrucao: e.instrucao || '' }
+    });
+  } catch (err) { falha(err); }
+}
+
+async function encerrarEtapa() {
+  const s = E.sala, a = A();
+  const enc = [...new Set([...(s.encerradas || []), s.etapaAtual])];
+  const patch = { fase: 'revisao', etapaAtual: null, encerradas: enc, executores: {}, leitoresExtra: {} };
+  if (a.meta && a.meta.ativa !== false) {
+    const parcial = calcularMeta({ ...a, meta: { ...a.meta, etapas: a.meta.etapas.filter(id => enc.includes(id)) } }, resultados());
+    if (parcial && parcial.total) patch.escala = escalaDesempenho(parcial);
+  }
+  await b.atualizarSala(E.codigo, patch).catch(falha);
+}
+
+async function revelarFinal() {
+  const a = A(), meta = calcularMeta(a, resultados());
+  const explicacoes = etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
+    const r = a.docente.respostas[e.id];
+    const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
+    return { titulo: e.titulo, resposta: op?.texto || '', explicacao: r.explicacao || '' };
+  });
+  await b.atualizarSala(E.codigo, { fase: 'final', etapaAtual: null, final: { meta, explicacoes } }).catch(falha);
+}
+
+// ---------------- contingências (ADR-001) ----------------
+function dialogo(titulo, corpo, acoes) {
+  const d = h('dialog', { class: 'explica' }, h('h2', {}, titulo), corpo,
+    h('div', { class: 'linha-botoes' }, ...acoes.map(([rot, fn, cls]) => h('button', { class: 'btn ' + (cls || ''), onclick: async () => { if (fn && (await fn()) === false) return; d.close(); d.remove(); } }, rot))));
+  document.body.append(d); d.showModal();
+}
+
+function dialogoCobrir(e, g) {
+  const s = E.sala;
+  const candidatos = A().grupos.filter(x => x.id !== g && (s.composicao?.[x.id] || []).length);
+  if (!candidatos.length) return avisoGeral('Nenhum outro grupo com participantes.', 'alerta');
+  let escolhido = candidatos[0].id;
+  dialogo(`Cobrir a tarefa de ${nomeGrupo(g)}`,
+    h('div', {}, h('p', {}, 'O grupo escolhido recebe as peças e a tarefa desse grupo. A autoria real fica registrada.'),
+      h('select', { onchange: ev => { escolhido = ev.target.value; } }, candidatos.map(x => h('option', { value: x.id }, x.nome)))),
+    [['Confirmar', async () => {
+      const rep = s.representantes?.[escolhido];
+      await b.atualizarSala(E.codigo, { executores: { ...s.executores, [g]: rep }, leitoresExtra: { ...s.leitoresExtra, [g]: s.composicao[escolhido] } }).catch(falha);
+      E.contingencias.push(registrarContingencia({ etapaId: e.id, grupoPlanejadoId: g, tipo: 'executor_adicional', executadoPor: escolhido }));
+      salvar();
+    }, 'primario'], ['Cancelar']]);
+}
+
+function dialogoRegistrar(e, g) {
+  const opcoes = e.config?.hipotesesCandidatas || [];
+  if (!opcoes.length) return avisoGeral('Esta etapa não tem opções para registrar.', 'alerta');
+  let escolha = null;
+  dialogo(`Registrar por ${nomeGrupo(g)}`,
+    h('div', {}, h('p', { class: 'sutil' }, 'Fica registrado que a decisão foi feita por quem conduz, não pelo grupo.'),
+      h('div', { class: 'opcoes' }, opcoes.map(o => h('label', { class: 'opcao' }, h('input', { type: 'radio', name: 'reg', onchange: () => { escolha = o.id; } }), h('span', {}, o.texto))))),
+    [['Registrar', async () => {
+      if (!escolha) return false;
+      try {
+        await b.enviar(E.codigo, e.id + '__' + g, { etapaId: e.id, escopo: 'grupo', grupoId: g, autor: E.conta.uid, dados: { hipoteseId: escolha, evidencias: [], justificativa: 'Registrado por quem conduz' }, contingencia: true });
+        E.contingencias.push(registrarContingencia({ etapaId: e.id, grupoPlanejadoId: g, tipo: 'execucao_docente' })); salvar();
+      } catch (err) { avisoGeral(err.message === 'ja-enviado' ? 'Esse grupo já tinha enviado.' : err.message, 'alerta'); }
+    }, 'primario'], ['Cancelar']]);
+}
+
+// ---------------- topo ----------------
+function renderTopo() {
+  const s = E.sala, partes = [];
+  if (E.codigo) partes.push('Sala ' + E.codigo);
+  if (s) partes.push(Object.keys(s.nomes || {}).length + ' pessoas');
+  if (s?.etapaInfo && s.fase === 'etapa') partes.push(s.etapaInfo.titulo);
+  else if (s?.fase === 'final') partes.push('Resultado');
+  if (EM_ENSAIO) partes.push('ENSAIO');
+  $('statusTopo').textContent = partes.join(' · ') || (A() ? A().titulo : 'Condução');
+}
+
+// ---------------- ensaio ----------------
+async function simularEntradas(n) {
+  const base = Object.keys(E.sala?.nomes || {}).length;
+  for (let i = 1; i <= n; i++) await b.entrar(E.codigo, 'sim-' + Math.random().toString(36).slice(2, 8), `Simulado ${base + i}`).catch(falha);
+}
+async function pilotoAutomatico() {
+  const s = E.sala, e = etapa(s.etapaAtual); if (!e) return;
+  const escolher = l => l[Math.floor(Math.random() * l.length)];
+  if (e.participacao.organizacao === 'individual') {
+    for (const u of Object.keys(s.nomes)) if (u.startsWith('sim-') && !s.progresso?.porParticipante?.[u])
+      await b.enviar(E.codigo, e.id + '__' + u, { etapaId: e.id, escopo: 'participante', grupoId: grupoDoUid(u), autor: u, dados: { alternativaId: escolher(e.config.alternativas).id }, contingencia: false }).catch(() => {});
+    return;
+  }
+  for (const g of A().grupos) {
+    const rep = s.executores?.[g.id] || s.representantes?.[g.id];
+    if (!rep || !rep.startsWith('sim-') || s.progresso?.porGrupo?.[g.id]) continue;
+    const pecas = A().pecas.filter(p => p.etapaId === e.id && p.destinatarios.includes(g.id)).map(p => p.id);
+    const dados = { hipoteseId: escolher(e.config.hipotesesCandidatas).id, justificativa: 'Envio simulado no ensaio' };
+    if (e.typeId === 'investigacao_fragmentos') dados.evidencias = pecas.slice(0, Math.max(e.config.minEvidencias ?? 1, 1));
+    await b.enviar(E.codigo, e.id + '__' + g.id, { etapaId: e.id, escopo: 'grupo', grupoId: g.id, autor: rep, dados, contingencia: !!s.executores?.[g.id] }).catch(() => {});
+  }
+}

@@ -7,7 +7,7 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js';
 import { getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js';
-import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, onSnapshot, runTransaction, serverTimestamp, Timestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
+import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, onSnapshot, runTransaction, serverTimestamp, Timestamp, writeBatch, query, where } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
 
 // ?perfil=N (simulador de aula): cada "celular" simulado usa uma instância própria do Firebase,
@@ -79,6 +79,26 @@ export const backend = {
     }
   },
   observarEnvios(c, cb, erro) { return onSnapshot(collection(sala(c), 'envios'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro); },
+
+  // ---------- biblioteca fechada (só contas da lista de mestres; regras no firestore.rules) ----------
+  /** Lista as atividades da própria conta e as compartilhadas entre mestres. Recusa = conta não autorizada. */
+  async listarBiblioteca() {
+    const u = auth.currentUser; if (!u) throw new Error('sem-login');
+    const col = collection(db, 'biblioteca');
+    const [minhas, comp] = await Promise.all([getDocs(query(col, where('owner', '==', u.uid))), getDocs(query(col, where('compartilhada', '==', true)))]);
+    const mapa = new Map();
+    for (const d of [...minhas.docs, ...comp.docs]) mapa.set(d.id, { id: d.id, ...d.data(), minha: d.data().owner === u.uid });
+    return [...mapa.values()].map(x => ({ ...x, atualizadoEm: x.atualizadoEm?.toMillis?.() ?? 0 })).sort((x, y) => y.atualizadoEm - x.atualizadoEm);
+  },
+  async lerBiblioteca(id) { const s = await getDoc(doc(db, 'biblioteca', id)); return s.exists() ? { id, ...s.data() } : null; },
+  /** Salva (cria ou atualiza). Devolve o id. */
+  async salvarBiblioteca(id, { titulo, conteudo, compartilhada = false, autor = '' }) {
+    const u = auth.currentUser;
+    const ref = id ? doc(db, 'biblioteca', id) : doc(collection(db, 'biblioteca'));
+    await setDoc(ref, { owner: u.uid, autor, titulo, conteudo, compartilhada: !!compartilhada, atualizadoEm: serverTimestamp() });
+    return ref.id;
+  },
+  apagarBiblioteca(id) { return deleteDoc(doc(db, 'biblioteca', id)); },
 
   /** Encerrar apaga tudo da sessão: envios, pacotes, membros e a sala. */
   async apagarSala(c) {

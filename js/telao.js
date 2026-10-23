@@ -1,8 +1,15 @@
 /* MOSAICO · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
 import { backend, link } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, contagemRegressiva, escalaVisual } from './ui.js';
+import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual } from './ui.js';
 
 const b = await backend();
+
+// Tela cheia de verdade: o telão ocupa a tela inteira em que está (botão ⛶ ou tecla F).
+async function alternarTelaCheia() {
+  try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { /* navegador sem tela cheia */ }
+}
+$('telaCheia').onclick = alternarTelaCheia;
+addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !(e.target instanceof HTMLInputElement)) alternarTelaCheia(); });
 let codigo = null, sala = null, relogio = null;
 
 const inicial = new URLSearchParams(location.search).get('sala');
@@ -66,8 +73,8 @@ function gradeGrupos() {
   return h('div', { class: 'grade-grupos' }, sala.publico.grupos.map(g => {
     const membros = sala.composicao?.[g.id] || [], rep = sala.representantes?.[g.id];
     return h('div', { class: 'grupo', style: { '--cor': corDoGrupo(sala.publico.grupos, g.id) } },
-      h('h3', {}, g.nome),
-      membros.length ? h('ul', {}, membros.map(u => h('li', {}, sala.nomes?.[u] || '—', u === rep && h('span', { class: 'rep' }, 'REPRESENTANTE'))))
+      h('h3', { class: 'titulo-grupo' }, iconeGrupo(sala.publico.grupos, g.id, 64), g.nome),
+      membros.length ? h('ul', {}, membros.map(u => h('li', { class: u === rep ? 'eh-rep' : null }, sala.nomes?.[u] || '—', u === rep && h('span', { class: 'rep' }, 'REPRESENTANTE'))))
         : h('p', { class: 'sutil' }, 'Sem participantes'));
   }));
 }
@@ -78,7 +85,7 @@ function progresso() {
     return h('p', {}, h('strong', {}, `${pr.enviados || 0} de ${pr.esperados || 0}`), ' responderam');
   return h('div', { class: 'progresso' }, sala.publico.grupos.map(g => {
     const ok = pr.porGrupo?.[g.id], vazio = !(sala.composicao?.[g.id] || []).length && !sala.executores?.[g.id];
-    return h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(sala.publico.grupos, g.id) } }), g.nome,
+    return h('span', { class: 'chip', style: { '--cor': corDoGrupo(sala.publico.grupos, g.id) } }, iconeGrupo(sala.publico.grupos, g.id, 44), g.nome,
       h('span', { class: 'estado ' + (ok ? 'ok' : vazio ? 'vazio' : 'pend') }, ok ? 'enviou' : vazio ? 'sem grupo' : 'pensando'));
   }));
 }

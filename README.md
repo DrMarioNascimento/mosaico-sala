@@ -12,6 +12,9 @@ Especificação de referência: *MOSAICO — Autoria automática e aplicação d
 | `conduzir.html` | quem conduz (login Google, lista de mestres) | celular |
 | `telao.html` | telão da sala | TV / PC da sala |
 | `participar.html` | participantes (sem cadastro) | celular |
+| `planejar.html` | quem planeja (login Google) | PC |
+| `previa.html` | pré-visualização aberta pelo Planejamento (ensaio local) | PC |
+| `simulador.html` | simulador de aula na sala real | PC |
 
 Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem internet, para ensaiar a aula sozinho (com participantes simulados).
 
@@ -22,6 +25,13 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
 5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.
+
+## Planejamento e dois modos de uso
+
+- **Fechado (biblioteca):** contas da lista de mestres guardam atividades no Firestore (`biblioteca/`). Cada conta lê e edita as suas; pode compartilhar com os outros mestres (leitura e cópia). Nenhum dado de participante fica na biblioteca.
+- **Aberto (planilha):** qualquer pessoa monta e exporta a planilha `.xlsx` e a carrega na condução só para a sessão. Nada é guardado.
+- Formato da planilha: abas Atividade, Grupos, Etapas, Opcoes, Pecas e Fontes (ver `js/core/planilha.js`). A planilha contém o gabarito: não distribuir aos participantes.
+- LGPD: nomes dos participantes só durante a sessão (apagados ao encerrar); a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Casos devem ser fictícios.
 
 ## Estrutura
 

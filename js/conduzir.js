@@ -3,17 +3,21 @@
    Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
 
 import { backend, link, EM_ENSAIO } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, escalaVisual, contagemRegressiva } from './ui.js';
+import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
 import { etapasOrdenadas, projecaoGrupo, prontidaoEtapa, calcularMeta, escalaDesempenho, montarResultado, registrarContingencia } from './core/motor.js';
 import { obterTipo } from './core/tipos.js';
 import { gerarPrompt } from './core/prompt.js';
+import { lerArquivoAtividade } from './planilha-xlsx.js';
 import { abrirImpressao } from './imprimir.js';
 
 const b = await backend();
-const GUARDA = 'mosaico-conducao', PENDENTES = 'mosaico-salas-pendentes';
+// ?previa (aberta pelo Planejamento): ensaio automático com a atividade em edição.
+const PREVIA = EM_ENSAIO && new URLSearchParams(location.search).has('previa');
+const SUF = EM_ENSAIO ? (PREVIA ? '-previa' : '-ensaio') : '';
+const GUARDA = 'mosaico-conducao' + SUF, PENDENTES = 'mosaico-salas-pendentes' + SUF;
 const E = { conta: null, atividade: null, diags: [], importacao: [], dispensadas: new Set(), codigo: null, sala: null, membros: [], envios: [], contingencias: [], aba: 'atividade', promptGerado: '' };
 let inscricoes = [], relogio = null;
 
@@ -38,7 +42,20 @@ $('entrarGoogle').onclick = () => {
     aviso($('avisoLogin'), m[e.code] || 'Não foi possível entrar. Confira a internet.', 'erro');
   });
 };
-(async () => { const c = await b.contaAtual(); if (c) iniciar(c); })();
+(async () => {
+  if (PREVIA) { try { localStorage.removeItem(GUARDA); } catch {} return iniciarPrevia(); }
+  const c = await b.contaAtual(); if (c) iniciar(c);
+})();
+
+/** Pré-visualização: entra sozinho, carrega a atividade do Planejamento, abre a sala e avisa a página-mãe. */
+async function iniciarPrevia() {
+  await iniciar(await b.entrarGoogle());
+  let a = null; try { a = JSON.parse(localStorage.getItem('mosaico-previa') || 'null'); } catch {}
+  if (!a) return avisoGeral('Nada para pré-visualizar. Abra pelo Planejamento.', 'erro');
+  if (!aceitar(a, 'pré-visualização')) return avisoGeral('A atividade tem erros. Corrija na Revisão do Planejamento.', 'erro');
+  await abrirSala();
+  mostrarAba('sala');
+}
 
 async function iniciar(conta) {
   E.conta = conta;
@@ -74,7 +91,7 @@ const etapa = id => A().etapas.find(e => e.id === id);
 const nomeGrupo = id => A().grupos.find(g => g.id === id)?.nome || id;
 const nomeDe = uid => E.sala?.nomes?.[uid] || (uid === E.conta?.uid ? 'quem conduz' : '—');
 const grupoDoUid = uid => Object.entries(E.sala?.composicao || {}).find(([, m]) => m.includes(uid))?.[0] || null;
-const chip = g => h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(A(), g) } }), nomeGrupo(g));
+const chip = g => chipGrupo(A(), g, nomeGrupo(g));
 
 function revalidar() { E.diags = A() ? validarAtividade(A()) : []; }
 
@@ -154,7 +171,7 @@ function renderAtividade() {
 
     h('div', { class: 'cartao' }, h('h2', {}, 'Grupos e meta'),
       a.grupos.slice().sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).map(g => h('div', {},
-        h('label', { for: 'gn-' + g.id }, h('span', { class: 'chip' }, h('i', { style: { background: corDoGrupo(a, g.id) } }), `Posição ${g.ordemAlocacao}`)),
+        h('label', { for: 'gn-' + g.id }, chipGrupo(a, g.id, `Posição ${g.ordemAlocacao}`)),
         h('input', { id: 'gn-' + g.id, maxlength: 40, value: g.nome, onchange: ev => { const v = ev.target.value.trim(); if (v) ajustar(x => { x.grupos.find(y => y.id === g.id).nome = v; }); } }))),
       a.meta && h('div', {},
         h('label', { for: 'metaLimiar' }, 'Meta da turma'),
@@ -179,17 +196,24 @@ function listaDiag(ds) {
 }
 
 function cartaoCarregar() {
-  const arquivo = h('input', { type: 'file', accept: '.json,application/json', id: 'arquivoJson' });
-  arquivo.onchange = async () => { const f = arquivo.files[0]; if (!f) return; importarTexto(await f.text(), f.name); };
+  const arquivo = h('input', { type: 'file', accept: '.xlsx,.json,application/json', id: 'arquivoJson' });
+  arquivo.onchange = async () => {
+    const f = arquivo.files[0]; if (!f) return;
+    try { const r = await lerArquivoAtividade(f); if (!r.atividade) { E.importacao = r.diagnosticos; return renderAtividade(); } aceitar(r.atividade, f.name); }
+    catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
+  };
+  const minhas = h('div', { class: 'cartao', hidden: true }, h('h2', {}, 'Minhas atividades'), h('p', { class: 'sutil' }, 'Carregando…'));
+  carregarMinhas(minhas);
   const colado = h('textarea', { id: 'jsonColado', placeholder: 'Ou cole aqui o JSON devolvido pela IA' });
   const cfg = { publico: '', duracaoMin: 50, numeroGrupos: 5, regime: 'fiel', preferencias: '' };
   const saida = h('textarea', { readonly: true, hidden: !E.promptGerado }, E.promptGerado);
 
   return h('div', {},
+    minhas,
     h('div', { class: 'cartao' }, h('h1', {}, 'Escolha a atividade'),
       h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: usarPiloto }, 'Usar o caso piloto: a ciclista que voltou da altitude'))),
     h('div', { class: 'cartao' }, h('h2', {}, 'Importar atividade'),
-      h('label', { for: 'arquivoJson' }, 'Arquivo .json'), arquivo,
+      h('label', { for: 'arquivoJson' }, 'Planilha (.xlsx) ou arquivo .json'), arquivo,
       h('label', { for: 'jsonColado' }, 'Texto colado'), colado,
       h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => importarTexto(colado.value, 'texto colado') }, 'Importar texto colado')),
       E.importacao.length && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
@@ -198,7 +222,7 @@ function cartaoCarregar() {
       h('label', { for: 'pPublico' }, 'Público'), h('input', { id: 'pPublico', placeholder: 'Ex.: Graduação em Fisioterapia, 3º período', oninput: e => cfg.publico = e.target.value }),
       h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
         h('div', {}, h('label', { for: 'pDur' }, 'Duração (min)'), h('input', { id: 'pDur', type: 'number', value: 50, oninput: e => cfg.duracaoMin = Number(e.target.value) || 50 })),
-        h('div', {}, h('label', { for: 'pGr' }, 'Grupos'), h('input', { id: 'pGr', type: 'number', min: 1, max: 12, value: 5, oninput: e => cfg.numeroGrupos = Math.min(12, Math.max(1, Number(e.target.value) || 5)) }))),
+        h('div', {}, h('label', { for: 'pGr' }, 'Grupos'), h('input', { id: 'pGr', type: 'number', min: 1, max: 10, value: 5, oninput: e => cfg.numeroGrupos = Math.min(10, Math.max(1, Number(e.target.value) || 5)) }))),
       h('label', { for: 'pReg' }, 'Regime'),
       h('select', { id: 'pReg', onchange: e => cfg.regime = e.target.value },
         h('option', { value: 'fiel' }, 'Fiel ao material (não inventa dados)'),
@@ -213,6 +237,19 @@ function cartaoCarregar() {
         } }, 'Gerar prompt'),
         h('button', { class: 'btn', onclick: async () => { try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); avisoGeral('Selecione e copie o texto do prompt.'); } } }, 'Copiar')),
       saida));
+}
+
+/** Lista da biblioteca fechada (só mestres). Some se a conta não tiver acesso. */
+async function carregarMinhas(alvo) {
+  if (PREVIA) return;
+  let lista;
+  try { lista = await b.listarBiblioteca(); } catch { return; }
+  alvo.hidden = false;
+  limpar(alvo, h('h2', {}, 'Minhas atividades'),
+    lista.length ? h('div', { class: 'opcoes' }, lista.map(item => h('button', { class: 'opcao', style: { textAlign: 'left', color: 'inherit', font: 'inherit' }, onclick: async () => {
+      try { const d = item.conteudo ? item : await b.lerBiblioteca(item.id); aceitar(JSON.parse(d.conteudo), 'biblioteca'); } catch (e) { avisoGeral('Não foi possível abrir: ' + e.message, 'erro'); }
+    } }, h('span', {}, h('strong', {}, item.titulo || '(sem título)'), h('br'), h('small', { class: 'sutil' }, item.minha ? 'sua' : 'compartilhada por ' + (item.autor || 'outro mestre')))))) : h('p', { class: 'sutil' }, 'Nenhuma atividade guardada. Monte no Planejamento, no PC.'),
+    h('p', { class: 'sutil' }, 'Para criar ou editar: ', h('a', { href: link('planejar.html'), target: '_blank' }, 'Planejamento')));
 }
 
 async function usarPiloto() {
@@ -262,7 +299,7 @@ function renderSala() {
       h('p', { class: 'sutil' }, 'No PC da sala, abra o telão e digite o código, ou use o botão acima.'),
       h('details', {}, h('summary', {}, 'Testar sem participantes (simulador no PC)'),
         h('p', { class: 'sutil' }, 'Abra no PC o endereço abaixo: ele mostra o telão e vários celulares simulados entrando nesta sala. Você conduz por aqui normalmente.'),
-        h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo })))),
+        h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo }).replace('simulador.html', 'simulador').replace(/^https?:\/\//, '')))),
       h('button', { class: 'btn bloco', onclick: () => b.atualizarSala(E.codigo, { entradaAberta: !s.entradaAberta }).catch(falha) }, s.entradaAberta ? 'Fechar a entrada' : 'Reabrir a entrada'),
       h('p', { class: 'sutil' }, s.entradaAberta ? 'Entrada aberta: novos participantes podem entrar. Depois da formação dos grupos, quem chega vai para o grupo com menos pessoas.' : 'Entrada fechada.')),
     h('div', { class: 'cartao' }, h('h2', {}, `${nomes.length} participante(s)`),
@@ -286,6 +323,7 @@ async function abrirSala() {
     E.contingencias = []; E.envios = [];
     marcarPendente(codigo, true);
     conectarSala(codigo); salvar(); renderTudo();
+    if (PREVIA && window.parent !== window) window.parent.postMessage({ tipo: 'mosaico-previa-sala', codigo }, location.origin);
   } catch (e) { falha(e); }
 }
 
@@ -376,8 +414,8 @@ function renderGrupos() {
     h('div', { class: 'grade-grupos' }, [...a.grupos].sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).map(g => {
       const membros = s.composicao?.[g.id] || [], rep = s.representantes?.[g.id];
       return h('div', { class: 'grupo', style: { '--cor': corDoGrupo(a, g.id) } },
-        h('h3', {}, g.nome, h('small', {}, ` · ${membros.length}`)),
-        membros.length ? h('ul', {}, membros.map(u => h('li', {},
+        h('h3', { class: 'titulo-grupo' }, iconeGrupo(a, g.id, 34), g.nome, h('small', {}, ` · ${membros.length}`)),
+        membros.length ? h('ul', {}, membros.map(u => h('li', { class: u === rep ? 'eh-rep' : null },
           h('span', {}, nomeDe(u), u === rep && h('span', { class: 'rep' }, ' REP')),
           h('span', { style: { display: 'flex', gap: '6px' } },
             u !== rep && h('button', { class: 'btn pequeno discreto', title: 'Tornar representante', 'aria-label': 'Tornar ' + nomeDe(u) + ' representante', onclick: () => b.atualizarSala(E.codigo, { representantes: { ...s.representantes, [g.id]: u } }).catch(falha) }, '★'),

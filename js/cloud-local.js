@@ -76,5 +76,16 @@ export const backend = {
     const p = `rooms/${c}/envios/`;
     return observar(k => k.startsWith(p), () => cb(chaves(p).map(k => ({ id: k.slice(p.length), ...ler(k) }))));
   },
+  // biblioteca de ensaio: fica neste navegador
+  async listarBiblioteca() {
+    return chaves('biblioteca/').map(k => ({ id: k.slice(11), ...ler(k), minha: true })).sort((x, y) => y.atualizadoEm - x.atualizadoEm);
+  },
+  async lerBiblioteca(id) { const d = ler('biblioteca/' + id); return d ? { id, ...d } : null; },
+  async salvarBiblioteca(id, { titulo, conteudo, compartilhada = false, autor = '' }) {
+    const novo = id || 'b' + Date.now().toString(36);
+    gravar('biblioteca/' + novo, { owner: meuUid(), autor, titulo, conteudo, compartilhada: !!compartilhada, atualizadoEm: Date.now() });
+    return novo;
+  },
+  async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
   async apagarSala(c) { chaves(`rooms/${c}`).forEach(k => gravar(k, null)); }
 };

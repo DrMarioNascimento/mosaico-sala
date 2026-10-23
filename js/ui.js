@@ -9,7 +9,7 @@ export function h(tag, attrs = {}, ...filhos) {
     if (v === undefined || v === null || v === false) continue;
     if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else if (k === 'class') e.className = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k === 'style' && typeof v === 'object') { for (const [p, val] of Object.entries(v)) p.startsWith('--') ? e.style.setProperty(p, val) : (e.style[p] = val); }
     else if (v === true) e.setAttribute(k, '');
     else e.setAttribute(k, v);
   }
@@ -19,13 +19,39 @@ export function h(tag, attrs = {}, ...filhos) {
 
 export const limpar = (alvo, ...filhos) => { alvo.replaceChildren(...filhos.flat(Infinity).filter(Boolean)); return alvo; };
 
-/** Cores dos grupos por posição na ordem de alocação (contraste alto em fundo escuro). */
-export const CORES = ['#ff8a3d', '#3ddcff', '#c6ff45', '#ff5fa8', '#b18cff', '#ffd23d', '#4dffb0', '#ff6b6b', '#7aa2ff', '#e8e8e8', '#ffa8e0', '#9be15d'];
-export function corDoGrupo(atividadeOuGrupos, grupoId) {
+/** Identidade visual dos grupos: forma 3D + cor, na ordem de alocação.
+ *  Genérica de propósito (serve a qualquer tema). As 4 primeiras repetem as cores do logo. */
+export const VISUAL_GRUPOS = [
+  { forma: 'circulo', nome: 'Círculo', cor: '#fa7309' },
+  { forma: 'triangulo', nome: 'Triângulo', cor: '#14c5d6' },
+  { forma: 'quadrado', nome: 'Quadrado', cor: '#a4ce2f' },
+  { forma: 'losango', nome: 'Losango', cor: '#f83d87' },
+  { forma: 'estrela', nome: 'Estrela', cor: '#f3bf0a' },
+  { forma: 'hexagono', nome: 'Hexágono', cor: '#8855c3' },
+  { forma: 'coracao', nome: 'Coração', cor: '#de1b1a' },
+  { forma: 'gota', nome: 'Gota', cor: '#338dec' },
+  { forma: 'lua', nome: 'Lua', cor: '#53a981' },
+  { forma: 'raio', nome: 'Raio', cor: '#afafaf' }
+];
+export const CORES = VISUAL_GRUPOS.map(v => v.cor);
+
+function visual(atividadeOuGrupos, grupoId) {
   const grupos = Array.isArray(atividadeOuGrupos) ? atividadeOuGrupos : atividadeOuGrupos.grupos;
   const ord = [...grupos].sort((a, b) => (a.ordemAlocacao ?? 0) - (b.ordemAlocacao ?? 0));
   const i = ord.findIndex(g => g.id === grupoId);
-  return CORES[(i < 0 ? 0 : i) % CORES.length];
+  return VISUAL_GRUPOS[(i < 0 ? 0 : i) % VISUAL_GRUPOS.length];
+}
+export const corDoGrupo = (g, id) => visual(g, id).cor;
+export const formaDoGrupo = (g, id) => visual(g, id);
+export const urlIcone = forma => `assets/icones/grupo-${forma}.webp`;
+
+/** Ícone 3D do grupo (decorativo: o nome do grupo sempre aparece ao lado). */
+export function iconeGrupo(g, id, tam = 26) {
+  return h('img', { src: urlIcone(visual(g, id).forma), alt: '', width: tam, height: tam, class: 'icone-grupo', loading: 'lazy', decoding: 'async' });
+}
+/** Etiqueta do grupo: ícone + nome. */
+export function chipGrupo(g, id, nome, tam = 26) {
+  return h('span', { class: 'chip', style: { '--cor': corDoGrupo(g, id) } }, iconeGrupo(g, id, tam), nome);
 }
 
 export function aviso(alvo, texto, tipo = 'info') {

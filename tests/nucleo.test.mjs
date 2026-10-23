@@ -215,3 +215,45 @@ test('Meta coletiva: ausências não contam como acerto', () => {
   assert.deepEqual([m.acertos, m.total, m.atingida], [3, 4, true]);
   assert.equal(calcularMeta(a, []).atingida, false);
 });
+
+test('Máximo de 10 grupos (um ícone distinto por grupo)', () => {
+  const a = caso();
+  for (let i = 6; i <= 11; i++) a.grupos.push({ id: 'g_extra' + i, nome: 'Extra ' + i, ordemAlocacao: i });
+  assert.ok(erros(validarAtividade(a)).some(x => /máximo é 10/.test(x.mensagem)));
+});
+
+// ---------- Planilha (modo aberto) ----------
+import { atividadeParaAbas, abasParaAtividade } from '../js/core/planilha.js';
+const semIdConexao = a => ({ ...a, conexoes: a.conexoes.map(({ id, ...c }) => c) });
+test('Planilha: atividade → abas → atividade preserva tudo (exceto id interno da conexão)', () => {
+  const a = caso();
+  const { atividade: b, problemas } = abasParaAtividade(atividadeParaAbas(a));
+  assert.deepEqual(problemas, []);
+  assert.deepEqual(erros(validarAtividade(b)), []);
+  assert.deepEqual(semIdConexao(b), semIdConexao(a));
+});
+test('Planilha: nomes de aba/coluna com acento e maiúsculas são aceitos; "60%" vira 0.6', () => {
+  const abas = atividadeParaAbas(caso());
+  const renomeada = {};
+  for (const [n, linhas] of Object.entries(abas)) renomeada[n.toUpperCase()] = linhas.map(l => Object.fromEntries(Object.entries(l).map(([k, v]) => [k === 'funcao' ? 'Função' : k.toUpperCase(), v])));
+  const { atividade } = abasParaAtividade(renomeada);
+  assert.equal(atividade.meta.limiar, 0.6);
+  assert.equal(atividade.grupos[0].funcao, caso().grupos[0].funcao);
+});
+test('Planilha: tipo desconhecido e aba faltando viram problemas legíveis', () => {
+  const abas = atividadeParaAbas(caso());
+  abas.Etapas[0].tipo = 'inventado';
+  delete abas.Grupos;
+  const { problemas } = abasParaAtividade(abas);
+  assert.ok(problemas.some(p => /inventado/.test(p)));
+  assert.ok(problemas.some(p => /Grupos/.test(p)));
+});
+test('LGPD: CPF, e-mail e telefone em peças geram aviso (não erro)', () => {
+  const a = caso();
+  a.pecas[0].conteudo += ' Contato: joana@exemplo.com';
+  a.pecas[1].conteudo += ' CPF 123.456.789-09';
+  a.pecas[2].conteudo += ' Tel (48) 99123-4567';
+  const d = validarAtividade(a);
+  assert.deepEqual(erros(d), []);
+  assert.equal(d.filter(x => /fictícios/.test(x.mensagem)).length, 3);
+});

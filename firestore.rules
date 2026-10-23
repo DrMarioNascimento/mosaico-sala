@@ -22,6 +22,22 @@ service cloud.firestore {
 
     match /config/{d} { allow read: if signed(); allow write: if false; }
 
+    // Biblioteca de atividades: FECHADA. Só contas da lista de mestres; cada uma lê e edita as suas,
+    // e lê as que outro mestre marcou como compartilhadas. Nenhum dado de participante fica aqui.
+    match /biblioteca/{id} {
+      allow read: if mestre() && (resource.data.owner == request.auth.uid || resource.data.compartilhada == true);
+      allow create: if mestre() && bibliotecaValida(request.resource.data) && request.resource.data.owner == request.auth.uid;
+      allow update: if mestre() && resource.data.owner == request.auth.uid && bibliotecaValida(request.resource.data)
+        && request.resource.data.owner == resource.data.owner;
+      allow delete: if mestre() && resource.data.owner == request.auth.uid;
+    }
+    function bibliotecaValida(d) {
+      return d.keys().hasOnly(['owner', 'autor', 'titulo', 'conteudo', 'compartilhada', 'atualizadoEm'])
+        && d.titulo is string && d.titulo.size() <= 200
+        && d.conteudo is string && d.conteudo.size() < 900000
+        && d.compartilhada is bool && d.atualizadoEm == request.time;
+    }
+
     match /rooms/{c} {
       allow get: if signed();
       allow list: if false;
