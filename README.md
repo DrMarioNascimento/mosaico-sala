@@ -1,30 +1,51 @@
 # MOSAICO · Sala
 
-Plataforma de aplicação de atividades MOSAICO em sala: quem conduz importa uma atividade, abre a sala por QR Code, os participantes entram sem cadastro e são distribuídos entre os grupos planejados.
+Plataforma de aplicação de atividades MOSAICO em sala: quem conduz importa uma atividade, abre a sala por QR Code, os participantes entram sem cadastro e são distribuídos entre os grupos planejados. Cada grupo recebe só uma parte das evidências; as hipóteses circulam entre grupos; a turma compete para superar a meta.
 
 Especificação de referência: *MOSAICO — Autoria automática e aplicação de atividades em sala*, versão 2.0 (23/10/2026), com a seção 7.1–7.5 (Gramática MOSAICO e autonomia docente).
 
-## Estado atual — primeiro corte
+## Páginas
 
-| Parte | Situação |
-| --- | --- |
-| Núcleo (`js/core/`) | Pronto e testado |
-| Caso piloto (`casos/ciclista-altitude.json`) | Pronto, aguardando revisão docente |
-| Prompt para IA externa | Pronto (`js/core/prompt.js`) |
-| Telas (condutor, telão, participante) e Firebase | Em construção |
+| Página | Quem usa | Onde |
+| --- | --- | --- |
+| `index.html` | todos | entrada |
+| `conduzir.html` | quem conduz (login Google, lista de mestres) | celular |
+| `telao.html` | telão da sala | TV / PC da sala |
+| `participar.html` | participantes (sem cadastro) | celular |
+
+Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem internet, para ensaiar a aula sozinho (com participantes simulados).
+
+## Fluxo da aula
+
+1. **Atividade:** caso piloto, arquivo importado ou montagem por IA externa (prompt gerado na própria tela). Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
+2. **Sala:** abrir sala → QR Code e código → abrir o telão.
+3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
+4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
+5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.
 
 ## Estrutura
 
 ```
-js/core/distribuicao.js   Distribuição equilibrada (seção 9, ADR-001)
-js/core/tipos.js          Catálogo ActivityType (3 tipos no primeiro corte)
-js/core/validacao.js      Validação estrutural da atividade importada
-js/core/equilibrio.js     Gramática MOSAICO e sugestões de equilíbrio (7.1–7.4)
-js/core/motor.js          Projeções por grupo, coleções, meta, contingências
-js/core/prompt.js         Prompt de montagem para IA externa (seção 6)
-casos/                    Atividades prontas
-tests/                    Testes automáticos (critérios da seção 22)
+js/core/           Núcleo puro, testado (distribuição, tipos, validação, equilíbrio, motor, prompt)
+js/conduzir.js     Painel de quem conduz ("cérebro" da sala)
+js/telao.js        Telão
+js/participar.js   Participante
+js/imprimir.js     Versão para imprimir (material docente em folha separada)
+js/backend.js      Escolhe Firebase ou ensaio local
+js/cloud-*.js      Firebase (Firestore + Auth) / ensaio (localStorage)
+js/qr.js           Gerador de QR Code próprio (mesmo do Eita!)
+casos/             Atividades prontas
+firestore.rules    Regras do Firestore
+tests/             Testes automáticos (critérios da seção 22)
 ```
+
+## Segurança e dados
+
+- O material docente (respostas esperadas, guia) **nunca** vai ao servidor durante a atividade: fica só no aparelho de quem conduz. Só é publicado o que quem conduz revela no fim.
+- Cada grupo só consegue ler o próprio pacote (regras do Firestore).
+- Envios só podem ser criados, nunca sobrescritos.
+- Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas abandonadas são apagadas na próxima entrada de quem conduz.
+- Lista de mestres: e-mails fixos em `firestore.rules` e/ou documento `config/mestres` com o campo `emails` (lista).
 
 ## Tipos de atividade disponíveis
 
@@ -34,19 +55,18 @@ tests/                    Testes automáticos (critérios da seção 22)
 | `comparar_hipoteses` | 1.0.0 | Grupos veem as hipóteses e evidências dos outros e decidem |
 | `questao_individual` | 1.0.0 | Múltipla escolha individual, pode contar para a meta |
 
+## Publicação
+
+- Firebase Hosting, projeto `mosaico-sala` (plano gratuito). Endereço: https://mosaico-sala.web.app
+- Publicação automática a cada push (`.github/workflows/firebase-hosting.yml`), com o segredo `FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA`.
+- As regras (`firestore.rules`) são coladas em Firestore → Regras no console.
+
 ## Testes
 
-Requer Node 20 ou superior. Na pasta do repositório:
+Requer Node 20 ou superior:
 
 ```
 node --test tests/*.test.mjs
 ```
-
-## Arquitetura da sala
-
-- O "cérebro" da sessão roda no aparelho de quem conduz. Só ele carrega o material docente.
-- O Firestore recebe apenas a projeção autorizada de cada grupo na etapa atual.
-- Encerrar a sala apaga os dados da sessão, como no Eita!.
-- Projeto Firebase próprio, separado do Eita! e dos demais jogos.
 
 Prof. Mário César Nascimento, PhD ©
