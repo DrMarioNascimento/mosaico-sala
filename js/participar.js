@@ -1,3 +1,4 @@
+import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Tela de quem participa (celular) */
 import { backend } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual } from './ui.js';
@@ -264,7 +265,7 @@ function placaCadeado(pk) {
   const progresso = pk.regra === 'fragmentos' ? `${G.acertos} de ${G.total} pedaços revelados no grupo` : `${G.acertos} de ${G.necessarios} acertos no grupo`;
   const fr = pk.regra === 'fragmentos' ? G.acertos / Math.max(1, G.total) : G.acertos / Math.max(1, G.necessarios);
   return h('div', { class: 'cadeado-placa' + (aberto ? ' aberto' : '') },
-    h('div', { class: 'cadeado-icone', 'aria-hidden': 'true' }, aberto ? '🔓' : '🔒'),
+    h('div', { class: 'cadeado-icone', 'aria-hidden': 'true' }, cadeadoIcone(aberto)),
     h('div', {}, h('strong', {}, aberto ? `Cadeado aberto!${G.posicao ? ' (' + G.posicao + 'º grupo)' : ''}` : 'Cadeado fechado'),
       h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * Math.min(1, fr)) + '%' } })),
       h('small', {}, progresso)));

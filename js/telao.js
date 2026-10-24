@@ -1,3 +1,4 @@
+import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
 import { backend, link } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual } from './ui.js';
@@ -124,11 +125,11 @@ function cadeados() {
   const grupos = sala.publico.grupos.filter(g => por[g.id]);
   if (!grupos.length) return h('p', { class: 'sutil' }, 'Distribuindo as perguntas…');
   return h('div', {},
-    h('p', { style: { fontSize: '1.3em', fontWeight: 700, margin: '0 0 .6em', textAlign: 'center' } }, frag ? '🔑 Cada acerto revela um pedaço do código. Juntem os pedaços!' : '🔒 Cada um responde a sua pergunta. O grupo abre o cadeado junto!'),
+    h('p', { style: { fontSize: '1.3em', fontWeight: 700, margin: '0 0 .6em', textAlign: 'center' } }, frag ? '🔑 Cada acerto revela um pedaço do código. Juntem os pedaços!' : [cadeadoIcone(), ' Cada um responde a sua pergunta. O grupo abre o cadeado junto!']),
     h('div', { class: 'cadeados' }, grupos.map(g => {
       const x = por[g.id], fr = frag ? x.acertos / Math.max(1, x.total) : x.acertos / Math.max(1, x.necessarios);
       return h('div', { class: 'cadeado-telao' + (x.destravado ? ' aberto' : ''), style: { '--cor': corDoGrupo(sala.publico.grupos, g.id) } },
-        h('div', { class: 'cadeado-icone' }, x.destravado ? '🔓' : '🔒'),
+        h('div', { class: 'cadeado-icone' }, cadeadoIcone(x.destravado)),
         h('div', { class: 'titulo-grupo' }, iconeGrupo(sala.publico.grupos, g.id, 40), g.nome),
         h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * Math.min(1, fr)) + '%' } })),
         h('small', {}, x.destravado ? `Aberto · ${x.posicao}º` : frag ? `${x.acertos} de ${x.total} pedaços` : `${x.acertos} de ${x.necessarios} acertos`));

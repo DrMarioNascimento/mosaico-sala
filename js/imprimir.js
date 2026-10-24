@@ -50,7 +50,7 @@ export function gerarImpressao(a) {
       // papel: cartões de pergunta para recortar; no verso (ou entregue pelo professor), o pedaço do código
       const frag = cfg.regra === 'fragmentos';
       const rp = a.docente?.respostas?.[e.id] || {};
-      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cartões para recortar (um por aluno)</p><h2>🔒 ${esc(e.titulo)}</h2>
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cartões para recortar (um por aluno)</p><h2><img src="${new URL('../assets/icons/locks/closed-blue.png', import.meta.url).href}" alt="" aria-hidden="true" style="display:inline-block;width:2.1em;height:2.1em;max-width:none;object-fit:contain;vertical-align:middle;flex-shrink:0"> ${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || (frag ? 'Cada aluno responde a sua pergunta. Quem acerta recebe um pedaço do código. Juntem os pedaços para abrir o cadeado.' : 'Cada aluno responde a sua pergunta. O cadeado abre quando o grupo acerta o suficiente.'))}</p>
         <div class="cartoes">${(cfg.perguntas || []).map((q, i) => `<div class="cartao-q"><small>Pergunta ${i + 1}</small><strong>${esc(q.enunciado)}</strong>
           <ul class="caixas">${q.alternativas.map((al, k) => `<li>☐ ${'ABCDE'[k]}) ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</div></section>`);

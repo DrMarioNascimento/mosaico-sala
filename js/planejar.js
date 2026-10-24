@@ -1,3 +1,4 @@
+import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Planejamento: montar, revisar, guardar e pré-visualizar atividades.
    - Contas da lista de mestres: biblioteca fechada no Firestore.
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
@@ -660,7 +661,7 @@ function blocoCadeado(e) {
   areaFrag.addEventListener('input', () => { c.fragmentos = fragmentosDoTexto(areaFrag.value); tocar(); desenhar(); });
   setTimeout(desenhar, 0);
   return h('div', {},
-    h('div', { class: 'cartao' }, h('h3', {}, '🔒 Como o cadeado abre'),
+    h('div', { class: 'cartao' }, h('h3', {}, cadeadoIcone(), ' Como o cadeado abre'),
       h('div', { class: 'campos-2' },
         seletor('Regra', c.regra || 'fragmentos', [['fragmentos', 'Pedaços do código (cada acerto revela um pedaço)'], ['acertos', 'Por acertos (X membros acertam)']], v => { c.regra = v; }, { redesenhar: true }),
         seletor('Perguntas no grupo', c.distribuicao || 'diferente', [['diferente', 'Cada aluno recebe uma diferente'], ['mesma', 'Todos do grupo recebem a mesma']], v => { c.distribuicao = v; desenhar(); })),
