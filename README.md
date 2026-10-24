@@ -1,5 +1,13 @@
 # MOSAICO · Sala
 
+## Disponibilidade e novidades — 24 de outubro de 2026
+
+**Planejamento público com conta Google; condução de salas restrita.** Qualquer conta Google pode montar e exportar atividades em [Planejamento](https://mosaico-sala.web.app/planejar.html). A biblioteca compartilhada e a criação de salas on-line exigem uma conta autorizada; participantes entram por código ou QR. O ensaio local serve para pré-visualização e não concede autorização de hospedagem de uma sala on-line.
+
+A descrição “modo aberto (planilha)” refere-se à montagem e exportação, não à liberação da condução. O novo [aviso de direitos autorais](LICENSE.md) registra a reserva de direitos já indicada neste README e preserva os direitos de terceiros.
+
+[Ver todos os recursos públicos](https://www.drmarionascimento.com.br/#acesso-publico). O acesso respeita [LICENSE.md](LICENSE.md).
+
 Plataforma de aplicação de atividades MOSAICO em sala: quem conduz importa uma atividade, abre a sala por QR Code, os participantes entram sem cadastro e são distribuídos entre os grupos planejados. Cada grupo recebe só uma parte das evidências; as hipóteses circulam entre grupos; a turma compete para superar a meta.
 
 Especificação de referência: *MOSAICO — Autoria automática e aplicação de atividades em sala*, versão 2.0 (23/10/2026), com a seção 7.1–7.5 (Gramática MOSAICO e autonomia docente).
@@ -29,7 +37,7 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 ## Planejamento e dois modos de uso
 
 - **Fechado (biblioteca):** contas da lista de mestres guardam atividades no Firestore (`biblioteca/`). Cada conta lê e edita as suas; pode compartilhar com os outros mestres (leitura e cópia). Nenhum dado de participante fica na biblioteca.
-- **Aberto (planilha):** qualquer pessoa monta e exporta a planilha `.xlsx` e a carrega na condução só para a sessão. Nada é guardado.
+- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
 - Formato da planilha: abas Atividade, Grupos, Etapas, Opcoes, Pecas e Fontes (ver `js/core/planilha.js`). A planilha contém o gabarito: não distribuir aos participantes.
 - LGPD: nomes dos participantes só durante a sessão (apagados ao encerrar); a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Casos devem ser fictícios.
 
@@ -64,6 +72,9 @@ tests/             Testes automáticos (critérios da seção 22)
 | `investigacao_fragmentos` | 1.0.0 | Cada grupo recebe parte das evidências e escolhe uma hipótese |
 | `comparar_hipoteses` | 1.0.0 | Grupos veem as hipóteses e evidências dos outros e decidem |
 | `questao_individual` | 1.0.0 | Múltipla escolha individual, pode contar para a meta |
+| `montagem_pecas` | 1.0.0 | Reconstrução com peças |
+| `cadeado_grupo` | 1.0.0 | Desafio de cadeado por grupo |
+| `quiz_grupos` | 1.0.0 | Quiz entre grupos |
 
 ## Publicação
 
