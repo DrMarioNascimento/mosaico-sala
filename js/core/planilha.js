@@ -9,6 +9,8 @@
                 instrucao | pergunta | enunciado | justificativa | min_evidencias |
                 aceita_parcial | recebe_de | explicacao
      Opcoes     etapa | id | texto | correta      (hipóteses e alternativas; "x" marca a correta)
+     Perguntas  etapa | pergunta | enunciado | a | b | c | d | e | correta | explicacao
+                (cadeado do grupo e quiz entre grupos; correta = letra)
      Pecas      id | etapa | grupos | natureza | fonte | conteudo   (grupos separados por ;)
      Fontes     id | descricao | localizacao | trecho
    A resposta correta e a explicação são material de quem conduz: quem for
@@ -16,15 +18,22 @@
 
 import { TIPOS } from './tipos.js';
 import { SCHEMA_VERSION } from './validacao.js';
+import { LETRAS, fragmentosDoTexto } from './desafios.js';
 
 export const ABAS = {
   Atividade: ['campo', 'valor'],
   Grupos: ['ordem', 'id', 'nome', 'funcao'],
-  Etapas: ['ordem', 'id', 'titulo', 'tipo', 'organizacao', 'envio', 'competicao', 'tempo_min', 'instrucao', 'pergunta', 'enunciado', 'justificativa', 'min_evidencias', 'aceita_parcial', 'recebe_de', 'explicacao'],
+  Etapas: ['ordem', 'id', 'titulo', 'tipo', 'organizacao', 'envio', 'competicao', 'tempo_min', 'instrucao', 'pergunta', 'enunciado', 'justificativa', 'min_evidencias', 'aceita_parcial', 'recebe_de', 'explicacao', 'montagem_modo', 'montagem_texto', 'montagem_corte', 'montagem_pecas', 'montagem_colunas', 'montagem_quantidade', 'montagem_ocultar', 'montagem_revelar',
+    'cadeado_regra', 'cadeado_distribuicao', 'cadeado_min_acertos', 'cadeado_fragmentos', 'cadeado_codigo', 'cadeado_espera', 'cadeado_mensagem',
+    'quiz_ao_errar', 'quiz_segundos', 'quiz_pergunta_no_telao', 'quiz_mostrar_resposta'],
   Opcoes: ['etapa', 'id', 'texto', 'correta'],
+  Perguntas: ['etapa', 'pergunta', 'enunciado', 'a', 'b', 'c', 'd', 'e', 'correta', 'explicacao'],
   Pecas: ['id', 'etapa', 'grupos', 'natureza', 'fonte', 'conteudo'],
   Fontes: ['id', 'descricao', 'localizacao', 'trecho']
 };
+/** Aba oculta com as imagens da montagem, em texto (cada célula até 30.000 caracteres). */
+export const ABA_IMAGENS = ['etapa', 'parte', 'largura', 'altura', 'dados'];
+const PEDACO = 30000;
 
 const LISTAS = ['objetivos', 'pendencias', 'guia', 'pontos_de_discussao', 'meta_etapas'];
 
@@ -60,7 +69,20 @@ export function atividadeParaAbas(a) {
       organizacao: e.participacao?.organizacao, envio: e.participacao?.envio, competicao: e.participacao?.competicao,
       tempo_min: e.tempoMin ?? '', instrucao: e.instrucao || '', pergunta: c.pergunta || '', enunciado: c.enunciado || '',
       justificativa: c.justificativa || '', min_evidencias: c.minEvidencias ?? '', aceita_parcial: c.aceitaParcial ? 'sim' : '',
-      recebe_de: conexao ? conexao.de.etapaId : '', explicacao: r[e.id]?.explicacao || ''
+      recebe_de: conexao ? conexao.de.etapaId : '', explicacao: r[e.id]?.explicacao || '',
+      ...(e.typeId === 'montagem_pecas' ? {
+        montagem_modo: c.modo || '', montagem_texto: c.texto || '', montagem_corte: c.corte?.tipo || '', montagem_pecas: c.corte?.n ?? '',
+        montagem_colunas: c.corte?.colunas ?? '', montagem_quantidade: c.quantidade || 'fixa',
+        montagem_ocultar: c.ocultarAoFim === false ? 'não' : 'sim', montagem_revelar: c.revelarAoEncerrar ? 'sim' : 'não'
+      } : {}),
+      ...(e.typeId === 'cadeado_grupo' ? {
+        cadeado_regra: c.regra || '', cadeado_distribuicao: c.distribuicao || 'diferente', cadeado_min_acertos: c.regra === 'acertos' ? (c.minAcertos || 'todos') : '',
+        cadeado_fragmentos: (c.fragmentos || []).join(' | '), cadeado_codigo: r[e.id]?.codigo ?? '', cadeado_espera: c.espera ?? 30, cadeado_mensagem: c.mensagem || ''
+      } : {}),
+      ...(e.typeId === 'quiz_grupos' ? {
+        quiz_ao_errar: c.aoErrar || 'repassar', quiz_segundos: c.segundos ?? 60,
+        quiz_pergunta_no_telao: c.mostrarNoTelao ? 'sim' : 'não', quiz_mostrar_resposta: c.mostrarResposta === false ? 'não' : 'sim'
+      } : {})
     };
   });
 
@@ -70,9 +92,26 @@ export function atividadeParaAbas(a) {
     for (const o of lista) opcoes.push({ etapa: e.id, id: o.id, texto: o.texto, correta: r[e.id]?.corretaId === o.id ? 'x' : '' });
   }
 
+  const perguntas = [];
+  for (const e of [...a.etapas].sort((x, y) => x.ordem - y.ordem)) {
+    for (const q of e.config?.perguntas || []) {
+      const rq = r[e.id]?.perguntas?.[q.id] || {};
+      const linha = { etapa: e.id, pergunta: q.id, enunciado: q.enunciado, correta: '', explicacao: rq.explicacao || '' };
+      // as alternativas vão para as colunas a..e; ids diferentes de a..e são renomeados na ordem
+      (q.alternativas || []).slice(0, 5).forEach((o, i) => { linha[LETRAS[i]] = o.texto; if (o.id === rq.corretaId) linha.correta = LETRAS[i]; });
+      perguntas.push(linha);
+    }
+  }
+
   const pecas = a.pecas.map(p => ({ id: p.id, etapa: p.etapaId, grupos: p.destinatarios.join('; '), natureza: p.origem?.natureza || '', fonte: p.origem?.fonteId || '', conteudo: p.conteudo }));
   const fontes = a.fontes.map(f => ({ id: f.id, descricao: f.descricao || '', localizacao: f.localizacao || '', trecho: f.trecho || '' }));
-  return { Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Pecas: pecas, Fontes: fontes };
+  const imagens = [];
+  for (const e of a.etapas) {
+    const img = e.typeId === 'montagem_pecas' && e.config?.imagem;
+    if (!img?.dados) continue;
+    for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO) });
+  }
+  return { Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Perguntas: perguntas, Pecas: pecas, Fontes: fontes, Imagens: imagens };
 }
 
 // ---------------------------------------------------------------- abas → atividade
@@ -109,6 +148,41 @@ export function abasParaAtividade(abas) {
       if (txt(l.justificativa)) config.justificativa = txt(l.justificativa);
       if (typeId === 'investigacao_fragmentos' && num(l.min_evidencias) !== undefined) config.minEvidencias = num(l.min_evidencias);
       if (typeId === 'comparar_hipoteses') config.aceitaParcial = sim(l.aceita_parcial);
+    } else if (typeId === 'montagem_pecas') {
+      config.modo = txt(l.montagem_modo) || 'texto';
+      if (config.modo === 'texto') config.texto = txt(l.montagem_texto);
+      else {
+        const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte));
+        if (partes.length) config.imagem = { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) };
+        config.corte = { tipo: txt(l.montagem_corte) || 'colunas', n: num(l.montagem_pecas) ?? 4, ...(num(l.montagem_colunas) ? { colunas: num(l.montagem_colunas) } : {}) };
+      }
+      config.quantidade = txt(l.montagem_quantidade) || 'fixa';
+      config.ocultarAoFim = !/^(nao|não|n|false|0)$/i.test(txt(l.montagem_ocultar) || 'sim');
+      config.revelarAoEncerrar = sim(l.montagem_revelar);
+    } else if (typeId === 'cadeado_grupo' || typeId === 'quiz_grupos') {
+      const resp = { perguntas: {} };
+      config.perguntas = (tab.perguntas || []).filter(q => txt(q.etapa) === id).map((q, k) => {
+        const pid = txt(q.pergunta) || 'p' + (k + 1);
+        const alternativas = LETRAS.filter(L => txt(q[L])).map(L => ({ id: L, texto: txt(q[L]) }));
+        const certa = txt(q.correta).toLowerCase().replace(/[^a-e]/g, '').slice(0, 1);
+        if (certa) resp.perguntas[pid] = { corretaId: certa, ...(txt(q.explicacao) ? { explicacao: txt(q.explicacao) } : {}) };
+        return { id: pid, enunciado: txt(q.enunciado), alternativas };
+      });
+      if (typeId === 'cadeado_grupo') {
+        config.regra = txt(l.cadeado_regra) || 'acertos';
+        config.distribuicao = txt(l.cadeado_distribuicao) || 'diferente';
+        if (config.regra === 'acertos') config.minAcertos = num(l.cadeado_min_acertos) ?? 0;
+        else { config.fragmentos = fragmentosDoTexto(txt(l.cadeado_fragmentos)); resp.codigo = txt(l.cadeado_codigo); }
+        config.espera = num(l.cadeado_espera) ?? 30;
+        if (txt(l.cadeado_mensagem)) config.mensagem = txt(l.cadeado_mensagem);
+      } else {
+        config.aoErrar = txt(l.quiz_ao_errar) || 'repassar';
+        config.segundos = num(l.quiz_segundos) ?? 60;
+        config.mostrarNoTelao = sim(l.quiz_pergunta_no_telao);
+        config.mostrarResposta = !/^(nao|não|n|false|0)$/i.test(txt(l.quiz_mostrar_resposta) || 'sim');
+      }
+      if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
+      respostas[id] = resp;
     } else if (typeId === 'questao_individual') {
       config.enunciado = txt(l.enunciado);
       config.alternativas = ops.map(({ id, texto }) => ({ id, texto }));

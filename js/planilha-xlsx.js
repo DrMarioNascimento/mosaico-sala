@@ -1,5 +1,5 @@
 /* MOSAICO · Leitura e escrita da planilha .xlsx no navegador (SheetJS, carregado só quando precisa). */
-import { ABAS, atividadeParaAbas, abasParaAtividade } from './core/planilha.js';
+import { ABAS, ABA_IMAGENS, atividadeParaAbas, abasParaAtividade } from './core/planilha.js';
 import { lerJsonImportado } from './core/validacao.js';
 
 const SHEETJS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
@@ -19,10 +19,14 @@ const INSTRUCOES = [
   ['Cada aba guarda uma parte da atividade. Não mude o nome das abas nem das colunas.'],
   ['Atividade: dados gerais, meta (meta_limiar em %), guia e pendências (um item por linha dentro da célula).'],
   ['Grupos: no máximo 10. A coluna ordem define o ícone e quem recebe os excedentes no sorteio.'],
-  ['Etapas: tipo = investigacao_fragmentos | comparar_hipoteses | questao_individual. recebe_de = id da etapa anterior que alimenta esta.'],
+  ['Etapas: tipo = investigacao_fragmentos | comparar_hipoteses | questao_individual | montagem_pecas | cadeado_grupo | quiz_grupos. recebe_de = id da etapa anterior que alimenta esta.'],
+  ['Perguntas: perguntas do cadeado do grupo e do quiz entre grupos. Uma linha por pergunta: alternativas nas colunas a até e; em correta, a letra certa.'],
+  ['Cadeado: cadeado_regra = acertos | fragmentos. Em fragmentos, escreva os pedaços separados por | (na ordem) e o código que abre em cadeado_codigo.'],
+  ['Quiz: quiz_ao_errar = repassar | revelar; quiz_segundos = tempo de cada pergunta.'],
   ['Opcoes: hipóteses e alternativas de cada etapa. Marque com x a correta (só nas etapas com gabarito).'],
   ['Pecas: grupos separados por ponto e vírgula. natureza = citacao | parafrase | inferencia | sintetico.'],
   ['Fontes: referências usadas pelas peças.'],
+  ['Etapas de montagem: montagem_texto usa | ou − entre espaços para marcar os cortes. As imagens ficam na aba oculta Imagens (não edite).'],
   [''],
   ['ATENÇÃO: esta planilha contém o gabarito (coluna correta e explicacao). Não distribua aos participantes.'],
   ['Use casos fictícios: não coloque nomes, CPF, telefone ou e-mail de pessoas reais.']
@@ -46,11 +50,15 @@ export async function baixarPlanilha(atividade) {
   const wb = X.utils.book_new();
   const inst = X.utils.aoa_to_sheet(INSTRUCOES); inst['!cols'] = [{ wch: 120 }];
   X.utils.book_append_sheet(wb, inst, 'Instrucoes');
-  const larguras = { conteudo: 80, texto: 70, instrucao: 50, introducao: 60, valor: 80, descricao: 50, explicacao: 60, pergunta: 50, enunciado: 50, titulo: 30, nome: 26, funcao: 40 };
+  const larguras = { a: 28, b: 28, c: 28, d: 28, e: 28, cadeado_fragmentos: 40, conteudo: 80, texto: 70, instrucao: 50, introducao: 60, valor: 80, descricao: 50, explicacao: 60, pergunta: 50, enunciado: 50, titulo: 30, nome: 26, funcao: 40 };
   for (const [nome, colunas] of Object.entries(ABAS)) {
     const ws = X.utils.json_to_sheet(abas[nome], { header: colunas });
     ws['!cols'] = colunas.map(c => ({ wch: larguras[c] || 14 }));
     X.utils.book_append_sheet(wb, ws, nome);
+  }
+  if (abas.Imagens.length) {
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(abas.Imagens, { header: ABA_IMAGENS }), 'Imagens');
+    wb.Workbook = { Sheets: wb.SheetNames.map(n => ({ name: n, Hidden: n === 'Imagens' ? 1 : 0 })) };
   }
   X.writeFile(wb, (atividade.id || 'atividade') + '.xlsx');
 }

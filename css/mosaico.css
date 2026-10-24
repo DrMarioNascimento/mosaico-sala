@@ -214,3 +214,47 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 /* representante: nome e etiqueta na cor da equipe */
 .grupo li.eh-rep { color: var(--cor, var(--acento)); font-weight: 700; }
 .grupo li .rep { color: var(--cor, var(--acento)); border: 1px solid var(--cor, var(--acento)); border-radius: 999px; padding: 1px 8px; }
+
+/* Montagem em peças: peça de quebra-cabeça em tela cheia no celular */
+.peca-qc { display: block; width: 100%; height: auto; max-height: 68vh; overflow: visible; filter: drop-shadow(0 8px 14px rgba(0,0,0,.35)); }
+.peca-qc-texto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: #1b1b1b; font-family: 'Archivo', system-ui, sans-serif; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; padding: 2px; }
+.pecas-carrossel { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 18px 6px 8px; }
+.pecas-carrossel > div { flex: 0 0 92%; scroll-snap-align: center; }
+.pecas-fila { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+.pecas-fila .peca-qc { width: 120px; max-height: none; }
+.montagem-aviso { text-align: center; font-size: 1.05rem; }
+.telao .pecas-fila .peca-qc { width: 100%; }
+
+/* ---------- Cadeado do grupo ---------- */
+.cadeado-placa { display: flex; gap: 12px; align-items: center; background: var(--cartao-2, rgba(255,255,255,.05)); border: 2px solid var(--cor, #ff8a3d); border-radius: var(--raio, 14px); padding: 10px 14px; margin: 10px 0; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+.cadeado-placa.aberto { border-color: #3ddc84; }
+.cadeado-icone { font-size: 2.2em; line-height: 1; filter: drop-shadow(0 4px 4px rgba(0,0,0,.4)); }
+.cadeado-placa > div:last-child { flex: 1; display: grid; gap: 4px; }
+.cadeado-barra { height: 10px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+.cadeado-barra span { display: block; height: 100%; background: var(--cor, #ff8a3d); border-radius: 99px; transition: width .4s; }
+.aberto .cadeado-barra span { background: #3ddc84; }
+.cadeado-pergunta { border-top: 1px solid rgba(255,255,255,.1); padding-top: 10px; margin-top: 12px; }
+.cadeado-pergunta.estado-certa h3::after { content: ' ✔'; color: #3ddc84; }
+.fragmento { text-align: center; background: linear-gradient(#fffaf0, #efe4cf); color: #1b1b1b; border: 3px dashed var(--cor, #ff8a3d); border-radius: 14px; padding: 10px; margin: 8px 0; box-shadow: 0 6px 0 rgba(0,0,0,.35); }
+.fragmento small { display: block; color: #6b5b3e; font-weight: 600; }
+.fragmento div { font-family: var(--fonte-titulo, 'Archivo'), system-ui, sans-serif; font-weight: 800; font-size: 2em; overflow-wrap: anywhere; }
+.cadeado-codigo { margin-top: 14px; padding: 12px; border-radius: var(--raio, 14px); border: 2px solid #f3bf0a; background: rgba(243,191,10,.08); }
+.cadeado-codigo input { font-size: 1.4em; text-align: center; letter-spacing: .05em; }
+.cadeado-mensagem { margin: 10px 0; padding: 14px; border-radius: var(--raio, 14px); background: rgba(61,220,132,.12); border: 2px solid #3ddc84; font-size: 1.1em; font-weight: 600; }
+.telao .cadeados { display: grid; grid-template-columns: repeat(auto-fit, minmax(11em, 1fr)); gap: .8em; }
+.cadeado-telao { background: var(--cartao); border: 3px solid var(--cor); border-radius: var(--raio); padding: .7em; text-align: center; display: grid; gap: .35em; justify-items: center; box-shadow: 0 6px 0 rgba(0,0,0,.4); transition: transform .3s; }
+.cadeado-telao .cadeado-barra { width: 100%; height: .6em; }
+.cadeado-telao.aberto { border-color: #3ddc84; transform: translateY(-4px); }
+.cadeado-telao .cadeado-icone { font-size: 2.6em; }
+
+/* ---------- Quiz entre grupos ---------- */
+.quiz-vez { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--raio, 14px); border: 2px solid var(--cor, rgba(255,255,255,.2)); margin: 8px 0; }
+.quiz-vez.minha { border-color: #f3bf0a; background: rgba(243,191,10,.1); }
+.quiz-placar { display: flex; flex-wrap: wrap; gap: 6px; }
+.telao .quiz-vez-telao { display: grid; grid-template-columns: auto 1fr auto; gap: 1em; align-items: center; background: var(--cartao); border: 4px solid var(--cor); border-radius: var(--raio); padding: .6em 1em; box-shadow: 0 8px 0 rgba(0,0,0,.4); }
+.telao .quiz-vez-telao .icone-grupo { width: 4em; height: 4em; }
+.telao .quiz-nome { font-family: var(--fonte-titulo); font-weight: 800; font-size: 2.2em; line-height: 1.1; }
+.telao .quiz-sinal { font-size: 3em; font-weight: 800; }
+.telao .relogio.acabando { color: #ff5d5d; }
+.telao .telao-placar { justify-content: center; }
+.telao .telao-placar .chip { font-size: 1em; }

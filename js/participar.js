@@ -1,6 +1,7 @@
 /* MOSAICO · Tela de quem participa (celular) */
 import { backend } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual } from './ui.js';
+import { svgPeca } from './quebra-cabeca.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
@@ -82,6 +83,7 @@ const nomeDe = (s, u) => s.nomes?.[u] || 'alguém';
 
 function pacotesNecessarios() {
   if (!sala || sala.fase !== 'etapa') return [];
+  if (['montagem_pecas', 'cadeado_grupo', 'quiz_grupos'].includes(sala.etapaInfo?.typeId)) return [uid];
   if (sala.etapaInfo?.organizacao === 'individual') return ['individual'];
   const g = grupoDe(sala);
   return [g, ...coberturas(sala)].filter(Boolean);
@@ -102,7 +104,7 @@ function render() {
   renderStatus();
   const g = grupoDe(sala);
   const chave = JSON.stringify([sala.fase, sala.etapaAtual, g, sala.representantes?.[g], sala.executores, coberturas(sala),
-    pacotesNecessarios().map(id => pacotes[id]?.etapaId), enviados(), sala.final ? 1 : 0]);
+    pacotesNecessarios().map(id => pacotes[id] === undefined ? 'carregando' : pacotes[id]?.etapaId), enviados(), sala.final ? 1 : 0, montagemExpirou(), chaveDesafio()]);
   if (chave === chaveRenderizada) return;   // evita apagar o que está sendo escolhido/digitado
   chaveRenderizada = chave;
   renderTarefa();
@@ -119,8 +121,10 @@ function agendarAuto() {
 function autoAgir() {
   if (!auto) return;
   const escolher = l => l[Math.floor(Math.random() * l.length)];
+  for (const inp of $('tarefa').querySelectorAll('input[data-codigo]')) { inp.value = String(Math.floor(Math.random() * 100)); inp.dispatchEvent(new Event('input')); }
   for (const btn of $('tarefa').querySelectorAll('button.primario:not(:disabled)')) {
     const caixa = btn.parentElement;
+    if (btn.dataset.codigo !== undefined) { btn.click(); continue; }
     const radios = [...caixa.querySelectorAll(':scope > .opcoes input[type=radio]')];
     if (!radios.length) continue;
     const r = escolher(radios); r.checked = true; r.dispatchEvent(new Event('change'));
@@ -143,7 +147,7 @@ function renderStatus() {
   const s = sala, g = grupoDe(s), p = s.progresso;
   const partes = [];
   if (g) partes.push(chipGrupo(s.publico.grupos, g, nomeGrupo(s, g)));
-  if (s.fase === 'etapa' && p) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
+  if (s.fase === 'etapa' && p && !p.montagem && !p.cadeado && !p.quiz) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   limpar($('status'), partes.length ? h('div', { class: 'linha-botoes' }, partes) : null);
 }
 
@@ -158,6 +162,9 @@ function renderTarefa() {
   if (s.fase !== 'etapa') return limpar(alvo);
 
   const info = s.etapaInfo;
+  if (info.typeId === 'montagem_pecas') return limpar(alvo, tarefaMontagem(info));
+  if (info.typeId === 'cadeado_grupo') return limpar(alvo, tarefaCadeado(info));
+  if (info.typeId === 'quiz_grupos') return limpar(alvo, tarefaQuiz(info));
   if (info.organizacao === 'individual') {
     const pk = pacotes.individual;
     if (!pk || pk.etapaId !== s.etapaAtual) return limpar(alvo, carregando());
@@ -180,6 +187,199 @@ function renderTarefa() {
       tarefaGrupo(px, extra, s.executores?.[extra] === uid)));
   }
   limpar(alvo, blocos);
+}
+
+// ---------- montagem em peças ----------
+function montagemExpirou() {
+  const i = sala?.etapaInfo;
+  if (!i || i.typeId !== 'montagem_pecas' || !i.ocultarAoFim || !i.tempoMin || !i.inicio) return false;
+  return Date.now() > i.inicio + i.tempoMin * 60e3;
+}
+setInterval(() => { if (sala?.etapaInfo?.typeId === 'montagem_pecas') render(); }, 1000);
+
+function tarefaMontagem(info) {
+  const pk = pacotes[uid];
+  explicar('mont-' + sala.etapaAtual, info.titulo, ['Seu celular mostra uma peça de quebra-cabeça. As saliências e os recortes indicam quem fica ao lado de quem.', 'Juntem os celulares na ordem certa para entender o todo. Não há botão de envio: prestem atenção, a próxima etapa depende do que vocês virem.']);
+  if (pk === undefined) return carregando();
+  const caixa = h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+  if (montagemExpirou()) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Tempo esgotado: as peças foram recolhidas. Guarde o que vocês montaram.')); return caixa; }
+  if (!pk || pk.etapaId !== sala.etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'As peças já foram distribuídas. Ajude seu grupo a colocar os celulares na ordem.')); return caixa; }
+  if (!pk.pecas.length) {
+    caixa.append(h('p', { class: 'aviso montagem-aviso' }, pk.motivo === 'representantes'
+      ? 'Os representantes dos grupos estão montando as peças juntos. Acompanhe e ajude a interpretar.'
+      : 'Seu grupo tem mais celulares que peças. Ajude a colocar os celulares na ordem certa.'));
+    return caixa;
+  }
+  const g = grupoDe(sala), cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
+  caixa.append(h('p', { class: 'sutil montagem-aviso' }, pk.pecas.length > 1 ? `Você tem ${pk.pecas.length} peças: deslize para ver todas.` : 'Esta é a sua peça. Coloquem os celulares lado a lado, na ordem certa.'),
+    h('div', { class: 'pecas-carrossel' }, pk.pecas.map(p => h('div', {}, svgPeca(p, { cor })))));
+  return caixa;
+}
+
+
+// ---------- cadeado do grupo e quiz entre grupos ----------
+// O celular só manda a escolha; quem conduz confere e devolve certo/errado (e o pedaço, no cadeado por fragmentos).
+const pendentes = {};          // tentativas enviadas, à espera da conferência
+const proximos = {};           // contador local das tentativas (id do envio)
+const agora = () => Date.now();
+const liberado = t => t.estado !== 'certa' && agora() >= (t.liberaEm || 0);
+
+function chaveDesafio() {
+  const i = sala?.etapaInfo;
+  if (sala?.fase !== 'etapa' || !i) return null;
+  if (i.typeId === 'cadeado_grupo') {
+    const pk = pacotes[uid];
+    if (!pk || pk.etapaId !== sala.etapaAtual) return 'c-' + (pk === undefined);
+    return JSON.stringify([pk, (pk.tarefas || []).map(liberado), pk.codigo ? agora() >= pk.codigo.liberaEm : null, Object.keys(pendentes).filter(k => pendentes[k] && agora() - pendentes[k].em < 8000)]);
+  }
+  if (i.typeId === 'quiz_grupos') {
+    const pk = pacotes[uid], j = sala.jogo || {};
+    return JSON.stringify([j, pk?.etapaId === sala.etapaAtual ? pk : null, j.estado === 'respondendo' && j.inicio && agora() > j.inicio + j.segundos * 1000]);
+  }
+  return null;
+}
+setInterval(() => {
+  const t = sala?.etapaInfo?.typeId;
+  if (t === 'cadeado_grupo' || t === 'quiz_grupos') render();
+  for (const el of document.querySelectorAll('[data-ate]')) {
+    const r = Math.max(0, Math.ceil((Number(el.dataset.ate) - agora()) / 1000));
+    el.textContent = el.dataset.formato === 'relogio' ? `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}` : `${r} s`;
+  }
+}, 1000);
+const contador = (ate, formato) => { const r = Math.max(0, Math.ceil((ate - agora()) / 1000)); return h('strong', { 'data-ate': ate, 'data-formato': formato || '' }, formato === 'relogio' ? `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}` : `${r} s`); };
+
+/** Envia uma tentativa com id novo (etapa__quem__t1, t2…); se o número já foi usado, tenta o seguinte. */
+async function enviarTentativa(prefixo, minimo, dados, grupoId) {
+  let n = Math.max(minimo || 1, proximos[prefixo] || 1);
+  for (let k = 0; k < 8; k++, n++) {
+    try { await b.enviar(codigo, prefixo + n, { etapaId: sala.etapaAtual, escopo: 'tentativa', grupoId, autor: uid, dados, contingencia: false }); proximos[prefixo] = n + 1; return; }
+    catch (e) { if (e.message !== 'ja-enviado') throw e; }
+  }
+  throw new Error('Não foi possível enviar. Tente de novo.');
+}
+
+function placaCadeado(pk) {
+  const G = pk.grupo; if (!G) return null;
+  const aberto = G.destravado;
+  const progresso = pk.regra === 'fragmentos' ? `${G.acertos} de ${G.total} pedaços revelados no grupo` : `${G.acertos} de ${G.necessarios} acertos no grupo`;
+  const fr = pk.regra === 'fragmentos' ? G.acertos / Math.max(1, G.total) : G.acertos / Math.max(1, G.necessarios);
+  return h('div', { class: 'cadeado-placa' + (aberto ? ' aberto' : '') },
+    h('div', { class: 'cadeado-icone', 'aria-hidden': 'true' }, aberto ? '🔓' : '🔒'),
+    h('div', {}, h('strong', {}, aberto ? `Cadeado aberto!${G.posicao ? ' (' + G.posicao + 'º grupo)' : ''}` : 'Cadeado fechado'),
+      h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * Math.min(1, fr)) + '%' } })),
+      h('small', {}, progresso)));
+}
+
+function tarefaCadeado(info) {
+  const pk = pacotes[uid];
+  explicar('cad-' + sala.etapaAtual, info.titulo, ['Cada um responde a própria pergunta, no próprio celular. Ajudem-se: o cadeado é do grupo.',
+    'Errou? Espere alguns segundos e tente de novo.', 'Quando o grupo cumprir a regra, o cadeado abre.']);
+  if (pk === undefined || (pk && pk.etapaId !== sala.etapaAtual)) return carregando();
+  if (!pk) return carregando();
+  const g = grupoDe(sala), cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
+  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && h('p', {}, pk.instrucao), placaCadeado(pk));
+  if (pk.grupo?.destravado) {
+    if (pk.mensagem) caixa.append(h('div', { class: 'cadeado-mensagem' }, pk.mensagem));
+    else caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Vocês conseguiram! Aguardem a próxima etapa.'));
+  }
+  if (pk.motivo === 'sem-tarefa') { caixa.append(h('p', { class: 'aviso' }, 'Você entrou depois da distribuição das perguntas. Ajude seu grupo a pensar!')); return caixa; }
+  pk.tarefas.forEach((t, i) => caixa.append(caixaPerguntaCadeado(pk, t, i)));
+  if (pk.codigo && !pk.grupo?.destravado) caixa.append(caixaCodigo(pk));
+  else if (pk.regra === 'fragmentos' && !pk.grupo?.destravado) caixa.append(h('p', { class: 'sutil' }, `Juntem os pedaços e digam o código para ${nomeDe(sala, sala.executores?.[g] || sala.representantes?.[g])}, que digita no celular dele.`));
+  return caixa;
+}
+
+function caixaPerguntaCadeado(pk, t, i) {
+  const chave = `${pk.etapaId}#${t.tarefa}`, r = rascunho('cad-' + chave), pend = pendentes[chave];
+  if (pend && (t.tentativas !== pend.tentativas || agora() - pend.em > 8000)) delete pendentes[chave];
+  const titulo = pk.tarefas.length > 1 ? `Pergunta ${i + 1}` : 'Sua pergunta';
+  const box = h('div', { class: 'cadeado-pergunta estado-' + t.estado });
+  box.append(h('h3', {}, titulo), h('p', {}, t.enunciado));
+  if (t.estado === 'certa') {
+    box.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, '✔ Você acertou!'));
+    if (t.fragmento !== undefined) box.append(h('div', { class: 'fragmento' }, h('small', {}, 'Seu pedaço do código'), h('div', {}, t.fragmento)), h('p', { class: 'sutil' }, 'Mostre ao seu grupo: o código sai da junção dos pedaços.'));
+    return box;
+  }
+  if (pendentes[chave]) { box.append(h('p', { class: 'aviso' }, 'Conferindo a resposta…')); return box; }
+  if (!liberado(t)) {
+    box.append(h('p', { class: 'aviso', 'data-tipo': 'erro' }, '✗ Não foi dessa vez. Tente de novo em ', contador(t.liberaEm), '.'));
+    return box;
+  }
+  if (t.tentativas) box.append(h('p', { class: 'sutil' }, `Tentativa ${t.tentativas + 1}. Pense com o grupo antes de responder.`));
+  box.append(listaOpcoes(t.alternativas, r, true, 'cad-' + chave));
+  const msg = h('p', { class: 'aviso', hidden: true });
+  const btn = h('button', { class: 'btn primario bloco', onclick: async () => {
+    aviso(msg, '');
+    if (!r.escolha) return aviso(msg, 'Escolha uma alternativa.', 'erro');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    try {
+      await enviarTentativa(`${pk.etapaId}__${uid}__t`, pk.proxima, { tarefa: t.tarefa, alternativaId: r.escolha }, pk.grupoId);
+      pendentes[chave] = { tentativas: t.tentativas, em: agora() }; r.escolha = null; render();
+    } catch (e) { btn.disabled = false; btn.textContent = 'Responder'; aviso(msg, e.message === 'recusado' ? 'Envio recusado: a etapa pode ter sido encerrada.' : e.message, 'erro'); }
+  } }, 'Responder');
+  box.append(btn, msg);
+  return box;
+}
+
+function caixaCodigo(pk) {
+  const chave = pk.etapaId + '#codigo', r = rascunho('cad-' + chave), c = pk.codigo, pend = pendentes[chave];
+  if (pend && (c.tentativas !== pend.tentativas || agora() - pend.em > 8000)) delete pendentes[chave];
+  const box = h('div', { class: 'cadeado-codigo' }, h('h3', {}, '🔑 Código do cadeado'), h('p', { class: 'sutil' }, 'Você é o líder: junte os pedaços que o grupo revelou e digite o código.'));
+  if (pendentes[chave]) { box.append(h('p', { class: 'aviso' }, 'Conferindo o código…')); return box; }
+  if (agora() < c.liberaEm) { box.append(h('p', { class: 'aviso', 'data-tipo': 'erro' }, '✗ Código errado. Nova tentativa em ', contador(c.liberaEm), '.')); return box; }
+  const inp = h('input', { type: 'text', inputmode: 'text', autocomplete: 'off', maxlength: 60, 'data-codigo': '', 'aria-label': 'Código do cadeado', value: r.justificativa || '', oninput: e => { r.justificativa = e.target.value; } });
+  const msg = h('p', { class: 'aviso', hidden: true });
+  const btn = h('button', { class: 'btn primario bloco', 'data-codigo': '', onclick: async () => {
+    const v = (inp.value || '').trim(); if (!v) return aviso(msg, 'Digite o código.', 'erro');
+    btn.disabled = true;
+    try {
+      await enviarTentativa(`${pk.etapaId}__${pk.grupoId}__c`, c.proxima, { codigo: v.slice(0, 60) }, pk.grupoId);
+      pendentes[chave] = { tentativas: c.tentativas, em: agora() }; r.justificativa = ''; render();
+    } catch (e) { btn.disabled = false; aviso(msg, e.message === 'recusado' ? 'Envio recusado.' : e.message, 'erro'); }
+  } }, 'Abrir o cadeado');
+  box.append(inp, btn, msg);
+  return box;
+}
+
+function tarefaQuiz(info) {
+  const j = sala.jogo || {}, g = grupoDe(sala), pk = pacotes[uid];
+  explicar('quiz-' + sala.etapaAtual, info.titulo, ['A cada pergunta, o sistema sorteia o grupo da vez.', 'A pergunta aparece só no celular do líder do grupo sorteado. Fiquem atentos ao telão!']);
+  const caixa = h('div', { class: 'cartao' }, h('h2', {}, info.titulo));
+  const placar = () => h('div', { class: 'quiz-placar' }, sala.publico.grupos.filter(x => j.placar?.[x.id] !== undefined || (sala.composicao?.[x.id] || []).length)
+    .sort((x, y) => (j.placar?.[y.id] || 0) - (j.placar?.[x.id] || 0))
+    .map(x => h('span', { class: 'chip', style: { '--cor': corDoGrupo(sala.publico.grupos, x.id) } }, iconeGrupo(sala.publico.grupos, x.id, 22), x.nome, h('strong', {}, ' ' + (j.placar?.[x.id] || 0)))));
+  if (!j.n) { caixa.append(h('p', {}, 'Aguardem o sorteio da primeira pergunta.'), placar()); return caixa; }
+  const minhaVez = pk && pk.etapaId === sala.etapaAtual && !pk.encerrada && pk.rodada === j.n && pk.grupoId === j.grupoId && j.estado === 'respondendo';
+  const vezDe = j.grupoId, nome = nomeGrupo(sala, vezDe);
+  caixa.append(h('p', { class: 'sutil' }, `Pergunta ${j.n} de ${j.total}`));
+  if (minhaVez) {
+    const r = rascunho('quiz-' + pk.envioId), fim = pk.inicio + pk.segundos * 1000;
+    caixa.append(h('div', { class: 'quiz-vez minha' }, h('strong', {}, pk.repasse ? 'A pergunta passou para o seu grupo!' : 'Sua vez!'), ' Tempo: ', contador(fim, 'relogio')),
+      h('h3', {}, pk.enunciado), h('p', { class: 'sutil' }, 'Só você vê a pergunta: leia em voz alta para o grupo e decidam juntos.'),
+      listaOpcoes(pk.alternativas, r, true, 'q-' + pk.envioId));
+    const msg = h('p', { class: 'aviso', hidden: true });
+    caixa.append(botaoConfirmar('Responder pelo grupo', async () => {
+      if (!r.escolha) throw new Error('Escolham uma alternativa.');
+      if (agora() > fim + 1000) throw new Error('O tempo acabou.');
+      await b.enviar(codigo, pk.envioId, { etapaId: pk.etapaId, escopo: 'tentativa', grupoId: pk.grupoId, autor: uid, dados: { rodada: pk.rodada, alternativaId: r.escolha }, contingencia: false });
+    }, msg), msg);
+    return caixa;
+  }
+  const meu = vezDe === g;
+  if (j.estado === 'respondendo') {
+    caixa.append(h('div', { class: 'quiz-vez' + (meu ? ' minha' : ''), style: { '--cor': corDoGrupo(sala.publico.grupos, vezDe) } },
+      iconeGrupo(sala.publico.grupos, vezDe, 40),
+      h('div', {}, h('strong', {}, meu ? 'Vez do seu grupo!' : (/^grupo\b/i.test(nome) ? 'Vez do ' + nome : 'Vez do grupo ' + nome)), j.repasseDe ? h('small', {}, ` (repassada por ${nomeGrupo(sala, j.repasseDe)})`) : '', h('br'),
+        h('small', {}, meu ? `Só ${nomeDe(sala, sala.executores?.[g] || sala.representantes?.[g])} tem a pergunta. Ajudem a responder!` : 'Acompanhe no telão.'), ' ', contador(j.inicio + j.segundos * 1000, 'relogio'))));
+    if (j.enunciado) caixa.append(h('h3', {}, j.enunciado), listaOpcoes(j.alternativas || [], {}, false, 'qv'));
+  } else {
+    const txt = { certo: `${nome} acertou!`, errado: `${nome} errou.`, tempo: `O tempo de ${nome} acabou.`, encerrada: 'Pergunta encerrada.' }[j.estado] || '';
+    caixa.append(h('p', { class: 'aviso', 'data-tipo': j.estado === 'certo' ? 'ok' : 'erro' }, txt));
+    if (j.revelacao?.texto) caixa.append(h('p', {}, h('strong', {}, 'Resposta: '), j.revelacao.texto), j.revelacao.explicacao && h('p', { class: 'sutil' }, j.revelacao.explicacao));
+    if (!j.fim) caixa.append(h('p', { class: 'sutil' }, 'Aguardem o sorteio da próxima pergunta.'));
+  }
+  caixa.append(h('h3', {}, 'Placar'), placar());
+  return caixa;
 }
 
 const carregando = () => h('div', { class: 'cartao' }, h('p', { class: 'sutil' }, 'Carregando a etapa…'));

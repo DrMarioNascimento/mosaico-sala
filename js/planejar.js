@@ -11,12 +11,15 @@ import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt } from './core/prompt.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
+import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
+import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
+import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
 
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
-const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual' };
-const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos' };
+const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos' };
+const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
 // ============================================================ entrada
@@ -227,6 +230,7 @@ function dialogoSalvar() {
     h('div', { class: 'linha-botoes' },
       h('button', { class: 'btn primario', onclick: async () => {
         try {
+          if (JSON.stringify(P.A).length > 880000) throw new Error('A atividade ficou pesada demais para a biblioteca (imagens). Use imagens menores ou exporte a planilha.');
           const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: JSON.stringify(P.A), compartilhada: comp, autor: P.conta?.email || '' });
           P.origem = { bibId: id, compartilhada: comp }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
           d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca.', 'ok');
@@ -314,9 +318,12 @@ function editorNovaEtapa() {
   return h('div', { class: 'cartao' }, h('h2', {}, 'Nova etapa: escolha o tipo'),
     h('p', { class: 'sutil' }, 'A decisão é sua. A Revisão sugere equilíbrio (por exemplo, quando há muitas etapas iguais seguidas).'),
     h('div', { class: 'tipo-cartoes' }, Object.values(TIPOS).map(t => h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, h('strong', {}, t.nome), h('small', {}, t.descricao)))),
-    h('p', { class: 'sutil', style: { marginTop: '12px' } }, 'Próximos tipos previstos: escape, deliberação em grupo e quiz em aliança.'));
+    h('p', { class: 'sutil', style: { marginTop: '12px' } }, 'Próximo tipo previsto: deliberação em grupo.'));
 }
 function configInicial(typeId, base) {
+  if (typeId === 'cadeado_grupo') return { regra: 'fragmentos', perguntas: [perguntaVazia('p1')], distribuicao: 'diferente', minAcertos: 0, fragmentos: [], espera: 30, mensagem: '' };
+  if (typeId === 'quiz_grupos') return { perguntas: [perguntaVazia('p1')], aoErrar: 'repassar', segundos: 60, mostrarNoTelao: false, mostrarResposta: true };
+  if (typeId === 'montagem_pecas') return { modo: 'texto', texto: '', quantidade: 'fixa', ocultarAoFim: true, revelarAoEncerrar: false, corte: { tipo: 'colunas', n: 4 } };
   const hip = base?.config?.hipotesesCandidatas || base?.config?.alternativas;
   if (typeId === 'investigacao_fragmentos') return { pergunta: base?.config?.pergunta || '', hipotesesCandidatas: (hip || [1, 2, 3].map(i => ({ id: 'h' + i, texto: '' }))).map(x => ({ ...x })), minEvidencias: 1, justificativa: 'opcional' };
   if (typeId === 'comparar_hipoteses') return { pergunta: base?.config?.pergunta || '', hipotesesCandidatas: (hip || [1, 2, 3].map(i => ({ id: 'h' + i, texto: '' }))).map(x => ({ ...x })), aceitaParcial: false, justificativa: 'obrigatoria' };
@@ -324,7 +331,7 @@ function configInicial(typeId, base) {
 }
 function participacaoPadrao(typeId) {
   const t = TIPOS[typeId];
-  return { organizacao: t.participacao.organizacao[0], envio: t.participacao.envio[0], competicao: t.participacao.competicao.includes('meta') ? 'meta' : t.participacao.competicao[0] };
+  return { organizacao: t.participacao.organizacao[0], envio: t.participacao.envio[0], competicao: typeId === 'quiz_grupos' ? 'entre_grupos' : t.participacao.competicao.includes('meta') ? 'meta' : t.participacao.competicao[0] };
 }
 function adicionarEtapa(typeId) {
   let novo;
@@ -371,12 +378,15 @@ function editorEtapa(e) {
     e.typeId === 'investigacao_fragmentos' && blocoInvestigacao(e),
     e.typeId === 'comparar_hipoteses' && blocoComparacao(e),
     e.typeId === 'questao_individual' && blocoQuestao(e),
+    e.typeId === 'montagem_pecas' && blocoMontagem(e),
+    e.typeId === 'cadeado_grupo' && blocoCadeado(e),
+    e.typeId === 'quiz_grupos' && blocoQuiz(e),
     h('div', { id: 'revEtapa' }, revEtapa(diagsEtapa)));
 }
 const revEtapa = ds => ds.length ? h('div', { class: 'cartao' }, h('h3', {}, 'Revisão desta etapa'), h('ul', { class: 'diag' }, ds.map(d => h('li', { class: d.severidade }, d.mensagem)))) : h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Esta etapa não tem pendências.');
 function diagsDaEtapa(e) {
   const a = P.A, idx = a.etapas.indexOf(e);
-  return validarAtividade(a).filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}`);
+  return validarAtividade(a).filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}` || d.local.startsWith(`docente.respostas.${e.id}.`));
 }
 function atualizarRevEtapa() {
   const alvo = document.getElementById('revEtapa'); if (!alvo || !P.secao.startsWith('etapa:')) return;
@@ -418,7 +428,7 @@ function duplicarEtapa(e) {
     const copia = JSON.parse(JSON.stringify(e)); copia.id = id; copia.ordem = e.ordem + 1; copia.titulo = e.titulo + ' (cópia)';
     a.etapas.push(copia);
     for (const p of a.pecas.filter(p => p.etapaId === e.id)) a.pecas.push({ ...JSON.parse(JSON.stringify(p)), id: novoId('p', idsDe(a.pecas)), etapaId: id });
-    if (a.docente.respostas[e.id]) a.docente.respostas[id] = { ...a.docente.respostas[e.id] };
+    if (a.docente.respostas[e.id]) a.docente.respostas[id] = JSON.parse(JSON.stringify(a.docente.respostas[e.id]));
     for (const c of a.conexoes.filter(c => c.para.etapaId === e.id)) a.conexoes.push({ ...JSON.parse(JSON.stringify(c)), id: `c_${c.de.etapaId}_${id}`, para: { ...c.para, etapaId: id } });
     P.secao = 'etapa:' + id;
   });
@@ -507,6 +517,198 @@ function blocoQuestao(e) {
     editorOpcoes(e, 'alternativas', { gabarito: true, rotulo: 'Alternativas (marque a correta)', prefixo: 'a', max: 5 }));
 }
 
+// ============================================================ Montagem em peças
+function blocoMontagem(e) {
+  const c = e.config;
+  const previa = h('div', { id: 'previaMontagem' });
+  const nSim = { valor: 4 };
+  const atualizar = () => desenharPreviaMontagem(e, previa, nSim.valor);
+  const areaTexto = h('textarea', { id: 'mtTexto', rows: 5, placeholder: 'Ex.: VO₂ − = − 0,1 × velocidade − + 3,5 − = − 13,5 mL·kg⁻¹·min⁻¹' }, c.texto || '');
+  areaTexto.addEventListener('input', () => { c.texto = areaTexto.value; tocar(); clearTimeout(areaTexto._t); areaTexto._t = setTimeout(atualizar, 250); });
+  const aplicarCorte = modo => { c.texto = sugerirCortes(c.texto, modo); areaTexto.value = c.texto; tocar(); atualizar(); };
+  const arquivo = h('input', { type: 'file', id: 'mtImg', accept: 'image/*' });
+  arquivo.onchange = async () => {
+    const f = arquivo.files[0]; if (!f) return;
+    try { avisoGeral('Reduzindo a imagem…'); c.imagem = await comprimirImagem(f); avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB${c.imagem.reduzida ? ', reduzida para ficar leve' : ''}).`, 'ok'); mudar(() => {}); }
+    catch (err) { avisoGeral(err.message, 'erro'); }
+  };
+  setTimeout(atualizar, 0);
+  return h('div', {},
+    h('div', { class: 'cartao' }, h('h3', {}, 'O que vira peças'),
+      h('div', { class: 'campos-2' },
+        seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; }, { redesenhar: true }),
+        seletor('Quantidade de peças', c.quantidade || 'fixa', [['fixa', 'As que eu definir'], ['celulares', 'Uma por celular presente']], v => { c.quantidade = v; }, { redesenhar: true })),
+      c.modo === 'texto' ? h('div', {},
+        h('label', { for: 'mtTexto' }, 'Texto (marque os cortes com | ou com − entre espaços; use hífen "-" para subtração dentro de uma peça)'), areaTexto,
+        h('div', { class: 'linha-botoes' },
+          h('button', { class: 'btn pequeno', onclick: () => aplicarCorte('sinais') }, 'Cortar nos sinais (= + × ÷)'),
+          h('button', { class: 'btn pequeno', onclick: () => aplicarCorte('palavras') }, 'Cortar por palavra'),
+          h('button', { class: 'btn pequeno discreto', onclick: () => aplicarCorte('limpar') }, 'Tirar todos os cortes')),
+        c.quantidade === 'celulares' && h('p', { class: 'sutil' }, 'Com "uma por celular", os trechos marcados são agrupados em tantas peças quantos forem os celulares, sempre na ordem.'))
+      : h('div', {},
+        h('label', { for: 'mtImg' }, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (ela é reduzida e comprimida automaticamente)'), arquivo,
+        h('div', { class: 'campos-3' },
+          seletor('Como cortar', c.corte?.tipo || 'colunas', [['colunas', 'Faixas lado a lado'], ['linhas', 'Faixas empilhadas'], ['grade', 'Grade']], v => { c.corte = { ...(c.corte || {}), tipo: v }; }, { redesenhar: true }),
+          c.quantidade !== 'celulares' ? campo('Número de peças', c.corte?.n ?? 4, v => { c.corte = { ...(c.corte || {}), n: Math.max(2, Math.min(20, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'),
+          c.corte?.tipo === 'grade' ? campo('Colunas da grade', c.corte?.colunas ?? 3, v => { c.corte = { ...(c.corte || {}), colunas: Math.max(2, Math.min(6, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'))),
+      h('div', { class: 'opcoes', style: { marginTop: '10px' } },
+        h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: c.ocultarAoFim !== false, onchange: ev => { c.ocultarAoFim = ev.target.checked; tocar(); } }), h('span', {}, 'As peças somem dos celulares quando o tempo acaba')),
+        h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: !!c.revelarAoEncerrar, onchange: ev => { c.revelarAoEncerrar = ev.target.checked; tocar(); } }), h('span', {}, 'Ao encerrar a etapa, o telão mostra o todo montado')))),
+    h('div', { class: 'cartao' }, h('h3', {}, 'Prévia das peças'),
+      c.quantidade === 'celulares' && h('div', { style: { maxWidth: '260px' } }, campo('Simular quantos celulares', nSim.valor, v => { nSim.valor = Math.max(2, Math.min(20, Math.round(v || 2))); atualizar(); }, { tipo: 'number' })),
+      previa),
+    h('p', { class: 'sutil' }, 'Dica: coloque logo depois uma etapa (questão individual ou investigação) que só se resolve com o que foi montado. É ela que conta para a meta.'));
+}
+
+async function desenharPreviaMontagem(e, alvo, nSim) {
+  const c = e.config, marca = Symbol(); alvo._marca = marca;
+  try {
+    if (c.modo === 'texto' && unidadesDoTexto(c.texto).length < 2) return limpar(alvo, h('p', { class: 'sutil' }, 'Marque pelo menos um corte para ver as peças.'));
+    if (c.modo === 'imagem' && !c.imagem?.dados) return limpar(alvo, h('p', { class: 'sutil' }, 'Envie uma imagem para ver as peças.'));
+    const pecas = await montarPecasEtapa(c, nSim);
+    if (alvo._marca !== marca) return;
+    const rep = c.modo === 'texto' ? pecasRepetidas(pecas.map(p => p.texto)) : [];
+    const fila = lista => h('div', { class: 'pecas-fila' }, lista.map(p => svgPeca(p)));
+    const grade = c.modo === 'imagem' && c.corte?.tipo !== 'colunas';
+    const naOrdem = grade
+      ? h('div', { style: { display: 'grid', gridTemplateColumns: `repeat(${c.corte.tipo === 'linhas' ? 1 : (c.corte.colunas || Math.ceil(Math.sqrt(pecas.length)))}, 120px)`, gap: '6px' } }, pecas.map(p => svgPeca(p)))
+      : fila(pecas);
+    limpar(alvo,
+      h('p', {}, h('strong', {}, `${pecas.length} peças · na ordem certa`)), naOrdem,
+      h('p', { style: { marginTop: '14px' } }, h('strong', {}, 'Como a turma recebe (embaralhado, sem números)')), fila(embaralharSemOrdemCerta(pecas)),
+      rep.length > 0 && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, `Peças repetidas (${rep.join(', ')}): a ordem entre elas fica ambígua. As saliências ajudam, mas considere juntar ou reescrever.`));
+  } catch (err) { limpar(alvo, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'Não foi possível desenhar a prévia: ' + err.message)); }
+}
+
+
+// ============================================================ Cadeado do grupo e Quiz entre grupos
+function perguntaVazia(id) { return { id, enunciado: '', alternativas: ['a', 'b', 'c', 'd'].map(l => ({ id: l, texto: '' })) }; }
+const gabaritoDe = e => {
+  const r = P.A.docente.respostas[e.id] && typeof P.A.docente.respostas[e.id] === 'object' && P.A.docente.respostas[e.id].perguntas ? P.A.docente.respostas[e.id] : (P.A.docente.respostas[e.id] = { perguntas: {} });
+  return r;
+};
+
+/** Lê perguntas coladas: blocos separados por linha em branco; 1ª linha = enunciado; alternativas "a) …" ou "- …"; * marca a certa. */
+function lerPerguntasColadas(texto) {
+  const blocos = String(texto || '').split(/\n\s*\n/).map(b => b.split('\n').map(l => l.trim()).filter(Boolean)).filter(b => b.length >= 3);
+  return blocos.map(linhas => {
+    const alts = [], enun = [];
+    let certa = null;
+    for (const l of linhas) {
+      const m = l.match(/^(\*)?\s*(?:([a-eA-E])[).:-]|[-•])\s*(.+?)\s*(\*)?$/);
+      if (m && alts.length < 5 && (alts.length || enun.length)) { if (m[1] || m[4]) certa = LETRAS[alts.length]; alts.push(m[3]); }
+      else if (!alts.length) enun.push(l.replace(/^\d+[).]\s*/, ''));
+    }
+    return { enunciado: enun.join(' '), alternativas: alts, certa };
+  }).filter(q => q.enunciado && q.alternativas.length >= 2);
+}
+
+function editorPerguntas(e, { explicacao }) {
+  const c = e.config, r = gabaritoDe(e), lista = c.perguntas || (c.perguntas = []);
+  const colar = h('textarea', { rows: 6, placeholder: 'Qual hormônio aumenta na altitude?\n*a) Eritropoetina\nb) Insulina\nc) Glucagon\n\nPróxima pergunta…\na) …' });
+  return h('div', { class: 'cartao' },
+    h('h3', {}, `Perguntas (${lista.length})`),
+    h('p', { class: 'sutil' }, 'Marque a alternativa certa de cada uma. O gabarito fica só no celular de quem conduz: os celulares dos alunos recebem apenas "certo" ou "errado".'),
+    lista.map((q, i) => {
+      const rq = r.perguntas[q.id] || {};
+      return h('div', { class: 'pergunta-edit' },
+        h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' } },
+          h('strong', {}, `Pergunta ${i + 1}`),
+          h('div', { class: 'mini' },
+            h('button', { class: 'btn pequeno', disabled: i === 0, 'aria-label': 'Subir pergunta', onclick: () => mudar(() => { [lista[i - 1], lista[i]] = [lista[i], lista[i - 1]]; }) }, '↑'),
+            h('button', { class: 'btn perigo pequeno', disabled: lista.length <= 1, 'aria-label': 'Remover pergunta ' + (i + 1), onclick: () => mudar(() => { c.perguntas = lista.filter(x => x !== q); delete r.perguntas[q.id]; }) }, '✕'))),
+        h('textarea', { rows: 2, 'aria-label': `Enunciado da pergunta ${i + 1}`, placeholder: 'Enunciado', oninput: ev => { q.enunciado = ev.target.value; tocar(); } }, q.enunciado),
+        q.alternativas.map((o, k) => h('div', { class: 'opcao-edit' },
+          h('label', { class: 'correta' }, h('input', { type: 'radio', name: `cor-${e.id}-${q.id}`, checked: rq.corretaId === o.id, onchange: () => { r.perguntas[q.id] = { ...(r.perguntas[q.id] || {}), corretaId: o.id }; tocar(); } }), LETRAS[k].toUpperCase()),
+          h('input', { type: 'text', value: o.texto, 'aria-label': `Alternativa ${LETRAS[k]} da pergunta ${i + 1}`, oninput: ev => { o.texto = ev.target.value; tocar(); } }),
+          h('button', { class: 'btn perigo pequeno', disabled: q.alternativas.length <= 2, 'aria-label': 'Remover alternativa', onclick: () => mudar(() => { q.alternativas = q.alternativas.filter(x => x !== o); if (rq.corretaId === o.id) delete r.perguntas[q.id].corretaId; renomearLetras(q, r); }) }, '✕'))),
+        h('div', { class: 'linha-botoes' }, h('button', { class: 'btn pequeno', disabled: q.alternativas.length >= 5, onclick: () => mudar(() => { q.alternativas.push({ id: LETRAS[q.alternativas.length], texto: '' }); }) }, '＋ Alternativa')),
+        explicacao && campo('Explicação (aparece no telão depois da pergunta)', rq.explicacao || '', v => { r.perguntas[q.id] = { ...(r.perguntas[q.id] || {}), explicacao: v }; }, { area: true, linhas: 2 }));
+    }),
+    h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', disabled: lista.length >= 60, onclick: () => mudar(() => { lista.push(perguntaVazia(novoId('p', idsDe(lista)))); }) }, '＋ Adicionar pergunta')),
+    h('details', { style: { marginTop: '10px' } }, h('summary', {}, 'Colar várias perguntas de uma vez'),
+      h('p', { class: 'sutil' }, 'Uma pergunta por bloco, separados por linha em branco. Primeira linha: enunciado. Alternativas começando com a) b) c)… Marque a certa com * no início.'),
+      colar,
+      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => {
+        const novas = lerPerguntasColadas(colar.value);
+        if (!novas.length) return avisoGeral('Nenhuma pergunta reconhecida. Confira o formato.', 'erro');
+        mudar(() => {
+          // substitui as perguntas vazias do começo
+          c.perguntas = lista.filter(q => q.enunciado.trim() || q.alternativas.some(o => o.texto.trim()));
+          for (const n of novas) {
+            const id = novoId('p', idsDe(c.perguntas));
+            c.perguntas.push({ id, enunciado: n.enunciado, alternativas: n.alternativas.map((t, k) => ({ id: LETRAS[k], texto: t })) });
+            if (n.certa) r.perguntas[id] = { corretaId: n.certa };
+          }
+        });
+        avisoGeral(`${novas.length} pergunta(s) adicionada(s).`, 'ok');
+      } }, 'Adicionar as perguntas coladas'))));
+}
+/** Mantém as alternativas com ids a, b, c… (a planilha usa as letras). */
+function renomearLetras(q, r) {
+  const certa = r.perguntas[q.id]?.corretaId, antiga = q.alternativas.findIndex(o => o.id === certa);
+  q.alternativas.forEach((o, k) => { o.id = LETRAS[k]; });
+  if (r.perguntas[q.id]) { if (antiga >= 0) r.perguntas[q.id].corretaId = LETRAS[antiga]; else delete r.perguntas[q.id].corretaId; }
+}
+
+function blocoCadeado(e) {
+  const c = e.config, r = gabaritoDe(e);
+  const frag = c.regra === 'fragmentos';
+  const areaFrag = h('textarea', { id: 'cdFrag', rows: 2, placeholder: 'Ex.: 0,1 | × 100 m/min | + 3,5 | = 13,5' }, (c.fragmentos || []).join(' | '));
+  const previa = h('div', { id: 'previaCadeado' });
+  const desenhar = () => limpar(previa, previaCadeado(e));
+  areaFrag.addEventListener('input', () => { c.fragmentos = fragmentosDoTexto(areaFrag.value); tocar(); desenhar(); });
+  setTimeout(desenhar, 0);
+  return h('div', {},
+    h('div', { class: 'cartao' }, h('h3', {}, '🔒 Como o cadeado abre'),
+      h('div', { class: 'campos-2' },
+        seletor('Regra', c.regra || 'fragmentos', [['fragmentos', 'Pedaços do código (cada acerto revela um pedaço)'], ['acertos', 'Por acertos (X membros acertam)']], v => { c.regra = v; }, { redesenhar: true }),
+        seletor('Perguntas no grupo', c.distribuicao || 'diferente', [['diferente', 'Cada aluno recebe uma diferente'], ['mesma', 'Todos do grupo recebem a mesma']], v => { c.distribuicao = v; desenhar(); })),
+      frag ? h('div', {},
+        h('label', { for: 'cdFrag' }, 'Pedaços do código, na ordem (separe com | ou um por linha)'), areaFrag,
+        h('div', { class: 'campos-2' },
+          campo('Código que abre o cadeado (só você vê)', r.codigo || '', v => { r.codigo = v; }, { id: 'cdCodigo', ajuda: 'Aceita vírgula ou ponto e ignora espaços. Para aceitar mais de uma forma, separe com ponto e vírgula (ex.: 13,5; 13,5 mL).' }),
+          h('div'))) :
+        campo('Quantos membros precisam acertar (0 = todos)', c.minAcertos ?? 0, v => { c.minAcertos = Math.max(0, Math.min(30, Math.round(v || 0))); desenhar(); }, { tipo: 'number' }),
+      h('div', { class: 'campos-2' },
+        seletor('Depois de errar, tentar de novo em', String(c.espera ?? 30), [['0', 'na hora'], ['15', '15 segundos'], ['30', '30 segundos'], ['60', '1 minuto'], ['120', '2 minutos']], v => { c.espera = Number(v); }),
+        h('div')),
+      campo('Mensagem quando o cadeado abre (opcional)', c.mensagem || '', v => { c.mensagem = v; }, { area: true, linhas: 2, ajuda: 'Ex.: a próxima pista, onde está o envelope, ou "Avisem o professor!"' })),
+    h('div', { class: 'cartao' }, h('h3', {}, 'Como fica num grupo'), previa),
+    editorPerguntas(e, { explicacao: false }),
+    h('p', { class: 'sutil' }, frag
+      ? 'Dica: o código pode ser o resultado de uma conta montada com os pedaços (ex.: VO₂ = 0,1 × 100 + 3,5 = 13,5). Quem acerta vê só o próprio pedaço: o grupo precisa juntar.'
+      : 'Dica: com perguntas diferentes por aluno, ninguém resolve sozinho. Uma espera depois do erro evita o chute.'));
+}
+function previaCadeado(e) {
+  const c = e.config, frag = c.regra === 'fragmentos';
+  const exemplo = n => {
+    const prep = prepararCadeado(c, [{ id: 'g', uids: Array.from({ length: n }, (_, i) => 'Aluno ' + (i + 1)) }], () => 0.3).g;
+    if (!prep) return h('p', { class: 'sutil' }, 'Adicione perguntas.');
+    return h('div', { class: 'cad-exemplo' }, h('strong', {}, `Grupo com ${n}`), h('ul', {}, prep.membros.slice().sort().map(u => h('li', {}, u + ': ',
+      prep.deUid[u].map(i => { const t = prep.tarefas[i]; const k = c.perguntas.findIndex(q => q.id === t.perguntaId) + 1; return `pergunta ${k}` + (t.fragmento !== null ? ` → pedaço “${c.fragmentos[t.fragmento]}”` : ''); }).join(' · ')))),
+      !frag && h('small', {}, `Abre com ${Math.max(1, Math.min(n, c.minAcertos > 0 ? c.minAcertos : n))} acerto(s).`));
+  };
+  if (frag && (c.fragmentos || []).length < 2) return h('p', { class: 'sutil' }, 'Escreva pelo menos 2 pedaços para ver a distribuição.');
+  return h('div', {},
+    frag && h('div', { class: 'fragmentos-fila' }, c.fragmentos.map(f => h('span', { class: 'fragmento mini' }, f))),
+    h('div', { class: 'campos-2' }, exemplo(3), exemplo(5)));
+}
+
+function blocoQuiz(e) {
+  const c = e.config;
+  return h('div', {},
+    h('div', { class: 'cartao' }, h('h3', {}, 'Como funciona o quiz'),
+      h('p', { class: 'sutil' }, 'A cada pergunta, o sistema sorteia o grupo da vez (sem repetir até todos jogarem). A pergunta aparece só no celular do líder do grupo sorteado; o telão mostra de quem é a vez e o placar. Você avança as perguntas pelo celular.'),
+      h('div', { class: 'campos-2' },
+        seletor('Se o grupo errar', c.aoErrar || 'repassar', [['repassar', 'Passa para outro grupo sorteado (uma vez)'], ['revelar', 'Mostra a resposta e segue']], v => { c.aoErrar = v; }),
+        campo('Tempo por pergunta (segundos)', c.segundos ?? 60, v => { c.segundos = Math.max(10, Math.min(600, Math.round(v || 60))); }, { tipo: 'number' })),
+      h('div', { class: 'opcoes', style: { marginTop: '10px' } },
+        h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: !!c.mostrarNoTelao, onchange: ev => { c.mostrarNoTelao = ev.target.checked; tocar(); } }), h('span', {}, 'O telão mostra a pergunta junto (a turma toda pensa; sem marcar: só o líder vê e lê para o grupo)')),
+        h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: c.mostrarResposta !== false, onchange: ev => { c.mostrarResposta = ev.target.checked; tocar(); } }), h('span', {}, 'Depois de cada pergunta, o telão mostra a resposta e a explicação')))),
+    editorPerguntas(e, { explicacao: true }));
+}
+
 // ============================================================ Fontes
 function editorFontes() {
   const a = P.A;
@@ -528,7 +730,7 @@ function onde(local) {
   if (m) { const p = a.pecas[Number(m[1])]; const e = p && etapa(p.etapaId); const n = p ? a.pecas.filter(x => x.etapaId === p.etapaId).indexOf(p) + 1 : ''; return `Peça ${n}` + (e ? ` · ${e.titulo}` : ''); }
   m = local.match(/^etapas\[(\d+)\]/);
   if (m) { const e = a.etapas[Number(m[1])]; return e ? `Etapa ${etapasOrdenadas(a).indexOf(e) + 1} · ${e.titulo}` : 'Etapa'; }
-  m = local.match(/^docente\.respostas\.(.+)$/);
+  m = local.match(/^docente\.respostas\.([^.]+)/);
   if (m) { const e = etapa(m[1]); return e ? `Gabarito · ${e.titulo}` : 'Gabarito'; }
   m = local.match(/^grupos/); if (m) return 'Grupos';
   m = local.match(/^meta/); if (m) return 'Meta';
@@ -539,7 +741,7 @@ function irPara(local) {
   const a = P.A;
   let m = local.match(/^pecas\[(\d+)\]/); if (m && a.pecas[Number(m[1])]) return 'etapa:' + a.pecas[Number(m[1])].etapaId;
   m = local.match(/^etapas\[(\d+)\]/); if (m && a.etapas[Number(m[1])]) return 'etapa:' + a.etapas[Number(m[1])].id;
-  m = local.match(/^docente\.respostas\.(.+)$/); if (m && etapa(m[1])) return 'etapa:' + m[1];
+  m = local.match(/^docente\.respostas\.([^.]+)/); if (m && etapa(m[1])) return 'etapa:' + m[1];
   if (/^grupos/.test(local)) return 'grupos';
   if (/^fontes/.test(local)) return 'fontes';
   return 'geral';

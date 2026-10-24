@@ -68,6 +68,8 @@ service cloud.firestore {
       match /pacotes/{g} {
         allow read: if signed() && (
           dono(c) ||
+          g == request.auth.uid ||                                   // peça da montagem, só deste celular
+          (g == 'revelacao' && sala(c).revelacao != null) ||          // todo montado, revelado por quem conduz
           (g == 'individual' && request.auth.uid in sala(c).nomes) ||
           request.auth.uid in sala(c).composicao.get(g, []) ||
           request.auth.uid in sala(c).leitoresExtra.get(g, []));
@@ -94,9 +96,19 @@ service cloud.firestore {
                 (s.representantes.get(d.grupoId, '') == request.auth.uid ||
                  s.executores.get(d.grupoId, '') == request.auth.uid)) ||
               (d.escopo == 'participante' && id == d.etapaId + '__' + request.auth.uid &&
-                request.auth.uid in s.nomes)
+                request.auth.uid in s.nomes) ||
+              // Cadeado do grupo e quiz: várias tentativas, cada uma um documento novo
+              // (etapa__quem__t1, t2… · etapa__grupo__c1… · etapa__grupo__r1…). Quem avalia é quem conduz.
+              (d.escopo == 'tentativa' && tentativaValida(s, id, d))
             ))
           );
+      }
+      function tentativaValida(s, id, d) {
+        let p = id.split('__');
+        return p.size() == 3 && p[0] == d.etapaId && p[2].matches('[a-z][0-9]{1,4}') && (
+          (p[1] == request.auth.uid && request.auth.uid in s.nomes) ||
+          (p[1] == d.grupoId && (s.representantes.get(d.grupoId, '') == request.auth.uid ||
+                                 s.executores.get(d.grupoId, '') == request.auth.uid)));
       }
     }
   }

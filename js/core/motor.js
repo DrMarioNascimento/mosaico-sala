@@ -93,6 +93,8 @@ function publicoConfig(etapa) {
 
 /** Avaliação pelo gabarito docente. Envio ≠ acerto ≠ conclusão (12.6). */
 export function avaliar(a, etapaId, dados) {
+  // cadeado e quiz: quem conduz já avaliou cada resultado (grupo destravou / grupo acertou a pergunta)
+  if (typeof dados?.acertou === 'boolean') return { avaliada: true, correta: dados.acertou };
   const r = a.docente?.respostas?.[etapaId];
   if (!r) return { avaliada: false };
   const escolhida = dados.alternativaId ?? dados.hipoteseId;

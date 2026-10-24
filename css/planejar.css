@@ -63,3 +63,12 @@
   .plan-nav .sub { padding-left: 12px; }
   .campos-2, .campos-3 { grid-template-columns: 1fr; }
 }
+
+/* Cadeado do grupo e Quiz entre grupos */
+.pergunta-edit { border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; margin: 10px 0; display: grid; gap: 6px; }
+.pergunta-edit .opcao-edit input[type=text] { margin: 0; }
+.fragmentos-fila { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.fragmento.mini { display: inline-block; padding: 6px 12px; margin: 0; font-family: var(--fonte-titulo, 'Archivo'), system-ui, sans-serif; font-weight: 800; font-size: 1.05em; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.cad-exemplo { background: rgba(255,255,255,.04); border-radius: 10px; padding: 10px 12px; }
+.cad-exemplo ul { margin: 6px 0; padding-left: 18px; }
+.cad-exemplo li { font-size: .92em; }

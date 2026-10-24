@@ -133,6 +133,7 @@ export function validarAtividade(a) {
     const tipo = obterTipo(e.typeId, e.typeVersion);
     if (!tipo || tipo.assessmentPolicy !== 'gabarito_docente') continue;
     const r = respostas[e.id];
+    if (tipo.validarRespostas) { d.push(...tipo.validarRespostas(e, r)); continue; }
     const opcoes = e.typeId === 'questao_individual' ? (e.config?.alternativas || []) : (e.config?.hipotesesCandidatas || []);
     if (!r || !opcoes.some(o => o.id === r.corretaId)) d.push(erro(`docente.respostas.${e.id}`, `Falta resposta esperada válida para "${e.titulo}".`));
     else if (!r.explicacao) d.push(aviso(`docente.respostas.${e.id}`, 'Resposta esperada sem explicação para a discussão.'));
@@ -157,7 +158,8 @@ export function validarAtividade(a) {
   // LGPD: casos devem ser fictícios. Avisa (não bloqueia) quando um texto parece ter dado pessoal real.
   const textos = [['introducao', a.introducao], ['perguntaCentral', a.perguntaCentral],
     ...a.pecas.map((p, i) => [`pecas[${i}].conteudo`, p.conteudo]),
-    ...a.etapas.map((e, i) => [`etapas[${i}]`, [e.instrucao, e.config?.pergunta, e.config?.enunciado, ...(e.config?.hipotesesCandidatas || e.config?.alternativas || []).map(o => o.texto)].join(' ')])];
+    ...a.etapas.map((e, i) => [`etapas[${i}]`, [e.instrucao, e.config?.pergunta, e.config?.enunciado, e.config?.texto, ...(e.config?.hipotesesCandidatas || e.config?.alternativas || []).map(o => o.texto),
+      ...(e.config?.perguntas || []).flatMap(q => [q.enunciado, ...(q.alternativas || []).map(o => o.texto)]), ...(e.config?.fragmentos || []), e.config?.mensagem].join(' ')])];
   for (const [local, t] of textos) {
     const tipo = dadoPessoal(t);
     if (tipo) d.push(aviso(local, `Parece conter ${tipo}. Use casos fictícios, sem dados de pessoas reais.`));

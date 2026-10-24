@@ -3,13 +3,15 @@
    Sem códigos visíveis nas peças. */
 
 import { formaDoGrupo, urlIcone } from './ui.js';
+import { svgPeca } from './quebra-cabeca.js';
+import { pecasDeTexto, bordas, embaralharSemOrdemCerta, gradeDoCorte } from './core/montagem.js';
 
 const icone = (a, gid, tam = 44) => `<img src="${new URL(urlIcone(formaDoGrupo(a, gid).forma), location.href).href}" alt="" width="${tam}" height="${tam}" style="vertical-align:middle;margin-right:8px">`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ordem = a => [...a.etapas].sort((x, y) => x.ordem - y.ordem);
 
 export function gerarImpressao(a) {
-  const partes = [];
+  const partes = [], partesDocente = [];
   partes.push(`<section class="folha capa"><p class="marca">MOSAICO</p><h1>${esc(a.titulo)}</h1>
     ${a.perguntaCentral ? `<p class="pergunta">${esc(a.perguntaCentral)}</p>` : ''}
     ${a.introducao ? `<p>${esc(a.introducao)}</p>` : ''}
@@ -29,6 +31,39 @@ export function gerarImpressao(a) {
           <ul class="caixas">${(cfg.hipotesesCandidatas || []).map(hp => `<li>☐ ${esc(hp.texto)}</li>`).join('')}</ul>
           ${cfg.justificativa !== 'nenhuma' ? '<p class="linhas">Justificativa:</p>' : ''}</section>`);
       }
+    } else if (e.typeId === 'montagem_pecas') {
+      if (cfg.modo === 'texto') {
+        const textos = pecasDeTexto({ ...cfg, quantidade: 'fixa' }, 0), bs = bordas({ linhas: 1, colunas: textos.length });
+        const pecas = textos.map((texto, i) => ({ texto, bordas: bs[i], aspecto: 1.25 }));
+        const svg = p => svgPeca(p, { cor: '#333' }).outerHTML;
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · recortar e embaralhar</p><h2>${esc(e.titulo)}</h2>
+          <p>${esc(e.instrucao || 'Recorte as peças e entregue embaralhadas. A turma deve colocá-las na ordem certa.')}</p>
+          <div class="pecas-imp">${embaralharSemOrdemCerta(pecas).map(svg).join('')}</div></section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · ordem certa</h3><p>${textos.map(esc).join(' &nbsp;|&nbsp; ')}</p></div>`);
+      } else if (cfg.imagem?.dados) {
+        const g = gradeDoCorte(cfg.corte?.tipo || 'colunas', cfg.corte?.n || 4, cfg.corte?.colunas);
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · recortar nas linhas e embaralhar</p><h2>${esc(e.titulo)}</h2>
+          <div class="img-corte" style="--l:${g.linhas};--c:${g.colunas}"><img src="${cfg.imagem.dados}" alt=""><div class="grade-corte"></div></div></section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · imagem completa</h3><img src="${cfg.imagem.dados}" alt="" style="max-width:100%"></div>`);
+      }
+    } else if (e.typeId === 'cadeado_grupo') {
+      // papel: cartões de pergunta para recortar; no verso (ou entregue pelo professor), o pedaço do código
+      const frag = cfg.regra === 'fragmentos';
+      const rp = a.docente?.respostas?.[e.id] || {};
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cartões para recortar (um por aluno)</p><h2>🔒 ${esc(e.titulo)}</h2>
+        <p>${esc(e.instrucao || (frag ? 'Cada aluno responde a sua pergunta. Quem acerta recebe um pedaço do código. Juntem os pedaços para abrir o cadeado.' : 'Cada aluno responde a sua pergunta. O cadeado abre quando o grupo acerta o suficiente.'))}</p>
+        <div class="cartoes">${(cfg.perguntas || []).map((q, i) => `<div class="cartao-q"><small>Pergunta ${i + 1}</small><strong>${esc(q.enunciado)}</strong>
+          <ul class="caixas">${q.alternativas.map((al, k) => `<li>☐ ${'ABCDE'[k]}) ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</div></section>`);
+      if (frag) partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · pedaços do código (o professor entrega a quem acertar)</p>
+        <div class="pedacos">${(cfg.fragmentos || []).map(f => `<div class="pedaco">${esc(f)}</div>`).join('')}</div></section>`);
+      partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · cadeado</h3>
+        ${frag ? `<p>Código: <strong>${esc(rp.codigo || '')}</strong> · pedaços na ordem: ${(cfg.fragmentos || []).map(esc).join(' | ')}</p>` : `<p>Abre com ${cfg.minAcertos > 0 ? cfg.minAcertos : 'todos os'} acerto(s) no grupo.</p>`}
+        <ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)} → <strong>${esc(q.alternativas.find(o => o.id === rp.perguntas?.[q.id]?.corretaId)?.texto || '?')}</strong></li>`).join('')}</ol></div>`);
+    } else if (e.typeId === 'quiz_grupos') {
+      const rp = a.docente?.respostas?.[e.id] || {};
+      partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · quiz entre grupos (ler em voz alta)</h3>
+        <ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)}<br>${q.alternativas.map((al, k) => `${'ABCDE'[k]}) ${esc(al.texto)}`).join(' &nbsp; ')}<br>Resposta: <strong>${esc(q.alternativas.find(o => o.id === rp.perguntas?.[q.id]?.corretaId)?.texto || '?')}</strong>${rp.perguntas?.[q.id]?.explicacao ? ' — ' + esc(rp.perguntas[q.id].explicacao) : ''}</li>`).join('')}</ol>
+        <table><thead><tr><th>Grupo</th><th>Pontos</th></tr></thead><tbody>${a.grupos.map(g => `<tr><td>${icone(a, g.id, 22)}${esc(g.nome)}</td><td></td></tr>`).join('')}</tbody></table></div>`);
     } else if (e.typeId === 'comparar_hipoteses') {
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · uma folha por grupo</p><h2>${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || '')}</p>
@@ -48,11 +83,12 @@ export function gerarImpressao(a) {
   // Material de quem conduz (separado)
   const r = a.docente?.respostas || {};
   partes.push(`<section class="folha docente"><p class="cab">MATERIAL DE QUEM CONDUZ — NÃO DISTRIBUIR</p><h2>Respostas esperadas</h2>
-    ${ordem(a).filter(e => r[e.id]).map(e => {
+    ${ordem(a).filter(e => r[e.id] && !r[e.id].perguntas).map(e => {
       const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r[e.id].corretaId);
       return `<div class="questao"><h3>${esc(e.titulo)}</h3><p><strong>${esc(op?.texto || r[e.id].corretaId)}</strong></p><p>${esc(r[e.id].explicacao || '')}</p></div>`;
     }).join('')}
     ${a.meta?.ativa !== false && a.meta ? `<h3>Meta</h3><p>${esc(a.meta.descricao || '')} (limiar ${Math.round(a.meta.limiar * 100)}%)</p>` : ''}
+    ${partesDocente.join('')}
     ${(a.docente?.guia || []).length ? `<h3>Guia de condução</h3><ol>${a.docente.guia.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
     ${(a.docente?.pontosDeDiscussao || []).length ? `<h3>Pontos de discussão</h3><ul>${a.docente.pontosDeDiscussao.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     <h3>Distribuição das peças</h3><ul>${a.grupos.map(g => `<li>${esc(g.nome)}: ${a.pecas.filter(p => p.destinatarios.includes(g.id)).length} peça(s)</li>`).join('')}</ul>
@@ -71,6 +107,10 @@ export function gerarImpressao(a) {
  .caixas{list-style:none;padding:0}.caixas li{margin:6px 0}
  .linhas{border-bottom:1px solid #999;padding-bottom:2.5cm}
  table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #555;padding:6px;text-align:left;height:1.4cm;vertical-align:top}th{height:auto;background:#f0f0f0;font:700 10pt Arial,sans-serif}
+ .pecas-imp{display:flex;flex-wrap:wrap;gap:10px}.pecas-imp svg{width:4.2cm;height:auto}.peca-qc-texto{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font:800 13px Arial,sans-serif;color:#111}
+ .img-corte{position:relative;display:inline-block;max-width:100%}.img-corte img{display:block;max-width:100%}.grade-corte{position:absolute;inset:0;background-image:linear-gradient(to right,#000 2px,transparent 2px),linear-gradient(to bottom,#000 2px,transparent 2px);background-size:calc(100%/var(--c)) calc(100%/var(--l));border-right:2px solid #000;border-bottom:2px solid #000;opacity:.7}
+ .cartoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cartao-q{border:1.5px dashed #333;border-radius:8px;padding:10px;break-inside:avoid}.cartao-q small{display:block;font:700 9pt Arial,sans-serif;color:#666}
+ .pedacos{display:flex;flex-wrap:wrap;gap:12px}.pedaco{border:2px dashed #333;border-radius:10px;padding:14px 18px;font:800 18pt Arial,sans-serif;min-width:3cm;text-align:center}
  .docente{border-top:8px solid #c00}.docente .cab{color:#c00}
  .barra{position:sticky;top:0;background:#222;color:#fff;padding:10px;text-align:center;font:14px Arial,sans-serif}
  .barra button{font:700 14px Arial,sans-serif;padding:8px 16px}
