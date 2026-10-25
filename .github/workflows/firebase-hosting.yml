@@ -22,13 +22,20 @@ jobs:
           projectId: mosaico-sala
           channelId: live
       # Regras do Firestore (por exemplo, a lista de mestres editável na tela). Se a conta de serviço não tiver
-      # permissão para publicar regras, este passo falha sem impedir a publicação do site: aí publique
-      # o firestore.rules pelo console do Firebase (Firestore → Regras).
+      # permissão para publicar regras, o site é publicado mesmo assim e este passo deixa um AVISO amarelo
+      # (na execução e no resumo): aí publique o firestore.rules pelo console do Firebase (Firestore → Regras)
+      # ou dê à conta de serviço o papel "Firebase Rules Admin" (roles/firebaserules.admin).
       - name: Publicar as regras do Firestore
-        continue-on-error: true
         env:
           CONTA_SERVICO: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA }}
         run: |
+          set -o pipefail   # o resultado do deploy, não o do tee, decide entre sucesso e aviso
           printf '%s' "$CONTA_SERVICO" > "$RUNNER_TEMP/conta.json"
-          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/conta.json" npx --yes firebase-tools@13 deploy --only firestore:rules --project mosaico-sala --non-interactive
-          rm -f "$RUNNER_TEMP/conta.json"
+          if GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/conta.json" npx --yes firebase-tools@13 deploy --only firestore:rules --project mosaico-sala --non-interactive 2>&1 | tee "$RUNNER_TEMP/regras.log"; then
+            echo "✅ Regras do Firestore publicadas." >> "$GITHUB_STEP_SUMMARY"
+          else
+            motivo=$(grep -m1 -o 'HTTP Error: [0-9]*, [^"]*' "$RUNNER_TEMP/regras.log" || echo 'veja o log deste passo')
+            echo "::warning title=Regras do Firestore NÃO publicadas::O site foi publicado, mas as regras não ($motivo). Publique o firestore.rules pelo console do Firebase (Firestore → Regras) ou dê à conta de serviço o papel Firebase Rules Admin."
+            printf '%s\n' "### ⚠️ Regras do Firestore NÃO publicadas" "" "O site foi publicado, mas as regras não: $motivo." "" "Publique o \`firestore.rules\` pelo console do Firebase (Firestore → Regras) ou dê à conta de serviço o papel **Firebase Rules Admin** (\`roles/firebaserules.admin\`)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f "$RUNNER_TEMP/conta.json" "$RUNNER_TEMP/regras.log"
