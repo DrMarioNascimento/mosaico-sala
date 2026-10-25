@@ -18,7 +18,14 @@ let codigo = null, sala = null, relogio = null, revelacao = null, inscRevelacao 
 const TT = criarTelao({ sala: () => sala, revelacao: () => revelacao });
 
 const inicial = new URLSearchParams(location.search).get('sala');
-if (inicial) abrir(inicial); else $('abrir').onclick = () => abrir($('codigo').value.trim());
+if (inicial) abrir(inicial);
+else {
+  // Digitou os 6 números: abre sozinho (sem precisar clicar em Mostrar).
+  $('abrir').onclick = () => abrir($('codigo').value.trim());
+  $('codigo').addEventListener('input', ev => { const v = ev.target.value.replace(/\D/g, '').slice(0, 6); ev.target.value = v; if (v.length === 6) abrir(v); });
+  $('codigo').addEventListener('keydown', ev => { if (ev.key === 'Enter') abrir($('codigo').value.trim()); });
+  $('codigo').focus();
+}
 
 async function abrir(c) {
   if (!/^\d{6}$/.test(c)) return aviso($('avisoTelao'), 'Informe o código de 6 números.', 'erro');
@@ -26,6 +33,7 @@ async function abrir(c) {
     await b.identificar();
     if (!(await b.lerSala(c))) throw new Error('Sala não encontrada.');
     codigo = c;
+    try { history.replaceState(null, '', location.pathname + '?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), sala: c })); } catch {}   // recarregar a página mantém a sala
     b.observarSala(c, s => {
       sala = s;
       // todo montado (só quando quem conduz revela, ao encerrar a montagem)

@@ -13,6 +13,7 @@ import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
+import { ehAdmin, lerEmails, ADMINS } from './mestres.js';
 import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
 import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
@@ -23,7 +24,7 @@ import { ico, ilustra } from './icones.js';
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
-const P = { conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
+const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
@@ -35,6 +36,13 @@ const CATEGORIAS = [
   ['Quizzes e jogos', ['quiz_grupos', 'corrida', 'quiz_pensar', 'sequencia']],
   ['Verificação individual', ['questao_individual']]
 ];
+/** “Ideal para” de cada tipo, na tela de nova etapa (ideia do protótipo do v0). */
+const IDEAL_PARA = {
+  investigacao_fragmentos: 'Abrir o tema com um problema', comparar_hipoteses: 'Depois de uma investigação', analise_imagem: 'Lâminas, gráficos, mapas e anatomia',
+  montagem_pecas: 'Textos, contas e imagens', cadeado_grupo: 'Revisão com desafio', cartoes_arrastar: 'Processos, categorias e debates', pares: 'Relacionar conceitos',
+  cruzadas: 'Vocabulário e conceitos-chave', quiz_grupos: 'Fechar a aula com energia', corrida: 'Revisão rápida e competitiva', quiz_pensar: 'Argumentar, decidir e refletir',
+  sequencia: 'Memorizar sequências e termos', questao_individual: 'Verificar o que cada um aprendeu'
+};
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
@@ -49,6 +57,7 @@ $('entrarGoogle').onclick = () => {
 async function iniciar(conta) {
   P.conta = conta; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
+  if (souAdmin()) carregarMestres();
   try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   render();
 }
@@ -58,6 +67,7 @@ async function carregarBiblioteca() {
   catch (e) { P.bib = null; P.bibErro = e?.code === 'permission-denied' || /permission/i.test(e?.message || '') ? 'fora' : 'falha'; }
 }
 const temBiblioteca = () => Array.isArray(P.bib);
+const souAdmin = () => EM_ENSAIO || ehAdmin(P.conta?.email);
 
 // ============================================================ estado
 function salvarRascunho() { try { localStorage.setItem(RASCUNHO, JSON.stringify({ A: P.A, origem: P.origem, sujo: P.sujo })); } catch {} }
@@ -149,7 +159,7 @@ function render() {
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
-  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
+  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
 }
 
@@ -173,15 +183,31 @@ function renderNav() {
   const nav = document.getElementById('nav'); if (!nav || !P.A) return;
   const diags = validarAtividade(P.A), nErros = diags.filter(d => d.severidade === 'erro').length;
   const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => irPara(secao), ...extra }, conteudo);
+  const errosEtapa = new Map(P.A.etapas.map(e => [e.id, diagsDaEtapa(e, diags).filter(d => d.severidade === 'erro').length]));
+  renderPassos3(nErros, [...errosEtapa.values()].reduce((x, y) => x + y, 0));
   limpar(nav,
     item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
     item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })),
+    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n)], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId }); }),
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
     item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' erro(s)' : 'ok')]));
+}
+
+/** Os 3 passos do planejamento (Sobre a turma → Etapas → Revisar), com as pendências de cada um. */
+function renderPassos3(nErros, nErrosEtapas) {
+  const alvo = document.getElementById('passos3'); if (!alvo || !P.A) return;
+  const s = P.secao, primeira = etapasOrdenadas(P.A)[0];
+  const passos = [
+    ['Sobre a turma', s === 'geral' || s === 'grupos', 'geral', nErros - nErrosEtapas],
+    ['Etapas', s.startsWith('etapa:') || s === 'nova-etapa' || s === 'fontes', primeira ? 'etapa:' + primeira.id : 'nova-etapa', P.A.etapas.length ? nErrosEtapas : -1],
+    ['Revisar e dar a aula', s === 'revisao', 'revisao', nErros]
+  ];
+  limpar(alvo, passos.map(([rot, atual, destino, n], i) => h('button', { class: 'passo3', 'aria-current': atual ? 'step' : null, onclick: () => irPara(destino) },
+    h('span', { class: 'n' }, i + 1), h('span', { class: 'rot' }, rot),
+    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? 'pronta' : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
 }
 
 function renderEditor() {
@@ -251,6 +277,7 @@ function telaInicio() {
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
             h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
             item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
+      souAdmin() && cartaoMestres(),
       h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
         h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
         h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
@@ -258,6 +285,42 @@ function telaInicio() {
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
       h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
+}
+
+/** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
+ *  salvar grava a lista inteira, então editar sem a lista carregada apagaria os professores que já estão nela. */
+function carregarMestres() {
+  P.mestres = null;
+  b.lerMestres().then(l => { P.mestres = Array.isArray(l) ? l : 'erro'; }, () => { P.mestres = 'erro'; }).then(() => { if (!P.A) render(); });
+}
+
+/** Administradores: quem pode guardar na biblioteca e abrir salas on-line (config/mestres no Firestore). */
+function cartaoMestres() {
+  const lista = P.mestres;
+  if (!Array.isArray(lista)) return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
+    lista === 'erro'
+      ? [h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'Não foi possível ler a lista de professores. Nada foi alterado.'), h('button', { class: 'btn', onclick: () => { carregarMestres(); render(); } }, 'Tentar de novo')]
+      : h('p', { class: 'sutil' }, 'Carregando a lista…'));
+  const novo = h('input', { id: 'novoMestre', type: 'email', placeholder: 'email@exemplo.com', autocomplete: 'off' });
+  const gravar = async emails => {
+    try { await b.salvarMestres(emails); P.mestres = emails; render(); avisoGeral('Lista de professores atualizada.', 'ok'); }
+    catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: publique as regras novas do Firestore (firestore.rules) e confira se sua conta é de administrador.' : 'Não foi possível salvar: ' + (e?.message || e), 'erro'); }
+  };
+  const adicionar = () => {
+    const { validos, invalidos } = lerEmails(novo.value);
+    if (invalidos.length) return avisoGeral('E-mail inválido: ' + invalidos.join(', '), 'erro');
+    const juntos = [...new Set([...lista, ...validos])].filter(x => !ADMINS.includes(x));
+    if (validos.length) gravar(juntos);
+  };
+  novo.addEventListener('keydown', ev => { if (ev.key === 'Enter') adicionar(); });
+  return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
+    h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Os administradores já têm acesso.'),
+    h('ul', { class: 'lista-bib' },
+        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador')))),
+        lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e)),
+          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
+    h('label', { for: 'novoMestre' }, 'Adicionar professor (conta Google)'), novo,
+    h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: adicionar }, ico('mais'), 'Adicionar')));
 }
 
 async function abrirModelo(id) {
@@ -330,9 +393,9 @@ function baixarJSON(a) {
 }
 
 // ============================================================ pré-visualização
-function previa() {
+function previa(etapaId) {
   try { localStorage.setItem('mosaico-previa', JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
-  const url = new URL('previa.html', location.href); url.search = '?ensaio=1';
+  const url = new URL('previa.html', location.href); url.search = '?ensaio=1' + (typeof etapaId === 'string' ? '&etapa=' + encodeURIComponent(etapaId) : '');
   window.open(url.href, '_blank');
 }
 
@@ -409,8 +472,11 @@ function editorNovaEtapa() {
   return h('div', { class: 'cartao' }, h('h2', {}, 'Nova etapa: escolha o tipo'),
     h('p', { class: 'sutil' }, 'A decisão é sua. A Revisão sugere equilíbrio (por exemplo, quando há muitas etapas iguais seguidas).'),
     CATEGORIAS.map(([cat, ids]) => h('div', {}, h('h3', { style: { margin: '16px 0 8px' } }, cat),
-      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, ilustra(id, 60), h('div', {}, h('strong', {}, t.nome), h('small', {}, t.descricao))); })))));
+      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, ilustra(id, 60), h('div', {}, h('strong', {}, t.nome),
+        h('span', { class: 'tipo-quem' }, quemResponde(t), IDEAL_PARA[id] && ' · ideal para ' + IDEAL_PARA[id].toLowerCase()), h('small', {}, t.descricao))); })))));
 }
+const quemResponde = t => [...new Set(t.participacao.organizacao.map(o => ({ grupos: 'Em grupos', individual: 'Individual', representantes: 'Entre grupos' })[o] || o))].join(' ou ');
+
 function configInicial(typeId, base) {
   const novo = ED.configInicial(typeId); if (novo) return novo;
   if (typeId === 'cadeado_grupo') return { regra: 'fragmentos', perguntas: [perguntaVazia('p1')], distribuicao: 'diferente', minAcertos: 0, fragmentos: [], espera: 30, mensagem: '' };
@@ -459,6 +525,7 @@ function editorEtapa(e) {
         h('div', { class: 'mini' },
           h('button', { class: 'btn', disabled: pos === 0, 'aria-label': 'Mover para antes', onclick: () => mover(-1) }, '↑'),
           h('button', { class: 'btn', disabled: pos === seq.length - 1, 'aria-label': 'Mover para depois', onclick: () => mover(1) }, '↓'),
+          h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(a)), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
           h('button', { class: 'btn', title: 'Duplicar etapa', onclick: () => duplicarEtapa(e) }, '⧉'),
           h('button', { class: 'btn perigo', 'aria-label': 'Remover etapa', onclick: () => removerEtapa(e) }, '✕'))),
       campo('Título', e.titulo, v => { e.titulo = v; }, { max: 120 }),
@@ -481,9 +548,9 @@ function editorEtapa(e) {
     h('div', { id: 'revEtapa' }, revEtapa(diagsEtapa)));
 }
 const revEtapa = ds => ds.length ? h('div', { class: 'cartao' }, h('h3', {}, 'Revisão desta etapa'), h('ul', { class: 'diag' }, ds.map(d => h('li', { class: d.severidade }, d.mensagem)))) : h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Esta etapa não tem pendências.');
-function diagsDaEtapa(e) {
+function diagsDaEtapa(e, diags = validarAtividade(P.A)) {
   const a = P.A, idx = a.etapas.indexOf(e);
-  return validarAtividade(a).filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}` || d.local.startsWith(`docente.respostas.${e.id}.`));
+  return diags.filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}` || d.local.startsWith(`docente.respostas.${e.id}.`));
 }
 function atualizarRevEtapa() {
   const alvo = document.getElementById('revEtapa'); if (!alvo || !P.secao.startsWith('etapa:')) return;

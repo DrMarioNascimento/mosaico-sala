@@ -6,6 +6,7 @@ import { link, EM_ENSAIO } from './backend.js';
 if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio', '1'); location.replace(u.href); }
 const $ = id => document.getElementById(id);
 let codigo = null;
+const ETAPA = new URLSearchParams(location.search).get('etapa');   // “Ver esta etapa”: a condução já começa nela
 
 function limparEnsaio() {
   // começa limpo: apaga salas de ensaio antigas deste navegador
@@ -16,7 +17,7 @@ function limparEnsaio() {
 function iniciar() {
   limparEnsaio(); codigo = null;
   $('telao').innerHTML = ''; $('turma').innerHTML = '<p class="sutil">Os participantes aparecem assim que a sala abrir.</p>';
-  $('conducao').src = link('conduzir.html', { previa: '1', t: Date.now() });
+  $('conducao').src = link('conduzir.html', { previa: '1', t: Date.now(), ...(ETAPA ? { etapa: ETAPA } : {}) });
   $('info').textContent = 'Abrindo a sala de ensaio…';
 }
 
@@ -37,7 +38,9 @@ addEventListener('message', async e => {
     caixa.append(f); $('turma').append(caixa);
     await new Promise(r => setTimeout(r, 250));
   }
-  $('info').textContent = `Sala ${codigo} com ${n} participantes simulados. No celular da esquerda: Grupos → Sortear, depois Condução → Iniciar etapa.`;
+  $('info').textContent = ETAPA
+    ? `Sala ${codigo} com ${n} participantes simulados. Os grupos são sorteados e a etapa começa sozinha.`
+    : `Sala ${codigo} com ${n} participantes simulados. No celular da esquerda: Grupos → Sortear, depois Condução → Iniciar etapa.`;
 });
 
 $('auto').onchange = e => { for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} } };
