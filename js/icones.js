@@ -115,55 +115,26 @@ function svgEm(cls, svg, rotulo) {
 }
 /* Padrão visual do MOSAICO: ícones 3D (como as formas dos grupos em assets/icones).
    Quando existe a versão 3D de um ícone, ela é usada; os desenhos acima são só provisórios até a versão 3D chegar.
-   Para trocar: gerar o 3D (prompts em ICONES-3D.md), salvar em assets/ilustracoes/<nome>.webp e acrescentar o nome aqui. */
+   Todos saem de assets/ilustracoes/3d, recortados e no mesmo tamanho óptico (origens.json diz de onde veio cada um).
+   Para trocar: gerar o 3D (prompts em ICONES-3D.md), normalizar como os demais e apontar o nome aqui. */
 export const EM_3D = {
-  cadeado_grupo: 'assets/icons/locks/closed-blue.png',
-  e_planejar: 'assets/ilustracoes/docente/preparar.png',
-  e_conduzir: 'assets/ilustracoes/docente/conduzir.png',
-  e_telao: 'assets/ilustracoes/docente/telao.png',
-  e_participar: 'assets/ilustracoes/docente/participar.png',
-  e_simulador: 'assets/ilustracoes/docente/simular.png',
-  e_material: 'assets/ilustracoes/docente/material.png',
-  e_ia: 'assets/ilustracoes/docente/ia.png',
-  e_revisar: 'assets/ilustracoes/docente/revisar.png',
-  investigacao_fragmentos: 'assets/ilustracoes/docente/investigar.png',
-  comparar_hipoteses: 'assets/ilustracoes/docente/comparar.png',
-  montagem_pecas: 'assets/ilustracoes/docente/montar.png',
-  quiz_grupos: 'assets/ilustracoes/docente/sala.png',
-  cartoes_arrastar: 'assets/ilustracoes/docente/cartoes.png',
-  pares: 'assets/ilustracoes/docente/pares.png',
-  corrida: 'assets/ilustracoes/docente/corrida.png',
-  cruzadas: 'assets/ilustracoes/docente/cruzadas.png',
-  sequencia: 'assets/ilustracoes/docente/simular.png',
-  quiz_pensar: 'assets/ilustracoes/docente/quiz.png',
-  analise_imagem: 'assets/ilustracoes/docente/imagem.png',
-  questao_individual: 'assets/ilustracoes/docente/sala.png',
-  escala_padronizada: 'assets/ilustracoes/docente/escala.png',
-  jogo_economico: 'assets/ilustracoes/docente/economia.png',
-  ui_planejar: 'assets/ilustracoes/docente/preparar.png',
-  ui_conduzir: 'assets/ilustracoes/docente/conduzir.png',
-  ui_telao: 'assets/ilustracoes/docente/telao.png',
-  ui_simulador: 'assets/ilustracoes/docente/simular.png',
-  ui_participar: 'assets/ilustracoes/docente/participar.png',
-  ui_sair: 'assets/ilustracoes/docente/participar.png',
-  ui_atividade: 'assets/ilustracoes/docente/atividade.png',
-  ui_sala: 'assets/ilustracoes/docente/sala.png',
-  ui_grupos: 'assets/ilustracoes/docente/grupos.png',
-  ui_etapas: 'assets/ilustracoes/docente/montar.png',
-  ui_ia: 'assets/ilustracoes/docente/ia.png',
-  ui_fontes: 'assets/ilustracoes/docente/material.png',
-  ui_revisao: 'assets/ilustracoes/docente/revisar.png',
-  ui_biblioteca: 'assets/ilustracoes/docente/biblioteca.png',
-  ui_abrir: 'assets/ilustracoes/docente/abrir.png',
-  ui_salvar: 'assets/ilustracoes/docente/revisar.png',
-  ui_meta: 'assets/ilustracoes/docente/meta.png',
-  ui_relogio: 'assets/ilustracoes/docente/relogio.png',
-  ui_trofeu: 'assets/ilustracoes/docente/trofeu.png',
-  ui_play: 'assets/ilustracoes/docente/play.png',
-  ui_parar: 'assets/ilustracoes/docente/parar.png',
-  ui_avancar: 'assets/ilustracoes/docente/avancar.png'
+  // entradas e fluxo
+  e_planejar: 'planejar', e_conduzir: 'conduzir', e_telao: 'telao', e_participar: 'participar', e_simulador: 'simulador',
+  e_material: 'material', e_ia: 'ia', e_revisar: 'revisar',
+  // tipos de atividade
+  investigacao_fragmentos: 'investigar', comparar_hipoteses: 'comparar', montagem_pecas: 'montar', cadeado_grupo: 'cadeado',
+  quiz_grupos: 'quiz-grupos', cartoes_arrastar: 'cartoes', pares: 'pares', corrida: 'corrida', cruzadas: 'cruzadas',
+  sequencia: 'sequencia', quiz_pensar: 'quiz-pensar', analise_imagem: 'imagem', questao_individual: 'individual',
+  escala_padronizada: 'escala', jogo_economico: 'economia',
+  // botões e navegação
+  ui_inicio: 'inicio', ui_voltar: 'voltar', ui_avancar: 'avancar', ui_planejar: 'planejar', ui_conduzir: 'conduzir',
+  ui_telao: 'telao', ui_simulador: 'simulador', ui_participar: 'participar', ui_sair: 'sair', ui_atividade: 'atividade',
+  ui_sala: 'sala', ui_grupos: 'grupos', ui_etapas: 'montar', ui_ia: 'ia', ui_fontes: 'material', ui_revisao: 'revisar',
+  ui_biblioteca: 'biblioteca', ui_abrir: 'material', ui_meta: 'meta', ui_relogio: 'relogio', ui_trofeu: 'trofeu',
+  ui_play: 'play', ui_parar: 'parar', ui_previa: 'olho', ui_olho: 'olho', ui_apagar: 'apagar', ui_fechar: 'fechar',
+  ui_enviar: 'enviar', ui_baixar: 'baixar', ui_licenca: 'licenca'
 };
-const url3d = nome => EM_3D[nome] === true ? `assets/ilustracoes/${nome}.webp` : EM_3D[nome];
+const url3d = nome => `assets/ilustracoes/3d/${EM_3D[nome]}.webp`;
 function img3d(cls, nome, tam, rotulo) {
   const el = document.createElement('img');
   el.className = cls + ' em-3d'; el.src = url3d(nome); el.alt = rotulo || ''; el.decoding = 'async'; el.loading = 'lazy';

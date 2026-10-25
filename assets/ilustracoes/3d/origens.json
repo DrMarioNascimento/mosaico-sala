@@ -1,0 +1,338 @@
+{
+ "planejar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/prancheta.png",
+  "escala": 0.521,
+  "caixa": [
+   197,
+   236
+  ]
+ },
+ "conduzir": {
+  "origem": "assets/ilustracoes/docente/conduzir.png",
+  "escala": 1.346,
+  "caixa": [
+   236,
+   131
+  ]
+ },
+ "telao": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/tv-mosaico.png",
+  "escala": 0.521,
+  "caixa": [
+   204,
+   236
+  ]
+ },
+ "participar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/importar-app.png",
+  "escala": 0.521,
+  "caixa": [
+   151,
+   236
+  ]
+ },
+ "simulador": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/dispositivos.png",
+  "escala": 0.521,
+  "caixa": [
+   202,
+   236
+  ]
+ },
+ "material": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/livro-aberto.png",
+  "escala": 0.483,
+  "caixa": [
+   218,
+   176
+  ]
+ },
+ "biblioteca": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/livro-fechado.png",
+  "escala": 0.539,
+  "caixa": [
+   236,
+   227
+  ]
+ },
+ "ia": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/estrelas-grupo.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   221
+  ]
+ },
+ "revisar": {
+  "origem": "assets/ilustracoes/docente/revisar.png",
+  "escala": 1.287,
+  "caixa": [
+   163,
+   236
+  ]
+ },
+ "atividade": {
+  "origem": "assets/ilustracoes/docente/atividade.png",
+  "escala": 1.472,
+  "caixa": [
+   152,
+   236
+  ]
+ },
+ "investigar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/busca.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   205
+  ]
+ },
+ "comparar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/balanca.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   212
+  ]
+ },
+ "montar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/quebra-cabeca.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   197
+  ]
+ },
+ "cadeado": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/cadeado.png",
+  "escala": 0.521,
+  "caixa": [
+   165,
+   236
+  ]
+ },
+ "quiz-grupos": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/chat-ajuda.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   197
+  ]
+ },
+ "cartoes": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/copiar.png",
+  "escala": 0.489,
+  "caixa": [
+   221,
+   210
+  ]
+ },
+ "pares": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/vincular.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   142
+  ]
+ },
+ "corrida": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/corrida.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   149
+  ]
+ },
+ "cruzadas": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/mosaico.png",
+  "escala": 0.521,
+  "caixa": [
+   235,
+   236
+  ]
+ },
+ "sequencia": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/roda-cores.png",
+  "escala": 0.463,
+  "caixa": [
+   209,
+   209
+  ]
+ },
+ "quiz-pensar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/ideia.png",
+  "escala": 0.521,
+  "caixa": [
+   202,
+   236
+  ]
+ },
+ "imagem": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/mapa-local.png",
+  "escala": 0.519,
+  "caixa": [
+   167,
+   236
+  ]
+ },
+ "individual": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/usuario-check.png",
+  "escala": 0.522,
+  "caixa": [
+   196,
+   236
+  ]
+ },
+ "economia": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/maos-bola.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   208
+  ]
+ },
+ "escala": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/hexagono-roxo.png",
+  "escala": 0.488,
+  "caixa": [
+   221,
+   202
+  ]
+ },
+ "inicio": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/home.png",
+  "escala": 0.517,
+  "caixa": [
+   233,
+   233
+  ]
+ },
+ "voltar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/seta-esquerda.png",
+  "escala": 0.522,
+  "caixa": [
+   236,
+   219
+  ]
+ },
+ "avancar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/seta-direita.png",
+  "escala": 0.522,
+  "caixa": [
+   236,
+   198
+  ]
+ },
+ "play": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/triangulo-laranja.png",
+  "escala": 0.521,
+  "caixa": [
+   201,
+   236
+  ]
+ },
+ "parar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/quadrado-vermelho.png",
+  "escala": 0.418,
+  "caixa": [
+   184,
+   188
+  ]
+ },
+ "sala": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/qrcode.png",
+  "escala": 0.41,
+  "caixa": [
+   185,
+   185
+  ]
+ },
+ "grupos": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/usuarios.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   178
+  ]
+ },
+ "meta": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/alvo-laranja.png",
+  "escala": 0.466,
+  "caixa": [
+   206,
+   211
+  ]
+ },
+ "relogio": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/relogio.png",
+  "escala": 0.468,
+  "caixa": [
+   206,
+   211
+  ]
+ },
+ "trofeu": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/trofeu.png",
+  "escala": 0.521,
+  "caixa": [
+   234,
+   236
+  ]
+ },
+ "apagar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/lixeira.png",
+  "escala": 0.523,
+  "caixa": [
+   187,
+   236
+  ]
+ },
+ "fechar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/x-vermelho.png",
+  "escala": 0.521,
+  "caixa": [
+   210,
+   236
+  ]
+ },
+ "enviar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/aviao-papel.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   188
+  ]
+ },
+ "baixar": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/download.png",
+  "escala": 0.521,
+  "caixa": [
+   199,
+   236
+  ]
+ },
+ "olho": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/olho.png",
+  "escala": 0.521,
+  "caixa": [
+   236,
+   151
+  ]
+ },
+ "sair": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/sair-porta.png",
+  "escala": 0.521,
+  "caixa": [
+   169,
+   236
+  ]
+ },
+ "licenca": {
+  "origem": "G:/Meu Drive/A_mobile/mosaico-icons-512-transparent/balanca.png",
+  "escala": 0.519,
+  "caixa": [
+   236,
+   212
+  ]
+ }
+}

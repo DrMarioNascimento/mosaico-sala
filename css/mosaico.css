@@ -641,3 +641,11 @@ body.com-barra-etapa .pagina { padding-bottom: 150px; }
 .plan-login .percurso-docente h2 { font-size:1rem; }
 @media(min-width:1100px) { .boas-vindas-docente .percurso-lista { grid-template-columns:repeat(8,minmax(0,1fr)); }.boas-vindas-docente .percurso-lista li { flex-direction:column;gap:8px; } }
 @media(max-width:640px) { .percurso-lista { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }.percurso-lista li { padding:8px; }.percurso-lista .numero-fluxo { width:24px;height:24px;min-width:24px;font-size:.8rem; }.percurso-lista small { font-size:.73rem; }.percurso-ver { margin-left:37px; }.percurso-docente.compacto { padding:9px; }.percurso-docente summary > strong { font-size:.87rem; } }
+
+/* ---------- Ícones grandes (padrão docente) ----------
+   Os 3D vêm recortados e com o mesmo tamanho óptico (assets/ilustracoes/3d), então podem crescer sem desalinhar.
+   Botões e navegação: ~28 px; ilustrações: 35% acima do tamanho pedido por cada tela, até 140 px. */
+img.ico.em-3d, .btn img.ico.em-3d, .abas button img.ico.em-3d, .plan-nav button img.ico.em-3d, .plan-acoes .btn img.ico.em-3d { width: 1.75em; height: 1.75em; margin-block: -.25em; }
+.ico:not(.em-3d), .btn .ico:not(.em-3d) { width: 1.4em; height: 1.4em; }
+img.ilu.em-3d { width: min(calc(var(--tam, 56px) * 1.35), 140px) !important; height: min(calc(var(--tam, 56px) * 1.35), 140px) !important; }
+.telao .titulo-etapa img.ilu.em-3d { width: 1.8em !important; height: 1.8em !important; }

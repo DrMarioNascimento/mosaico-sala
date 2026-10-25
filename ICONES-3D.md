@@ -2,6 +2,15 @@
 
 O padrão visual do MOSAICO são ícones **3D de plástico brilhante**, como as formas dos grupos (círculo, triângulo, quadrado, losango…) e o logo de peças. Hoje a plataforma usa desenhos provisórios onde ainda não há 3D. Cada ícone desta lista substitui um provisório.
 
+## Padrão em uso (25/10/2026)
+
+- Todos os ícones 3D da interface ficam em `assets/ilustracoes/3d/*.webp`, 256 × 256, recortados pelo alfa e com o **mesmo tamanho óptico**: a escala vem da área visível, limitada pelo lado maior (um quadrado cheio e uma lâmpada fina parecem do mesmo tamanho). `origens.json` diz de onde veio cada um.
+- Fonte principal: o conjunto `G:\Meu Drive\A_mobile\mosaico-icons-512-transparent` (plástico brilhante, mesma luz). Do conjunto anterior ficaram só três que já seguiam o estilo: atividade, revisar e conduzir.
+- Saíram os desenhos realistas (pasta com carimbo, livro fotográfico, escrivaninha, livros com maçã, bússola, Lego), que quebravam o padrão.
+- Ícones grandes para o professor: cerca de 28 px em botões e navegação; ilustrações 35% acima do tamanho pedido por cada tela, até 140 px (`css/mosaico.css`, bloco "Ícones grandes").
+- Evitar objetos escuros (celular preto, anel verde-escuro): somem no fundo escuro da plataforma.
+- Ainda de linha, por falta de 3D legível: planilha, JSON, imprimir, salvar, mais, importar, geral, sortear, revelar, tela cheia.
+
 ## Como entregar
 
 1. Gere cada imagem com o **estilo base** + o **assunto** do ícone.
