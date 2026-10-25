@@ -3,6 +3,7 @@ import { cadeadoIcone } from './lock-icons.js';
 import { backend, link } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
+import { criarTelao } from './telao-tipos.js';
 
 const b = await backend();
 
@@ -13,6 +14,7 @@ async function alternarTelaCheia() {
 $('telaCheia').onclick = alternarTelaCheia;
 addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !(e.target instanceof HTMLInputElement)) alternarTelaCheia(); });
 let codigo = null, sala = null, relogio = null, revelacao = null, inscRevelacao = null, revelacaoDe = null;
+const TT = criarTelao({ sala: () => sala, revelacao: () => revelacao });
 
 const inicial = new URLSearchParams(location.search).get('sala');
 if (inicial) abrir(inicial); else $('abrir').onclick = () => abrir($('codigo').value.trim());
@@ -63,9 +65,11 @@ function render() {
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1em' } },
         h('h1', {}, info.titulo), h('span', { class: 'relogio', id: 'relogio' }, sala.fase === 'revisao' ? 'Encerrada' : '')),
       info.instrucao && h('p', {}, info.instrucao),
-      sala.fase === 'revisao' && revelacao && revelacao.etapaId === sala.revelacao ? todoMontado()
+      sala.fase === 'revisao' && revelacao && revelacao.tipo !== 'midia' && revelacao.etapaId === sala.revelacao ? todoMontado()
         : sala.fase === 'revisao' && sala.etapaInfo?.typeId === 'quiz_grupos' ? quiz()
-        : sala.fase === 'revisao' && sala.etapaInfo?.typeId === 'cadeado_grupo' ? cadeados() : progresso(),
+        : sala.fase === 'revisao' && sala.etapaInfo?.typeId === 'cadeado_grupo' ? cadeados()
+        : sala.fase === 'revisao' && (sala.etapaInfo?.quadro || sala.etapaInfo?.typeId === 'cartoes_arrastar') && sala.jogo?.tipo === 'cartoes' ? cartoesRevisao()
+        : sala.fase === 'revisao' && TT.tem(sala.etapaInfo) && sala.jogo?.final ? TT.revisao() : progresso(),
       sala.escala != null && h('div', {}, h('small', {}, 'Desempenho da turma'), escalaVisual(sala.escala)));
   }
   if (sala.fase === 'final') {
@@ -99,6 +103,8 @@ function todoMontado() {
 function progresso() {
   if (sala.etapaInfo?.typeId === 'cadeado_grupo') return cadeados();
   if (sala.etapaInfo?.typeId === 'quiz_grupos') return quiz();
+  if (sala.etapaInfo?.quadro || sala.etapaInfo?.typeId === 'cartoes_arrastar') return cartoesAoVivo();
+  if (TT.tem(sala.etapaInfo)) return TT.aoVivo();
   if (sala.etapaInfo?.typeId === 'montagem_pecas') return h('div', { class: 'cartao', style: { textAlign: 'center' } },
     h('p', { style: { fontSize: '2em', fontWeight: 800, margin: 0 } }, '🧩 Montem os celulares na ordem certa'),
     h('p', { class: 'sutil' }, sala.etapaInfo.organizacao === 'representantes' ? 'Representantes: juntem-se à frente com os celulares.' : 'Cada grupo junta os próprios celulares.'));
@@ -116,7 +122,8 @@ function atualizarRelogio() {
   const r = document.getElementById('relogio');
   if (r && sala?.fase === 'etapa') r.textContent = contagemRegressiva(sala.etapaInfo?.inicio, sala.etapaInfo?.tempoMin);
   const q = document.getElementById('relogioQuiz'), j = sala?.jogo;
-  if (q && j?.inicio) { const s = Math.max(0, Math.ceil((j.inicio + j.segundos * 1000 - Date.now()) / 1000)); q.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; q.classList.toggle('acabando', s <= 10); }
+  if (q && q.dataset.ate) { const s = Math.max(0, Math.ceil((Number(q.dataset.ate) - Date.now()) / 1000)); q.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; q.classList.toggle('acabando', s <= 10); }
+  else if (q && j?.inicio) { const s = Math.max(0, Math.ceil((j.inicio + j.segundos * 1000 - Date.now()) / 1000)); q.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; q.classList.toggle('acabando', s <= 10); }
 }
 
 // ---------- cadeado do grupo: um cadeado por grupo, com o progresso (sem perguntas nem respostas) ----------
@@ -155,4 +162,68 @@ function quiz() {
   if (j.revelacao?.texto && j.estado !== 'respondendo') corpo.push(h('div', { class: 'explicacao' }, h('strong', {}, 'Resposta: ' + j.revelacao.texto), j.revelacao.explicacao && h('p', {}, j.revelacao.explicacao)));
   setTimeout(atualizarRelogio, 0);
   return h('div', { style: { display: 'grid', gap: '1em' } }, cab, ...corpo, placar);
+}
+
+// ---------- cartões de arrastar ----------
+const gs = () => sala.publico.grupos;
+const rotuloConj = g => g === 'representantes'
+  ? h('div', { class: 'titulo-grupo' }, h('span', { style: { fontSize: '1.6em' } }, '🤝'), 'Representantes')
+  : h('div', { class: 'titulo-grupo' }, iconeGrupo(gs(), g, 40), nomeGrupo(g));
+const FRASE = { ordenar: '🧩 Ponham os cartões na ordem certa', classificar: '🗂️ Separem os cartões nas colunas', termometro: '🌡️ Posicionem cada caso na linha', imagem: '📍 Marquem na imagem onde fica cada item' };
+
+/** Durante a etapa: só o andamento de cada quadro (nada das posições, para ninguém copiar). */
+function cartoesAoVivo() {
+  const pr = sala.progresso || {}, por = pr.porGrupo || {};
+  const ids = Object.keys(por);
+  if (!ids.length) return h('p', { class: 'sutil' }, 'Distribuindo os cartões…');
+  const m = TT.midia();
+  return h('div', {},
+    m && h('div', { class: 'telao-midia-caixa' }, m),
+    h('p', { style: { fontSize: '1.3em', fontWeight: 700, margin: '0 0 .6em', textAlign: 'center' } }, sala.etapaInfo?.typeId === 'pares' ? '🔗 Liguem cada cartão ao seu par' : FRASE[pr.formato] || ''),
+    h('div', { class: 'cadeados' }, ids.map(g => {
+      const x = por[g], fr = x.colocados / Math.max(1, x.total), espera = !x.travado && x.confirmacoes > 0 && Date.now() < x.liberaEm;
+      return h('div', { class: 'cadeado-telao' + (x.concluido ? ' aberto' : ''), style: { '--cor': g === 'representantes' ? '#ff8a3d' : corDoGrupo(gs(), g) } },
+        rotuloConj(g),
+        h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * fr) + '%' } })),
+        h('small', {}, x.concluido ? (x.posicao ? `✔ Certo · ${x.posicao}º` : '✔ Fechado') : x.travado ? 'Enviado' : espera ? 'Ajustando para tentar de novo' : x.confirmacoes ? 'Tentando de novo' : `${x.colocados} de ${x.total} colocados`));
+    })));
+}
+
+/** Depois de encerrar: resultado de cada quadro, a resposta esperada e, no termômetro, onde cada grupo pôs cada caso. */
+function cartoesRevisao() {
+  const j = sala.jogo, por = j.porGrupo || {};
+  const placar = !j.semGabarito && h('div', { class: 'quiz-placar telao-placar' }, Object.entries(por).map(([g, x]) =>
+    h('span', { class: 'chip', style: { '--cor': g === 'representantes' ? '#ff8a3d' : corDoGrupo(gs(), g) } }, g === 'representantes' ? '🤝' : iconeGrupo(gs(), g, 40), g === 'representantes' ? 'Representantes' : nomeGrupo(g),
+      h('strong', {}, ' ' + (x.confirmou ? `${x.acertos}/${x.total}` : '—') + (x.concluido ? ' ✔' : '')))));
+  if (j.formato === 'termometro') {
+    const lista = (j.distribuicao || []).slice(0, 8);
+    return h('div', { class: 'termo-telao' },
+      h('div', { class: 'termo-polos' }, h('span', {}, '◀ ' + (j.polos?.esquerda || '')), h('span', {}, (j.polos?.direita || '') + ' ▶')),
+      lista.map((c, i) => h('div', { class: 'termo-linha-telao' },
+        h('div', { class: 'termo-rotulo' }, c.texto, i === 0 && c.divergencia >= 30 && h('span', { class: 'etiqueta-div' }, 'maior divergência')),
+        h('div', { class: 'termo-trilha' },
+          h('div', { class: 'termo-faixa' }),
+          c.esperado !== undefined && h('div', { class: 'termo-esperado', style: { left: Math.max(0, c.esperado - (j.margem ?? 15)) + '%', width: (Math.min(100, c.esperado + (j.margem ?? 15)) - Math.max(0, c.esperado - (j.margem ?? 15))) + '%' } }),
+          c.pontos.map((p, k) => h('div', { class: 'termo-ponto', style: { left: p.pos + '%', top: (k % 3) * 22 - 22 + '%' } },
+            p.conj === 'representantes' ? h('span', {}, '🤝') : iconeGrupo(gs(), p.conj, 34)))))),
+      placar);
+  }
+  const corpo = [];
+  if (j.formato === 'imagem') {
+    const img = revelacao?.tipo === 'midia' ? revelacao.imagem : null;
+    const prop = img?.largura && img?.altura ? img.largura / img.altura : 4 / 3;
+    corpo.push(h('div', { class: 'marcar-foto telao-marcar', style: { aspectRatio: `${prop}`, width: `min(60vw, ${Math.round(38 * prop)}vh)` } }, img && h('img', { src: img.dados, alt: '' }),
+      ...(j.marcadores || []).flatMap((mk, k) => [
+        ...(mk.esperado ? [h('div', { class: 'marcar-esperado', style: { left: mk.esperado.x + '%', top: mk.esperado.y + '%', width: 2 * (j.tolerancia || 8) + '%' } }, h('span', {}, k + 1))] : []),
+        ...mk.pontos.map(p => h('div', { class: 'marcar-pino', style: { left: p.x + '%', top: p.y + '%', '--cor': p.conj === 'representantes' ? '#ff8a3d' : corDoGrupo(sala.publico.grupos, p.conj) } }, h('span', {}, k + 1)))])),
+      h('div', { class: 'marcar-itens', style: { justifyContent: 'center' } }, (j.marcadores || []).map((mk, k) => h('span', { class: 'marcar-item' }, h('span', { class: 'n' }, k + 1), mk.rotulo))));
+  }
+  if (j.pares) corpo.push(h('div', { class: 'pares-telao' }, j.pares.map(p => h('div', {}, h('span', { class: 'cartao-arr' }, p.a), h('span', { class: 'seta' }, '↔'), h('span', { class: 'cartao-arr' }, p.b)))));
+  if (j.trechos) corpo.push(h('div', { class: 'cadeia-telao' }, j.trechos.map((t, k) => [k > 0 && h('span', { class: 'seta' }, '→'),
+    h('span', { class: 'trecho', style: { '--cor': corDoGrupo(sala.publico.grupos, t.grupo) } }, iconeGrupo(sala.publico.grupos, t.grupo, 28), t.cartoes.map((x, i) => [i > 0 && h('span', { class: 'seta' }, '→'), h('span', { class: 'cartao-arr' }, x)]))])));
+  else if (j.ordem) corpo.push(h('div', {}, h('p', { class: 'sutil', style: { textAlign: 'center' } }, 'Ordem esperada'),
+    h('div', { class: 'cadeia-telao' }, j.ordem.map((t, i) => [i > 0 && h('span', { class: 'seta' }, '→'), h('span', { class: 'cartao-arr' }, t)]))));
+  if (j.colunas) corpo.push(h('div', { class: 'cartoes-colunas telao-colunas', style: { '--n': j.colunas.length } }, j.colunas.map(c =>
+    h('div', { class: 'cartoes-coluna' }, h('h4', {}, c.titulo), h('div', { class: 'cartoes-lista' }, c.cartoes.map(t => h('span', { class: 'cartao-arr' }, t)))))));
+  return h('div', { style: { display: 'grid', gap: '1em' } }, ...corpo, placar);
 }

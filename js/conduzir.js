@@ -15,6 +15,9 @@ import { montarPecasEtapa } from './quebra-cabeca.js';
 import { distribuirPecas } from './core/montagem.js';
 import { prepararCadeado, estadoCadeado, sortearGrupo, respostaCerta } from './core/desafios.js';
 import { abrirImpressao } from './imprimir.js';
+import { prepararCartoes, estadoCartoes, conferirQuadro, distribuicaoTermometro, temGabaritoTermometro, respostaEsperadaTexto, quadroCompleto, conjuntosPorTrechos } from './core/cartoes.js';
+import { ligarComoCartoes } from './core/pares.js';
+import { criarTipos } from './conduzir-tipos.js';
 
 const b = await backend();
 // ?previa (aberta pelo Planejamento): ensaio automático com a atividade em edição.
@@ -188,6 +191,8 @@ function renderAtividade() {
       h('h3', {}, 'Respostas esperadas'),
       etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
         const r = a.docente.respostas[e.id];
+        if (e.typeId === 'cartoes_arrastar') return h('div', { style: { marginBottom: '12px' } }, h('strong', {}, e.titulo + ': '), respostaEsperadaTexto(e.config, r) || 'só debate (sem posição esperada)', r.explicacao && h('p', { class: 'sutil' }, r.explicacao));
+        if (T.tem(e) || ehQuadro(e)) return h('div', { style: { marginBottom: '12px' } }, h('strong', {}, e.titulo + ': '), T.respostaTexto(e) || '—', r.explicacao && h('p', { class: 'sutil' }, r.explicacao));
         if (r.perguntas) return h('details', { style: { marginBottom: '12px' } }, h('summary', {}, h('strong', {}, e.titulo), r.codigo ? ` · código: ${r.codigo}` : ''),
           h('ol', {}, (e.config?.perguntas || []).map(q => h('li', {}, q.enunciado, ' → ', h('strong', {}, respostaCerta(q, r).texto)))));
         const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
@@ -345,7 +350,7 @@ function conectarSala(codigo) {
   inscricoes.push(b.observarEnvios(codigo, lista => { E.envios = lista; atualizarJogo(); renderConducao(); sincronizarProgresso(); }, falha));
   clearInterval(relogio); relogio = setInterval(() => {
     const r = document.getElementById('relogioConducao'); if (r && E.sala?.etapaInfo) r.textContent = contagemRegressiva(E.sala.etapaInfo.inicio, E.sala.etapaInfo.tempoMin);
-    verificarTempoQuiz();
+    verificarTempoQuiz(); T.tique();
   }, 1000);
 }
 
@@ -478,6 +483,12 @@ function calcularProgresso() {
     return { cadeado: true, regra: e.config.regra, porGrupo, enviados: Object.values(est).filter(G => G.destravado).length, esperados: Object.keys(est).length };
   }
   if (e.typeId === 'quiz_grupos') return { quiz: true };
+  if (ehQuadro(e)) {
+    const est = estadoAtualCartoes(e); if (!est) return null;
+    const porGrupo = Object.fromEntries(Object.entries(est).map(([g, S]) => [g, { colocados: S.colocados, total: Object.keys(S.quadro).length, confirmacoes: S.confirmacoes, travado: S.travado, concluido: S.concluido, posicao: S.posicao ?? null, liberaEm: S.liberaEm }]));
+    return { cartoes: true, formato: motorQuadro(e).c.formato, organizacao: e.participacao.organizacao, porGrupo, enviados: Object.values(est).filter(S => S.travado).length, esperados: Object.keys(est).length };
+  }
+  if (T.tem(e)) return T.progresso(e);
   if (e.participacao.organizacao === 'individual') {
     const por = {}; envs.filter(x => x.escopo === 'participante').forEach(x => { por[x.autor] = true; });
     return { enviados: Object.keys(por).length, esperados: Object.keys(s.nomes || {}).length, porGrupo: {}, porParticipante: por };
@@ -535,6 +546,8 @@ function painelEtapaAtual(e) {
   }
   if (e.typeId === 'cadeado_grupo') return painelCadeado(e, caixa);
   if (e.typeId === 'quiz_grupos') return painelQuiz(e, caixa);
+  if (ehQuadro(e)) return painelCartoes(e, caixa);
+  if (T.tem(e)) return T.painel(e, caixa);
   caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin)), ' · ', `${p.enviados ?? 0} de ${p.esperados ?? 0} ${e.participacao.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   if (e.participacao.organizacao === 'grupos') {
     caixa.append(h('ul', { class: 'diag' }, A().grupos.map(g => {
@@ -577,7 +590,8 @@ function painelProxima(e, res) {
 }
 
 function resumoEnvios(e) {
-  if (e.typeId === 'cadeado_grupo' || e.typeId === 'quiz_grupos') return resumoDesafio(e);
+  if (e.typeId === 'cadeado_grupo' || e.typeId === 'quiz_grupos' || ehQuadro(e)) return resumoDesafio(e);
+  if (T.tem(e)) return T.resumo(e);
   const envs = E.envios.filter(x => x.etapaId === e.id);
   if (!envs.length) return h('span');
   const correta = A().docente?.respostas?.[e.id]?.corretaId;
@@ -603,12 +617,16 @@ async function iniciarEtapa(e) {
   try {
     if (e.typeId === 'montagem_pecas') { avisoGeral('Preparando as peças…'); await prepararMontagem(e); avisoGeral(''); }
     else if (e.typeId === 'cadeado_grupo') prepararCadeadoEtapa(e);
+    else if (ehQuadro(e)) prepararCartoesEtapa(e);
+    else if (T.tem(e)) await T.preparar(e);
     else if (e.typeId === 'quiz_grupos') { E.jogo[e.id] = { tipo: 'quiz', fila: [], idx: -1, vez: null, historico: [], placar: {} }; salvar(); }
     else if (e.participacao.organizacao === 'grupos') for (const g of A().grupos) await b.gravarPacote(E.codigo, g.id, projecaoGrupo(A(), e.id, g.id, res));
     else await b.gravarPacote(E.codigo, 'individual', projecaoGrupo(A(), e.id, null, res));
+    if (T.temMidia(e)) await T.gravarMidia(e);
     await b.atualizarSala(E.codigo, {
-      fase: 'etapa', etapaAtual: e.id, executores: {}, leitoresExtra: {}, progresso: null, revelacao: null, jogo: e.typeId === 'quiz_grupos' ? projecaoQuiz(e) : null,
-      etapaInfo: { titulo: e.titulo, ordem: e.ordem, typeId: e.typeId, organizacao: e.participacao.organizacao, tempoMin: e.tempoMin ?? null, inicio: Date.now(), instrucao: e.instrucao || '', ocultarAoFim: e.typeId === 'montagem_pecas' ? e.config.ocultarAoFim !== false : false }
+      fase: 'etapa', etapaAtual: e.id, executores: {}, leitoresExtra: {}, progresso: null, revelacao: T.temMidia(e) ? e.id : null, jogo: e.typeId === 'quiz_grupos' ? projecaoQuiz(e) : T.tem(e) ? T.jogoInicial(e) : null,
+      etapaInfo: { titulo: e.titulo, ordem: e.ordem, typeId: e.typeId, organizacao: e.participacao.organizacao, tempoMin: e.tempoMin ?? null, inicio: Date.now(), instrucao: e.instrucao || '', ocultarAoFim: e.typeId === 'montagem_pecas' ? e.config.ocultarAoFim !== false : false,
+        formato: e.config?.formato || e.config?.tarefa || null, quadro: ehQuadro(e), midia: T.temMidia(e) }
     });
   } catch (err) { falha(err); }
 }
@@ -645,6 +663,9 @@ async function encerrarEtapa() {
     await b.gravarPacote(E.codigo, 'revelacao', { etapaId: atual.id, titulo: atual.titulo, ...todo }).catch(falha);
     patch.revelacao = atual.id;
   }
+  if (ehQuadro(atual)) patch.jogo = projecaoCartoesFinal(atual);
+  else if (T.tem(atual)) { await T.encerrar(atual); patch.jogo = T.jogoFinal(atual); }
+  if (T.temMidia(atual)) patch.revelacao = atual.id;
   if (a.meta && a.meta.ativa !== false) {
     const parcial = calcularMeta({ ...a, meta: { ...a.meta, etapas: a.meta.etapas.filter(id => enc.includes(id)) } }, resultados());
     if (parcial && parcial.total) patch.escala = escalaDesempenho(parcial);
@@ -656,6 +677,8 @@ async function revelarFinal() {
   const a = A(), meta = calcularMeta(a, resultados());
   const explicacoes = etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
     const r = a.docente.respostas[e.id];
+    if (e.typeId === 'cartoes_arrastar') return { titulo: e.titulo, resposta: respostaEsperadaTexto(e.config, r), explicacao: r.explicacao || '' };
+    if (T.tem(e) || ehQuadro(e)) return { titulo: e.titulo, resposta: T.respostaTexto(e), explicacao: r.explicacao || '' };
     if (r.perguntas) return { titulo: e.titulo, resposta: r.codigo ? 'código ' + r.codigo : '', explicacao: r.explicacao || '' };
     const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
     return { titulo: e.titulo, resposta: op?.texto || '', explicacao: r.explicacao || '' };
@@ -675,6 +698,10 @@ const tentativas = etapaId => E.envios.filter(x => x.etapaId === etapaId && x.es
   .map(x => ({ id: x.id, autor: x.autor, grupoId: x.grupoId, dados: x.dados, t: tMs(x.enviadoEm) }));
 let fila = Promise.resolve();
 const emSerie = fn => (fila = fila.then(fn).catch(falha));   // gravações na ordem, sem atropelar
+// Tipos novos (pares na memória, corrida, cruzadas, quiz que faz pensar, análise de imagem): js/conduzir-tipos.js
+const T = criarTipos({ E, b, A: () => A(), etapa: id => etapa(id), lider: g => lider(g), grupoDoUid: u => grupoDoUid(u), nomeGrupo: g => nomeGrupo(g), nomeDe: u => nomeDe(u), chip: g => chip(g),
+  tentativas: id => tentativas(id), salvar: () => salvar(), falha: e => falha(e), encerrarEtapa: () => encerrarEtapa(), renderConducao: () => renderConducao(), emSerie: fn => emSerie(fn), avisoGeral: (t, k) => avisoGeral(t, k),
+  ehQuadro: e => ehQuadro(e), motorQuadro: e => motorQuadro(e), estadoAtualCartoes: e => estadoAtualCartoes(e) });
 
 /** Recalcula e publica o que mudou (chamado a cada envio e a cada mudança da sala). */
 function atualizarJogo() {
@@ -682,6 +709,8 @@ function atualizarJogo() {
   const e = etapa(s.etapaAtual); if (!e) return;
   if (e.typeId === 'cadeado_grupo') emSerie(() => publicarCadeado(e));
   if (e.typeId === 'quiz_grupos') emSerie(() => avaliarVezQuiz(e));
+  if (ehQuadro(e)) emSerie(() => publicarCartoes(e));
+  else if (T.tem(e)) emSerie(() => T.publicar(e));
 }
 
 function resultadosDesafios() {
@@ -690,6 +719,12 @@ function resultadosDesafios() {
     const j = E.jogo[e.id]; if (!j) continue;
     if (j.tipo === 'cadeado') for (const [g, G] of Object.entries(estadoAtualCadeado(e) || {}))
       out.push(montarResultado({ etapaId: e.id, grupoPlanejadoId: g, autoria: { tipo: 'grupo', grupoId: g }, dados: { acertou: G.destravado } }));
+    if (j.tipo !== 'cartoes' && T.tem(e)) { out.push(...T.resultados(e)); continue; }
+    if (j.tipo === 'cartoes') {
+      if (soDebate(e)) continue;   // só debate: não é avaliado
+      for (const [g, S] of Object.entries(estadoAtualCartoes(e) || {}))
+        out.push(montarResultado({ etapaId: e.id, grupoPlanejadoId: g === 'representantes' ? null : g, autoria: { tipo: 'grupo', grupoId: g }, dados: { acertou: !!(S.travado && S.ultimo?.certo), acertos: S.ultimo?.acertos ?? 0, total: S.ultimo?.total ?? 0 } }));
+    }
     if (j.tipo === 'quiz') for (const r of j.historico)
       out.push(montarResultado({ etapaId: e.id, grupoPlanejadoId: r.grupoId, autoria: { tipo: 'grupo', grupoId: r.grupoId }, dados: { acertou: r.acertou, pergunta: r.idx } }));
   }
@@ -838,6 +873,11 @@ function resumoDesafio(e) {
     const est = estadoAtualCadeado(e) || {};
     return h('p', { class: 'sutil' }, Object.entries(est).map(([g, G]) => `${nomeGrupo(g)}: ${G.destravado ? 'abriu (' + G.posicao + 'º)' : 'não abriu'}`).join(' · '));
   }
+  if (j.tipo === 'cartoes') {
+    const est = estadoAtualCartoes(e) || {};
+    const so = soDebate(e);
+    return h('p', { class: 'sutil' }, Object.entries(est).map(([g, S]) => `${g === 'representantes' ? 'Representantes' : nomeGrupo(g)}: ${!S.confirmacoes ? 'não enviou' : so ? 'fechou as posições' : `${S.ultimo.acertos} de ${S.ultimo.total}` + (S.concluido ? ` ✔ (${S.posicao}º)` : '')}`).join(' · '));
+  }
   return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(j.placar).sort((x, y) => y[1] - x[1]).map(([g, n]) => `${nomeGrupo(g)} ${n}`).join(' · ') + ` · ${j.historico.filter(r => r.acertou).length} acerto(s) em ${j.historico.length} resposta(s)`);
 }
 
@@ -854,6 +894,109 @@ function painelQuiz(e, caixa) {
   caixa.append(h('p', { class: 'sutil' }, 'Placar: ' + (gruposComGente().map(g => `${nomeGrupo(g)} ${j?.placar?.[g] || 0}`).join(' · ') || '—')));
   if (!fim && (!v || v.estado !== 'respondendo')) caixa.append(h('button', { class: 'btn primario bloco', onclick: () => emSerie(() => proximaPerguntaQuiz(e)) }, v ? 'Sortear a próxima pergunta' : 'Sortear a primeira pergunta'));
   caixa.append(h('button', { class: 'btn ' + (fim ? 'primario ' : '') + 'bloco', onclick: encerrarEtapa }, fim ? 'Encerrar etapa (todas respondidas)' : 'Encerrar etapa'));
+  return caixa;
+}
+
+// ---------------- quadro de arrastar (cartões, pares para ligar, marcar na imagem) ----------------
+// Quadro compartilhado: cada movimento chega como envio (etapa__uid__mN) e o líder confirma
+// (etapa__grupo__fN). Este aparelho aplica tudo em ordem e devolve o quadro aos celulares.
+const ehQuadro = e => e?.typeId === 'cartoes_arrastar' || (e?.typeId === 'pares' && e.config?.formato === 'ligar') || (e?.typeId === 'analise_imagem' && e.config?.tarefa === 'marcar');
+const nomeConj = g => g === 'representantes' ? 'Representantes' : nomeGrupo(g);
+/** Configuração e gabarito do motor (os pares e a imagem viram um quadro de cartões). */
+function motorQuadro(e) {
+  const j = E.jogo[e.id];
+  if (j?.cfg) return { c: j.cfg, gab: j.gab || {} };
+  return { c: e.config, gab: A().docente?.respostas?.[e.id] || {} };
+}
+const soDebate = e => { const { c, gab } = motorQuadro(e); return c.formato === 'termometro' && !temGabaritoTermometro(gab); };
+function prepararCartoesEtapa(e) {
+  const s = E.sala, todos = A().grupos.map(g => g.id), r = A().docente?.respostas?.[e.id] || {};
+  let cfg = null, gab = null;
+  if (e.typeId === 'pares') ({ cfg, gab } = ligarComoCartoes(e.config));
+  if (e.typeId === 'analise_imagem') {
+    const c = e.config;
+    cfg = { formato: 'imagem', cartoes: c.marcadores.map(m => ({ id: m.id, texto: m.rotulo })), tolerancia: c.tolerancia ?? 8, imagem: { largura: c.imagem?.largura, altura: c.imagem?.altura },
+      distribuicao: c.distribuicao || 'todos', tentativas: c.tentativas || 'uma', espera: 30, enunciado: c.enunciado || '', revelarAoEncerrar: true };
+    gab = { posicoes: r.posicoes || {} };
+  }
+  const c = cfg || e.config;
+  const grupos = A().grupos.map(g => ({ id: g.id, uids: s.composicao?.[g.id] || [], grupos: [g.id] })).filter(x => x.uids.length);
+  const conjuntos = e.participacao.organizacao === 'representantes'
+    ? [{ id: 'representantes', uids: [...new Set(todos.map(lider).filter(Boolean))], grupos: todos }]
+    : c.formato === 'ordenar' && c.modo === 'trechos' ? conjuntosPorTrechos(r.ordem?.length ? r.ordem : c.cartoes.map(x => x.id), grupos) : grupos;
+  E.jogo[e.id] = { tipo: 'cartoes', prep: prepararCartoes(c, conjuntos), ...(cfg ? { cfg, gab } : {}) };
+  E.pub = {};
+  salvar();
+}
+function estadoAtualCartoes(e) {
+  const j = E.jogo[e.id]; if (!j?.prep) return null;
+  // em grupos, quem entrou depois (ou foi movido) também mexe no quadro do grupo em que está agora
+  const conjDoUid = { ...j.prep.conjDoUid };
+  if (e.participacao.organizacao !== 'representantes')
+    for (const [g, m] of Object.entries(E.sala?.composicao || {})) if (j.prep.quadros[g]) for (const u of m) conjDoUid[u] = g;
+  const { c, gab } = motorQuadro(e);
+  return estadoCartoes(c, gab, { ...j.prep, conjDoUid }, tentativas(e.id));
+}
+const proximaConf = (e, g) => E.envios.filter(x => x.etapaId === e.id && x.id.startsWith(`${e.id}__${g}__f`)).length + 1;
+async function publicarCartoes(e) {
+  const est = estadoAtualCartoes(e); if (!est) return;
+  const j = E.jogo[e.id], { c } = motorQuadro(e), rep = e.participacao.organizacao === 'representantes';
+  const texto = id => c.cartoes.find(x => x.id === id)?.texto || '';
+  const gravar = async (dest, pk) => { const k = JSON.stringify(pk); if (E.pub['c:' + dest] === k) return; E.pub['c:' + dest] = k; await b.gravarPacote(E.codigo, dest, JSON.parse(k)); };
+  for (const [conj, S] of Object.entries(est)) {
+    const P = j.prep.quadros[conj];
+    const pk = {
+      etapaId: e.id, titulo: e.titulo, instrucao: e.instrucao || '', tipo: 'cartoes', formato: c.formato, enunciado: c.enunciado || '',
+      colunas: c.formato === 'classificar' ? c.colunas : null, polos: c.formato === 'termometro' ? c.polos : null,
+      rotulos: c.rotulos || null, imagem: c.formato === 'imagem' ? c.imagem : null, trecho: P.ids ? { de: Object.keys(j.prep.quadros).indexOf(conj) + 1, total: Object.keys(j.prep.quadros).length } : null,
+      tentativas: c.tentativas || 'uma', espera: c.espera ?? 30, conjunto: conj, representantes: rep,
+      cartoes: P.ordem.map(id => ({ id, texto: texto(id) })),          // ordem embaralhada: nunca a ordem certa
+      dono: P.dono, membros: P.membros, quadro: S.quadro, ultimoMov: S.ultimoMov,
+      confirmacoes: S.confirmacoes, liberaEm: S.liberaEm, travado: S.travado, concluido: S.concluido, posicao: S.posicao ?? null,
+      ultimo: S.ultimo ? { acertos: S.ultimo.acertos, total: S.ultimo.total, certo: S.ultimo.certo, semGabarito: !!S.ultimo.semGabarito } : null
+    };
+    if (rep) for (const u of P.membros) { const g = grupoDoUid(u); await gravar(u, { ...pk, grupoConfirma: g, proximaConf: proximaConf(e, g) }); }
+    else await gravar(conj, { ...pk, grupoConfirma: conj, proximaConf: proximaConf(e, conj) });
+  }
+}
+/** O que o telão mostra depois de encerrar: resultado de cada quadro e, se combinado, a resposta esperada. */
+function projecaoCartoesFinal(e) {
+  const est = estadoAtualCartoes(e) || {}, { c, gab } = motorQuadro(e), j = E.jogo[e.id];
+  const revelar = c.revelarAoEncerrar !== false;
+  const porGrupo = Object.fromEntries(Object.entries(est).map(([g, S]) => [g, { confirmou: S.confirmacoes > 0, acertos: S.ultimo?.acertos ?? null, total: S.ultimo?.total ?? null, concluido: S.concluido, posicao: S.posicao ?? null }]));
+  const out = { tipo: 'cartoes', etapaId: e.id, formato: c.formato, polos: c.polos || null, porGrupo, semGabarito: soDebate(e) };
+  const texto = id => c.cartoes.find(x => x.id === id)?.texto || '';
+  if (c.formato === 'termometro') {
+    out.distribuicao = distribuicaoTermometro(c, revelar ? gab : null, est);
+    if (revelar) out.margem = gab.margem ?? 15;
+  } else if (c.formato === 'imagem') {
+    out.marcadores = c.cartoes.map(x => ({ id: x.id, rotulo: x.texto, pontos: Object.entries(est).filter(([, S]) => S.quadro[x.id]).map(([conj, S]) => ({ conj, ...S.quadro[x.id] })), ...(revelar && gab.posicoes?.[x.id] ? { esperado: gab.posicoes[x.id] } : {}) }));
+    out.tolerancia = c.tolerancia;
+  } else if (revelar) {
+    if (c.rotulos) out.pares = c.rotulos.map((a, i) => ({ a, b: texto(gab.ordem[i]) }));
+    else if (c.formato === 'ordenar') {
+      out.ordem = (gab.ordem?.length ? gab.ordem : c.cartoes.map(x => x.id)).map(texto);
+      if (Object.values(j?.prep?.quadros || {}).some(P => P.ids)) out.trechos = Object.entries(j.prep.quadros).map(([g, P]) => ({ grupo: g, cartoes: P.ids.map(texto) }));
+    }
+    else out.colunas = c.colunas.map(col => ({ titulo: col.titulo, cartoes: c.cartoes.filter(x => gab.colunaDe?.[x.id] === col.id).map(x => x.texto) }));
+  }
+  return out;
+}
+function painelCartoes(e, caixa) {
+  const p = E.sala.progresso || {}, por = p.porGrupo || {}, { c, gab } = motorQuadro(e);
+  const so = soDebate(e);
+  const rot = { ordenar: c.rotulos ? 'Liguem cada cartão ao seu par.' : c.modo === 'trechos' ? 'Cada grupo ordena um trecho da cadeia; o telão junta tudo no fim.' : 'Ponham os cartões na ordem certa.', classificar: 'Separem os cartões nas colunas.', termometro: so ? 'Posicionem cada caso na linha (só debate: sem posição esperada).' : 'Posicionem cada caso na linha.', imagem: 'Marquem na imagem onde fica cada item.' }[c.formato];
+  caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(E.sala.etapaInfo?.inicio, E.sala.etapaInfo?.tempoMin)), ` · ${p.enviados ?? 0} de ${p.esperados ?? 0} quadros fechados`),
+    h('p', { class: 'sutil' }, rot + (c.distribuicao === 'fracionado' ? ' Cada celular segura alguns cartões.' : '') + (e.participacao.organizacao === 'representantes' ? ' Os representantes montam um quadro só, juntos.' : ' O líder de cada grupo confirma.')),
+    h('ul', { class: 'diag' }, Object.entries(por).map(([g, x]) => h('li', { class: x.concluido ? 'info' : 'aviso' }, g === 'representantes' ? h('strong', {}, 'Representantes') : chip(g), ' ',
+      h('span', { class: 'estado ' + (x.concluido ? 'ok' : 'pend') }, x.concluido ? (so ? 'fechou' : `certo (${x.posicao}º)`) : x.travado ? 'enviou (tentativa única)' : x.confirmacoes ? `tentou ${x.confirmacoes}×` : `${x.colocados} de ${x.total} colocados`)))));
+  const est = estadoAtualCartoes(e);
+  if (est) caixa.append(h('details', {}, h('summary', {}, 'Quadros agora — só você vê'),
+    h('ul', { class: 'diag' }, Object.entries(est).map(([g, S]) => {
+      const P = E.jogo[e.id].prep.quadros[g], r = conferirQuadro(c, P.ids ? { ...gab, ordem: P.gabOrdem } : gab, S.quadro), n = Object.keys(S.quadro).length;
+      return h('li', { class: 'info' }, h('strong', {}, nomeConj(g) + ': '), so ? `${S.colocados} de ${n} posicionados` : `${r.acertos} de ${r.total} certos agora` + (quadroCompleto(S.quadro) ? '' : ` · ${S.colocados} de ${n} colocados`));
+    }))));
+  caixa.append(h('button', { class: 'btn primario bloco', onclick: encerrarEtapa }, 'Encerrar etapa'));
   return caixa;
 }
 
@@ -925,6 +1068,29 @@ async function pilotoAutomatico() {
         const q = e.config.perguntas.find(x => x.id === t.perguntaId);
         const n = E.envios.filter(x => x.etapaId === e.id && x.autor === u).length + 1;
         await b.enviar(E.codigo, `${e.id}__${u}__t${n}`, { etapaId: e.id, escopo: 'tentativa', grupoId: g, autor: u, dados: { tarefa: t.tarefa, alternativaId: escolher(q.alternativas).id }, contingencia: false }).catch(() => {});
+      }
+    }
+    return;
+  }
+  if (T.tem(e)) return T.piloto(e);
+  if (ehQuadro(e)) {
+    const j = E.jogo[e.id]; if (!j) return;
+    const est = estadoAtualCartoes(e), { c } = motorQuadro(e);
+    for (const [g, P] of Object.entries(j.prep.quadros)) {
+      const S = est[g]; if (!S || S.travado) continue;
+      const sims = P.membros.filter(u => u.startsWith('sim-')); if (!sims.length) continue;
+      if (quadroCompleto(S.quadro)) {                                  // tudo colocado: o líder simulado confirma
+        const quem = g === 'representantes' ? sims[0] : lider(g), grupo = g === 'representantes' ? grupoDoUid(quem) : g;
+        if (quem?.startsWith('sim-') && Date.now() >= S.liberaEm)
+          await b.enviar(E.codigo, `${e.id}__${grupo}__f${proximaConf(e, grupo)}`, { etapaId: e.id, escopo: 'tentativa', grupoId: grupo, autor: quem, dados: { confirmar: true }, contingencia: false }).catch(() => {});
+        continue;
+      }
+      const n = Object.keys(S.quadro).length, cont = {}, livres = c.formato === 'ordenar' ? [...Array(n).keys()].filter(i => !Object.values(S.quadro).includes(i)) : [];
+      for (const id of P.ordem.filter(id => S.quadro[id] === null)) {
+        const u = P.dono[id] || escolher(sims); if (!u?.startsWith('sim-')) continue;
+        const para = c.formato === 'ordenar' ? livres.splice(Math.floor(Math.random() * livres.length), 1)[0] : c.formato === 'classificar' ? escolher(c.colunas).id : c.formato === 'imagem' ? { x: Math.random() * 100, y: Math.random() * 100 } : Math.round(Math.random() * 100);
+        cont[u] = Math.max(cont[u] || 0, S.ultimoMov[u] || 0) + 1;
+        await b.enviar(E.codigo, `${e.id}__${u}__m${cont[u]}`, { etapaId: e.id, escopo: 'tentativa', grupoId: grupoDoUid(u), autor: u, dados: { cartao: id, para }, contingencia: false }).catch(() => {});
       }
     }
     return;

@@ -9,17 +9,29 @@ import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js'
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
-import { gerarPrompt } from './core/prompt.js';
+import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
 import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
+import { cartoesDoTexto, prepararCartoes } from './core/cartoes.js';
+import { criarEditores } from './planejar-tipos.js';
 
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
-const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos' };
+const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem' };
+// Editores dos tipos novos: js/planejar-tipos.js
+const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
+  editorPerguntas: (e, o) => editorPerguntas(e, o), avisoGeral: (t, k) => avisoGeral(t, k), comprimirImagem: f => comprimirImagem(f), A: () => P.A });
+/** Cardápio por categoria (ideia do protótipo feito no v0). */
+const CATEGORIAS = [
+  ['Investigar e discutir', ['investigacao_fragmentos', 'comparar_hipoteses', 'analise_imagem']],
+  ['Desafios cooperativos', ['montagem_pecas', 'cadeado_grupo', 'cartoes_arrastar', 'pares', 'cruzadas']],
+  ['Quizzes e jogos', ['quiz_grupos', 'corrida', 'quiz_pensar', 'sequencia']],
+  ['Verificação individual', ['questao_individual']]
+];
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
@@ -195,17 +207,29 @@ function telaInicio() {
 }
 
 function cartaoPrompt() {
-  const cfg = { publico: '', duracaoMin: 50, numeroGrupos: 5, regime: 'fiel', preferencias: '' };
+  const cfg = { publico: '', duracaoMin: 50, numeroGrupos: 5, regime: 'fiel', preferencias: '', tipos: [] };
   const saida = h('textarea', { readonly: true, hidden: true, rows: 6 });
+  const ordem = h('p', { class: 'sutil' }, 'Nenhuma escolhida: a IA propõe a sequência.');
+  const mostrarOrdem = () => { ordem.textContent = cfg.tipos.length ? 'Ordem: ' + cfg.tipos.map((t, i) => `${i + 1}. ${TIPOS[t].nome}`).join(' · ') : 'Nenhuma escolhida: a IA propõe a sequência.'; };
+  const exemplo = async () => { try { return await (await fetch('casos/ciclista-altitude.json')).json(); } catch { return null; } };
   return h('div', {},
-    h('p', { class: 'sutil' }, 'Gere o prompt, cole na IA de sua preferência com o seu material e importe o JSON que ela devolver.'),
+    h('p', { class: 'sutil' }, 'Escolha as atividades (na ordem em que tocar), gere o prompt ou o guia .md, leve à IA de sua preferência com o seu material e importe o JSON que ela devolver.'),
     h('div', { class: 'campos-2' },
       h('div', {}, h('label', { for: 'iaPub' }, 'Público'), h('input', { id: 'iaPub', oninput: e => cfg.publico = e.target.value })),
       h('div', {}, h('label', { for: 'iaGr' }, 'Grupos'), h('input', { id: 'iaGr', type: 'number', min: 1, max: 10, value: 5, oninput: e => cfg.numeroGrupos = Math.min(10, Math.max(1, Number(e.target.value) || 5)) }))),
+    h('details', {}, h('summary', {}, 'Escolher as atividades'),
+      CATEGORIAS.map(([cat, ids]) => h('div', {}, h('small', { class: 'sutil' }, cat), h('div', { class: 'opcoes', style: { gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' } }, ids.filter(id => TIPOS[id]).map(id =>
+        h('label', { class: 'opcao' }, h('input', { type: 'checkbox', onchange: e => { cfg.tipos = e.target.checked ? [...cfg.tipos, id] : cfg.tipos.filter(x => x !== id); mostrarOrdem(); } }), h('span', {}, TIPOS[id].nome)))))),
+      ordem),
     h('label', { for: 'iaPref' }, 'Preferências por etapa (opcional)'), h('textarea', { id: 'iaPref', rows: 2, oninput: e => cfg.preferencias = e.target.value }),
     h('div', { class: 'linha-botoes' },
-      h('button', { class: 'btn', onclick: async () => { let ex = null; try { ex = await (await fetch('casos/ciclista-altitude.json')).json(); } catch {} saida.value = gerarPrompt({ ...cfg, organizacao: 'grupos', exemplo: ex }); saida.hidden = false; } }, 'Gerar prompt'),
-      h('button', { class: 'btn discreto', onclick: async () => { try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); } } }, 'Copiar')),
+      h('button', { class: 'btn', onclick: async () => { saida.value = gerarPrompt({ ...cfg, organizacao: 'grupos', exemplo: await exemplo() }); saida.hidden = false; } }, 'Gerar prompt'),
+      h('button', { class: 'btn discreto', onclick: async () => { try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); } } }, 'Copiar'),
+      h('button', { class: 'btn', onclick: async () => {
+        const md = gerarGuiaMd({ ...cfg, organizacao: 'grupos', exemplo: await exemplo() });
+        const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+        const l = h('a', { href: url, download: 'guia-mosaico-ia.md' }); document.body.append(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 30e3);
+      } }, 'Baixar guia .md')),
     saida);
 }
 
@@ -318,12 +342,14 @@ function removerGrupo(g) {
 function editorNovaEtapa() {
   return h('div', { class: 'cartao' }, h('h2', {}, 'Nova etapa: escolha o tipo'),
     h('p', { class: 'sutil' }, 'A decisão é sua. A Revisão sugere equilíbrio (por exemplo, quando há muitas etapas iguais seguidas).'),
-    h('div', { class: 'tipo-cartoes' }, Object.values(TIPOS).map(t => h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, h('strong', {}, t.nome), h('small', {}, t.descricao)))),
-    h('p', { class: 'sutil', style: { marginTop: '12px' } }, 'Próximo tipo previsto: deliberação em grupo.'));
+    CATEGORIAS.map(([cat, ids]) => h('div', {}, h('h3', { style: { margin: '16px 0 8px' } }, cat),
+      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, h('strong', {}, t.nome), h('small', {}, t.descricao)); })))));
 }
 function configInicial(typeId, base) {
+  const novo = ED.configInicial(typeId); if (novo) return novo;
   if (typeId === 'cadeado_grupo') return { regra: 'fragmentos', perguntas: [perguntaVazia('p1')], distribuicao: 'diferente', minAcertos: 0, fragmentos: [], espera: 30, mensagem: '' };
   if (typeId === 'quiz_grupos') return { perguntas: [perguntaVazia('p1')], aoErrar: 'repassar', segundos: 60, mostrarNoTelao: false, mostrarResposta: true };
+  if (typeId === 'cartoes_arrastar') return { formato: 'ordenar', enunciado: '', cartoes: ['c1', 'c2', 'c3', 'c4'].map(id => ({ id, texto: '' })), distribuicao: 'todos', tentativas: 'repetir', espera: 30, conferencia: 'posicao', revelarAoEncerrar: true };
   if (typeId === 'montagem_pecas') return { modo: 'texto', texto: '', quantidade: 'fixa', ocultarAoFim: true, revelarAoEncerrar: false, corte: { tipo: 'colunas', n: 4 } };
   const hip = base?.config?.hipotesesCandidatas || base?.config?.alternativas;
   if (typeId === 'investigacao_fragmentos') return { pergunta: base?.config?.pergunta || '', hipotesesCandidatas: (hip || [1, 2, 3].map(i => ({ id: 'h' + i, texto: '' }))).map(x => ({ ...x })), minEvidencias: 1, justificativa: 'opcional' };
@@ -332,14 +358,14 @@ function configInicial(typeId, base) {
 }
 function participacaoPadrao(typeId) {
   const t = TIPOS[typeId];
-  return { organizacao: t.participacao.organizacao[0], envio: t.participacao.envio[0], competicao: typeId === 'quiz_grupos' ? 'entre_grupos' : t.participacao.competicao.includes('meta') ? 'meta' : t.participacao.competicao[0] };
+  return { organizacao: t.participacao.organizacao[0], envio: t.participacao.envio[0], competicao: ['quiz_grupos', 'sequencia'].includes(typeId) ? 'entre_grupos' : t.participacao.competicao.includes('meta') ? 'meta' : t.participacao.competicao[0] };
 }
 function adicionarEtapa(typeId) {
   let novo;
   mudar(a => {
     const id = novoId('e', idsDe(a.etapas)), ordem = Math.max(0, ...a.etapas.map(e => e.ordem)) + 1;
     const anterior = etapasOrdenadas(a).at(-1);
-    novo = { id, ordem, titulo: NOMES_TIPO[typeId], typeId, typeVersion: TIPOS[typeId].typeVersion, tempoMin: typeId === 'questao_individual' ? 4 : 15, instrucao: '', participacao: participacaoPadrao(typeId), config: configInicial(typeId, anterior) };
+    novo = { id, ordem, titulo: NOMES_TIPO[typeId], typeId, typeVersion: TIPOS[typeId].typeVersion, tempoMin: typeId === 'questao_individual' ? 4 : ['cartoes_arrastar', 'pares', 'corrida', 'sequencia'].includes(typeId) ? 8 : typeId === 'analise_imagem' ? 10 : 15, instrucao: '', participacao: participacaoPadrao(typeId), config: configInicial(typeId, anterior) };
     a.etapas.push(novo);
     if (typeId === 'comparar_hipoteses') {
       const fonte = etapasOrdenadas(a).filter(e => e.typeId === 'investigacao_fragmentos' && e.ordem < ordem).at(-1);
@@ -382,6 +408,8 @@ function editorEtapa(e) {
     e.typeId === 'montagem_pecas' && blocoMontagem(e),
     e.typeId === 'cadeado_grupo' && blocoCadeado(e),
     e.typeId === 'quiz_grupos' && blocoQuiz(e),
+    e.typeId === 'cartoes_arrastar' && blocoCartoes(e),
+    ED[e.typeId] && ED[e.typeId](e),
     h('div', { id: 'revEtapa' }, revEtapa(diagsEtapa)));
 }
 const revEtapa = ds => ds.length ? h('div', { class: 'cartao' }, h('h3', {}, 'Revisão desta etapa'), h('ul', { class: 'diag' }, ds.map(d => h('li', { class: d.severidade }, d.mensagem)))) : h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Esta etapa não tem pendências.');
@@ -585,8 +613,9 @@ async function desenharPreviaMontagem(e, alvo, nSim) {
 // ============================================================ Cadeado do grupo e Quiz entre grupos
 function perguntaVazia(id) { return { id, enunciado: '', alternativas: ['a', 'b', 'c', 'd'].map(l => ({ id: l, texto: '' })) }; }
 const gabaritoDe = e => {
-  const r = P.A.docente.respostas[e.id] && typeof P.A.docente.respostas[e.id] === 'object' && P.A.docente.respostas[e.id].perguntas ? P.A.docente.respostas[e.id] : (P.A.docente.respostas[e.id] = { perguntas: {} });
-  return r;
+  const r = P.A.docente.respostas[e.id];
+  if (r && typeof r === 'object' && !('corretaId' in r)) { r.perguntas ||= {}; return r; }
+  return (P.A.docente.respostas[e.id] = { perguntas: {} });
 };
 
 /** Lê perguntas coladas: blocos separados por linha em branco; 1ª linha = enunciado; alternativas "a) …" ou "- …"; * marca a certa. */
@@ -708,6 +737,109 @@ function blocoQuiz(e) {
         h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: !!c.mostrarNoTelao, onchange: ev => { c.mostrarNoTelao = ev.target.checked; tocar(); } }), h('span', {}, 'O telão mostra a pergunta junto (a turma toda pensa; sem marcar: só o líder vê e lê para o grupo)')),
         h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: c.mostrarResposta !== false, onchange: ev => { c.mostrarResposta = ev.target.checked; tocar(); } }), h('span', {}, 'Depois de cada pergunta, o telão mostra a resposta e a explicação')))),
     editorPerguntas(e, { explicacao: true }));
+}
+
+// ============================================================ Cartões de arrastar
+function gabCartoes(e) {
+  const r = P.A.docente.respostas[e.id];
+  return r && typeof r === 'object' && !r.perguntas && !('corretaId' in r) ? r : (P.A.docente.respostas[e.id] = {});
+}
+/** Mantém o gabarito coerente com o formato e com a lista de cartões. */
+function ajustarGabaritoCartoes(e) {
+  const c = e.config, r = gabCartoes(e), ids = c.cartoes.map(x => x.id);
+  if (c.formato === 'ordenar') { r.ordem = ids; delete r.colunaDe; delete r.posicao; delete r.margem; }
+  if (c.formato === 'classificar') { const cols = new Set((c.colunas || []).map(x => x.id)); r.colunaDe = Object.fromEntries(Object.entries(r.colunaDe || {}).filter(([k, v]) => ids.includes(k) && cols.has(v))); delete r.ordem; delete r.posicao; delete r.margem; }
+  if (c.formato === 'termometro') { r.posicao = Object.fromEntries(Object.entries(r.posicao || {}).filter(([k]) => ids.includes(k))); r.margem ??= 15; delete r.ordem; delete r.colunaDe; }
+}
+function trocarFormato(e, f) {
+  const c = e.config;
+  c.formato = f;
+  if (f === 'classificar' && !c.colunas?.length) c.colunas = [{ id: 'k1', titulo: '' }, { id: 'k2', titulo: '' }];
+  if (f !== 'classificar') delete c.colunas;
+  if (f === 'termometro') c.polos ||= { esquerda: '', direita: '' }; else delete c.polos;
+  if (f === 'ordenar') c.conferencia ||= 'posicao'; else delete c.conferencia;
+  ajustarGabaritoCartoes(e);
+}
+
+function blocoCartoes(e) {
+  const c = e.config, r = gabCartoes(e), f = c.formato;
+  // no ordenar, a lista é mostrada (e guardada) na ordem certa
+  if (f === 'ordenar' && Array.isArray(r.ordem) && r.ordem.length === c.cartoes.length && r.ordem.every(id => c.cartoes.some(x => x.id === id)))
+    c.cartoes = r.ordem.map(id => c.cartoes.find(x => x.id === id));
+  ajustarGabaritoCartoes(e);
+  const previa = h('div');
+  const desenhar = () => limpar(previa, previaCartoes(e));
+  const mexer = fn => mudar(() => { fn(); ajustarGabaritoCartoes(e); });
+  setTimeout(desenhar, 0);
+  const colar = h('textarea', { rows: 5, placeholder: f === 'ordenar' ? 'Renina\nAngiotensina I\nAngiotensina II\nVasoconstrição\n↑ Pressão arterial' : 'Um cartão por linha' });
+  const dica = { ordenar: 'Escreva os cartões na ORDEM CERTA, de cima para baixo. Os celulares recebem embaralhado e sem números.', classificar: 'Escolha a coluna certa de cada cartão. O gabarito fica só com quem conduz.', termometro: 'A posição esperada é opcional (0 = polo da esquerda, 100 = da direita). Em branco em todos: a etapa é só para debate. Com posição, o grupo pontua quando fica dentro da margem.' }[f];
+  return h('div', {},
+    h('div', { class: 'cartao' }, h('h3', {}, 'Formato e regras'),
+      h('div', { class: 'campos-2' },
+        seletor('Formato', f, [['ordenar', 'Ordenar (sequência, causa e efeito)'], ['classificar', 'Classificar (separar em colunas)'], ['termometro', 'Termômetro (linha entre dois polos)']], v => trocarFormato(e, v), { redesenhar: true }),
+        campo('Comando para o grupo (opcional)', c.enunciado || '', v => { c.enunciado = v; }, { max: 500 })),
+      f === 'termometro' && h('div', { class: 'campos-2' },
+        campo('Polo da esquerda (0)', c.polos?.esquerda || '', v => { c.polos.esquerda = v; }, { max: 80, ajuda: 'Ex.: Totalmente antiético · Leve' }),
+        campo('Polo da direita (100)', c.polos?.direita || '', v => { c.polos.direita = v; }, { max: 80, ajuda: 'Ex.: Totalmente ético · Máxima' })),
+      f === 'classificar' && h('div', {},
+        h('label', {}, `Colunas (${c.colunas.length} de no máximo 6)`),
+        c.colunas.map((col, i) => h('div', { class: 'linha-item' },
+          h('span', { class: 'num' }, i + 1),
+          h('input', { value: col.titulo, maxlength: 80, placeholder: 'Título da coluna', 'aria-label': 'Coluna ' + (i + 1), oninput: ev => { col.titulo = ev.target.value; document.querySelectorAll(`option[data-col="${col.id}"]`).forEach(o => { o.textContent = col.titulo || col.id; }); tocar(); } }),
+          h('button', { class: 'btn perigo pequeno', disabled: c.colunas.length <= 2, 'aria-label': 'Remover coluna ' + (i + 1), onclick: () => mexer(() => { c.colunas = c.colunas.filter(x => x !== col); }) }, '✕'))),
+        h('div', { class: 'linha-botoes' }, h('button', { class: 'btn pequeno', disabled: c.colunas.length >= 6, onclick: () => mexer(() => { c.colunas.push({ id: novoId('k', idsDe(c.colunas)), titulo: '' }); }) }, '＋ Coluna'))),
+      h('div', { class: 'campos-2' },
+        seletor('Cartões no grupo', c.distribuicao || 'todos', [['todos', 'Todos movem qualquer cartão'], ['fracionado', 'Cada celular segura alguns (fracionado)']], v => { c.distribuicao = v; desenhar(); }),
+        seletor('Tentativas', c.tentativas || 'uma', [['uma', 'Uma só (o primeiro envio vale)'], ['repetir', 'Repetir até acertar']], v => { c.tentativas = v; }, { redesenhar: true })),
+      h('div', { class: 'campos-2' },
+        c.tentativas === 'repetir' ? seletor('Depois de errar, tentar de novo em', String(c.espera ?? 30), [['0', 'na hora'], ['15', '15 segundos'], ['30', '30 segundos'], ['60', '1 minuto'], ['120', '2 minutos']], v => { c.espera = Number(v); }) : h('div'),
+        f === 'ordenar' ? seletor('Conferência', c.conferencia || 'posicao', [['posicao', 'Cada cartão no lugar exato'], ['vizinhos', 'Pares vizinhos na ordem (nota parcial)']], v => { c.conferencia = v; }) : h('div')),
+      f === 'ordenar' && e.participacao.organizacao === 'grupos' && seletor('Quadro de cada grupo', c.modo || '', [['', 'A cadeia inteira (cada grupo ordena tudo)'], ['trechos', 'Um trecho da cadeia (entre grupos: o telão junta tudo no fim)']], v => { if (v) c.modo = v; else delete c.modo; }),
+      h('label', { class: 'opcao', style: { marginTop: '10px' } }, h('input', { type: 'checkbox', checked: c.revelarAoEncerrar !== false, onchange: ev => { c.revelarAoEncerrar = ev.target.checked; tocar(); } }),
+        h('span', {}, f === 'termometro' ? 'Ao encerrar, o telão mostra onde cada grupo pôs cada caso (e a posição esperada, se houver)' : 'Ao encerrar, o telão mostra a resposta esperada'))),
+    h('div', { class: 'cartao' }, h('h3', {}, `Cartões (${c.cartoes.length} de no máximo 20)`),
+      h('p', { class: 'sutil' }, dica),
+      c.cartoes.map((x, i) => h('div', { class: 'linha-item cartao-edit' },
+        h('span', { class: 'num' }, f === 'ordenar' ? i + 1 : '•'),
+        h('input', { value: x.texto, maxlength: 200, placeholder: 'Texto do cartão', 'aria-label': 'Cartão ' + (i + 1), oninput: ev => { x.texto = ev.target.value; tocar(); clearTimeout(previa._t); previa._t = setTimeout(desenhar, 300); } }),
+        f === 'classificar' && h('select', { 'aria-label': 'Coluna certa do cartão ' + (i + 1), style: { width: 'auto', minWidth: '130px' }, onchange: ev => { if (ev.target.value) r.colunaDe[x.id] = ev.target.value; else delete r.colunaDe[x.id]; tocar(); } },
+          h('option', { value: '' }, 'coluna certa…'), c.colunas.map(col => h('option', { value: col.id, 'data-col': col.id, selected: r.colunaDe?.[x.id] === col.id }, col.titulo || col.id))),
+        f === 'termometro' && h('input', { type: 'number', min: 0, max: 100, value: r.posicao?.[x.id] ?? '', placeholder: '—', title: 'Posição esperada (0 a 100), opcional', 'aria-label': 'Posição esperada do cartão ' + (i + 1), style: { width: '90px' },
+          oninput: ev => { const v = ev.target.value; if (v === '') delete r.posicao[x.id]; else r.posicao[x.id] = Math.max(0, Math.min(100, Math.round(Number(v)))); tocar(); } }),
+        h('div', { class: 'mini' },
+          f === 'ordenar' && h('button', { class: 'btn pequeno', disabled: i === 0, 'aria-label': 'Subir cartão', onclick: () => mexer(() => { [c.cartoes[i - 1], c.cartoes[i]] = [c.cartoes[i], c.cartoes[i - 1]]; }) }, '↑'),
+          f === 'ordenar' && h('button', { class: 'btn pequeno', disabled: i === c.cartoes.length - 1, 'aria-label': 'Descer cartão', onclick: () => mexer(() => { [c.cartoes[i + 1], c.cartoes[i]] = [c.cartoes[i], c.cartoes[i + 1]]; }) }, '↓'),
+          h('button', { class: 'btn perigo pequeno', disabled: c.cartoes.length <= 2, 'aria-label': 'Remover cartão ' + (i + 1), onclick: () => mexer(() => { c.cartoes = c.cartoes.filter(y => y !== x); }) }, '✕')))),
+      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', disabled: c.cartoes.length >= 20, onclick: () => mexer(() => { c.cartoes.push({ id: novoId('c', idsDe(c.cartoes)), texto: '' }); }) }, '＋ Adicionar cartão')),
+      f === 'termometro' && h('div', { style: { maxWidth: '300px' } }, campo('Margem de acerto (±)', r.margem ?? 15, v => { r.margem = Math.max(1, Math.min(50, Math.round(v || 15))); }, { tipo: 'number', ajuda: 'Só vale quando há posição esperada.' })),
+      h('details', { style: { marginTop: '10px' } }, h('summary', {}, 'Colar vários cartões de uma vez'),
+        h('p', { class: 'sutil' }, f === 'ordenar' ? 'Um por linha, já na ordem certa. Os cartões vazios são substituídos.' : 'Um por linha. Os cartões vazios são substituídos.'),
+        colar,
+        h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => {
+          const novos = cartoesDoTexto(colar.value);
+          if (!novos.length) return avisoGeral('Nenhum cartão reconhecido.', 'erro');
+          mexer(() => {
+            c.cartoes = c.cartoes.filter(x => x.texto.trim());
+            for (const t of novos) if (c.cartoes.length < 20) c.cartoes.push({ id: novoId('c', idsDe(c.cartoes)), texto: t.slice(0, 200) });
+          });
+          avisoGeral(`${novos.length} cartão(ões) adicionado(s).`, 'ok');
+        } }, 'Adicionar os cartões colados'))),
+      campo('Explicação para a discussão (aparece na revelação final)', r.explicacao || '', v => { r.explicacao = v; }, { area: true, linhas: 2 })),
+    h('div', { class: 'cartao' }, h('h3', {}, 'Como a turma recebe'), previa),
+    h('p', { class: 'sutil' }, f === 'termometro'
+      ? 'Dica: o termômetro rende mais no debate. Ao encerrar, o telão mostra as posições de todos os grupos e destaca o caso com maior divergência.'
+      : 'Dica: com "fracionado", cada celular segura só alguns cartões. Ninguém resolve sozinho e o grupo precisa combinar quem põe o quê.'));
+}
+function previaCartoes(e) {
+  const c = e.config, validos = c.cartoes.filter(x => x.texto.trim());
+  if (validos.length < 2) return h('p', { class: 'sutil' }, 'Escreva pelo menos 2 cartões para ver a prévia.');
+  const prep = prepararCartoes({ ...c, cartoes: validos }, [{ id: 'g', uids: ['Aluno 1', 'Aluno 2', 'Aluno 3', 'Aluno 4'], grupos: ['g'] }], (() => { let x = 0.37; return () => (x = (x * 9301 + 0.49297) % 1); })()).quadros.g;
+  const texto = id => validos.find(x => x.id === id).texto;
+  return h('div', {},
+    h('p', {}, h('strong', {}, 'Embaralhado, sem números:')),
+    h('div', { class: 'pecas-fila' }, prep.ordem.map(id => h('span', { class: 'cartao-arr', style: { fontSize: '.9rem', minHeight: 0, padding: '8px 10px' } }, texto(id)))),
+    c.distribuicao === 'fracionado' && h('div', { style: { marginTop: '10px' } }, h('strong', {}, 'Num grupo de 4 (fracionado):'),
+      h('ul', {}, ['Aluno 1', 'Aluno 2', 'Aluno 3', 'Aluno 4'].map(u => h('li', {}, `${u}: ${prep.ordem.filter(id => prep.dono[id] === u).map(texto).join(' · ') || '— (ajuda a decidir)'}`)))));
 }
 
 // ============================================================ Fontes

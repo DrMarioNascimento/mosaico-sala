@@ -1,0 +1,585 @@
+/* MOSAICO · Catálogo de tipos de atividade (ActivityType)
+   Especificação v2, seção 12.
+
+   Primeiro corte: três tipos, que juntos formam um mosaico completo
+   (fracionar → investigar em grupo → cooperar entre grupos → transferir).
+
+   Cada tipo declara: configuração, portas de entrada e saída, capacidades
+   de participação, políticas de conclusão/avaliação/contingência e uma
+   função de validação. Componentes de tela são do código da plataforma
+   (js/telas/...), nunca indicados pelo arquivo importado. */
+
+import { problemasRamos as problemasRamosTipos } from './pensar.js';
+const ID_CURTO = /^[a-z0-9][a-z0-9_-]{0,31}$/;
+const POWER_UPS_IDS = ['dobrar', 'congelar', 'escudo', 'ajuda', 'congelar_rival', 'roubar', 'embaralhar_rival', 'bloquear'];
+const texto = (v, max = 2000) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
+
+export const TIPOS = {
+  investigacao_fragmentos: {
+    typeId: 'investigacao_fragmentos',
+    typeVersion: '1.0.0',
+    nome: 'Investigação por fragmentos',
+    descricao: 'Cada grupo recebe parte das evidências, analisa e escolhe a hipótese que suas peças sustentam, indicando quais evidências usou.',
+    configuracao: {
+      pergunta: 'texto obrigatório: o que o grupo precisa decidir',
+      hipotesesCandidatas: 'lista obrigatória (2 a 6) de {id, texto}',
+      minEvidencias: 'inteiro opcional (padrão 1): quantas peças o grupo precisa indicar',
+      justificativa: "'nenhuma' | 'opcional' | 'obrigatoria' (padrão 'opcional')"
+    },
+    acceptedInputs: [],
+    producedOutputs: [{
+      portId: 'hipotese_grupo', escopo: 'grupo', cardinalidade: 'uma_por_grupo',
+      dados: '{hipoteseId, evidencias:[pecaId], justificativa?}', disponivelQuando: 'envio_confirmado'
+    }],
+    participacao: { organizacao: ['grupos', 'individual'], envio: ['representante', 'individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado',
+    assessmentPolicy: 'nao_avaliada',            // hipótese inicial é material de trabalho, não nota
+    contingencyPolicy: ['aguardar', 'executor_adicional', 'execucao_docente'],
+    usaPecas: true,
+    validar(etapa, ctx) {
+      const d = [], c = etapa.config || {};
+      if (!texto(c.pergunta, 500)) d.push(erro('config.pergunta', 'A etapa precisa de uma pergunta para o grupo.'));
+      const hs = c.hipotesesCandidatas;
+      if (!Array.isArray(hs) || hs.length < 2 || hs.length > 6) d.push(erro('config.hipotesesCandidatas', 'Informe de 2 a 6 hipóteses candidatas.'));
+      else {
+        const ids = hs.map(h => h.id);
+        if (new Set(ids).size !== ids.length) d.push(erro('config.hipotesesCandidatas', 'IDs de hipótese repetidos.'));
+        hs.forEach((h, i) => { if (!texto(h.texto, 300)) d.push(erro(`config.hipotesesCandidatas[${i}]`, 'Hipótese sem texto.')); });
+      }
+      const pecas = ctx.atividade.pecas.filter(p => p.etapaId === etapa.id);
+      if (!pecas.length) d.push(erro('pecas', 'Nenhuma peça destinada a esta etapa.'));
+      for (const g of ctx.atividade.grupos) {
+        if (etapa.participacao?.organizacao === 'grupos' && !pecas.some(p => p.destinatarios.includes(g.id)))
+          d.push(aviso('pecas', `O grupo "${g.nome}" não recebe nenhuma peça nesta etapa.`));
+      }
+      const min = c.minEvidencias ?? 1;
+      if (!Number.isInteger(min) || min < 0) d.push(erro('config.minEvidencias', 'minEvidencias deve ser inteiro ≥ 0.'));
+      return d;
+    }
+  },
+
+  comparar_hipoteses: {
+    typeId: 'comparar_hipoteses',
+    typeVersion: '1.0.0',
+    nome: 'Comparação de hipóteses entre grupos',
+    descricao: 'Cada grupo vê as hipóteses e as evidências escolhidas pelos outros grupos e decide qual explicação integra melhor o conjunto.',
+    configuracao: {
+      pergunta: 'texto obrigatório',
+      hipotesesCandidatas: 'lista obrigatória (2 a 6) de {id, texto}',
+      aceitaParcial: 'booleano (padrão false): permite iniciar sem a hipótese de todos os grupos',
+      justificativa: "'nenhuma' | 'opcional' | 'obrigatoria' (padrão 'obrigatoria')"
+    },
+    acceptedInputs: [{
+      portId: 'hipoteses_recebidas', escopo: 'grupo', cardinalidade: 'uma_por_grupo_planejado',
+      aceita: ['investigacao_fragmentos.hipotese_grupo'], obrigatoria: true,
+      disponivelQuando: 'envio_confirmado_e_liberacao_docente'
+    }],
+    producedOutputs: [{
+      portId: 'decisao_grupo', escopo: 'grupo', cardinalidade: 'uma_por_grupo',
+      dados: '{hipoteseId, justificativa?}', disponivelQuando: 'envio_confirmado'
+    }],
+    participacao: { organizacao: ['grupos'], envio: ['representante'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado',
+    assessmentPolicy: 'gabarito_docente',
+    contingencyPolicy: ['aguardar', 'executor_adicional', 'execucao_docente', 'aceitar_parcial_registrado'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!texto(c.pergunta, 500)) d.push(erro('config.pergunta', 'A etapa precisa de uma pergunta.'));
+      const hs = c.hipotesesCandidatas;
+      if (!Array.isArray(hs) || hs.length < 2 || hs.length > 6) d.push(erro('config.hipotesesCandidatas', 'Informe de 2 a 6 hipóteses candidatas.'));
+      if (etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'Comparação entre grupos exige organização em grupos.'));
+      return d;
+    }
+  },
+
+  montagem_pecas: {
+    typeId: 'montagem_pecas',
+    typeVersion: '1.0.0',
+    nome: 'Montagem em peças',
+    descricao: 'Cada celular mostra uma peça (trecho de texto, conta ou recorte de imagem) em formato de quebra-cabeça. Só pondo os celulares na ordem certa dá para entender o todo. Não há envio: vale o tempo da etapa, e a etapa seguinte cobra o que foi visto.',
+    configuracao: {
+      modo: "'texto' (texto ou conta) | 'imagem'",
+      texto: 'no modo texto: o texto completo, com os cortes marcados por | ou por − entre espaços',
+      imagem: 'no modo imagem: {dados: data URL (webp/png/jpeg, leve), largura, altura}',
+      corte: "no modo imagem: {tipo: 'colunas'|'linhas'|'grade', n: quantidade de peças, colunas?: para grade}",
+      quantidade: "'fixa' (as peças definidas) | 'celulares' (uma por celular presente)",
+      ocultarAoFim: 'booleano (padrão true): as peças somem quando o tempo acaba',
+      revelarAoEncerrar: 'booleano (padrão false): ao encerrar a etapa, o telão mostra o todo montado'
+    },
+    acceptedInputs: [],
+    producedOutputs: [],
+    participacao: { organizacao: ['grupos', 'representantes'], envio: ['nenhum'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'tempo',
+    assessmentPolicy: 'nao_avaliada',
+    contingencyPolicy: ['aguardar'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['texto', 'imagem'].includes(c.modo)) d.push(erro('config.modo', "Escolha o modo: 'texto' ou 'imagem'."));
+      if (c.modo === 'texto') {
+        const n = String(c.texto || '').split(/\r?\n/).flatMap(l => l.split(/\s*\|\s*|\s+[−–]\s+/)).map(s => s.trim()).filter(Boolean).length;
+        if (n < 2) d.push(erro('config.texto', 'Marque ao menos um corte no texto (use | ou − entre espaços).'));
+        if (n > 30) d.push(aviso('config.texto', `São ${n} peças; acima de 20 fica difícil de montar.`));
+      }
+      if (c.modo === 'imagem') {
+        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem que será cortada.'));
+        else if (c.imagem.dados.length > 950000) d.push(erro('config.imagem', 'Imagem pesada demais. Envie de novo para ser reduzida.'));
+        if (!['colunas', 'linhas', 'grade'].includes(c.corte?.tipo)) d.push(erro('config.corte', 'Escolha como cortar a imagem.'));
+        if (c.quantidade !== 'celulares' && !(Number.isInteger(c.corte?.n) && c.corte.n >= 2 && c.corte.n <= 20)) d.push(erro('config.corte', 'A imagem precisa de 2 a 20 peças.'));
+      }
+      if (!['fixa', 'celulares'].includes(c.quantidade || 'fixa')) d.push(erro('config.quantidade', "Quantidade deve ser 'fixa' ou 'celulares'."));
+      if (!etapa.tempoMin) d.push(aviso('tempoMin', 'A montagem vale pelo tempo: defina o tempo da etapa.'));
+      return d;
+    }
+  },
+
+  cadeado_grupo: {
+    typeId: 'cadeado_grupo',
+    typeVersion: '1.0.0',
+    nome: 'Cadeado do grupo',
+    descricao: 'Escape room: cada aluno responde a própria pergunta no celular. O grupo destrava quando X membros acertam, ou quando junta os pedaços revelados pelos acertos (um número, um termo, uma palavra) e o líder digita o código.',
+    configuracao: {
+      regra: "'acertos' (destrava com X acertos) | 'fragmentos' (cada acerto revela um pedaço; o líder digita o código)",
+      perguntas: 'lista (1 a 60) de {id, enunciado, alternativas: [{id, texto}] (2 a 5)}; a correta fica em docente.respostas[etapa].perguntas[id].corretaId',
+      distribuicao: "'diferente' (cada aluno recebe uma pergunta diferente) | 'mesma' (todos do grupo recebem a mesma)",
+      minAcertos: "regra 'acertos': quantos membros precisam acertar (0 = todos)",
+      fragmentos: "regra 'fragmentos': lista dos pedaços, em ordem (2 a 20); o código esperado fica em docente.respostas[etapa].codigo",
+      espera: 'segundos de espera para tentar de novo depois de errar (padrão 30; 0 = sem espera)',
+      mensagem: 'texto opcional que aparece para o grupo quando o cadeado abre'
+    },
+    acceptedInputs: [],
+    producedOutputs: [],
+    participacao: { organizacao: ['grupos'], envio: ['individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'destravar',
+    assessmentPolicy: 'gabarito_docente',
+    contingencyPolicy: ['aguardar'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['acertos', 'fragmentos'].includes(c.regra)) d.push(erro('config.regra', "Escolha a regra: 'acertos' ou 'fragmentos'."));
+      d.push(...validarPerguntas(c.perguntas));
+      if (!['diferente', 'mesma'].includes(c.distribuicao || 'diferente')) d.push(erro('config.distribuicao', "Distribuição deve ser 'diferente' ou 'mesma'."));
+      if (c.regra === 'acertos' && !(Number.isInteger(c.minAcertos ?? 0) && (c.minAcertos ?? 0) >= 0 && (c.minAcertos ?? 0) <= 30)) d.push(erro('config.minAcertos', 'Acertos necessários: inteiro de 0 (todos) a 30.'));
+      if (c.regra === 'fragmentos') {
+        const f = c.fragmentos;
+        if (!Array.isArray(f) || f.length < 2 || f.length > 20 || f.some(x => !texto(x, 200))) d.push(erro('config.fragmentos', 'Informe de 2 a 20 pedaços do código.'));
+        if ((c.distribuicao || 'diferente') === 'diferente' && Array.isArray(f) && Array.isArray(c.perguntas) && c.perguntas.length < f.length)
+          d.push(aviso('config.perguntas', `São ${f.length} pedaços e ${c.perguntas.length} pergunta(s): algumas perguntas vão se repetir no grupo.`));
+      }
+      const esp = c.espera ?? 30;
+      if (!(Number.isFinite(esp) && esp >= 0 && esp <= 600)) d.push(erro('config.espera', 'Espera deve ficar entre 0 e 600 segundos.'));
+      if (c.mensagem !== undefined && c.mensagem !== '' && !texto(c.mensagem, 1000)) d.push(erro('config.mensagem', 'Mensagem longa demais.'));
+      if (etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'O cadeado é sempre em grupos.'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [], c = etapa.config || {};
+      for (const p of c.perguntas || []) {
+        const certa = r?.perguntas?.[p.id]?.corretaId;
+        if (!(p.alternativas || []).some(a => a.id === certa)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
+      }
+      if (c.regra === 'fragmentos' && !texto(String(r?.codigo ?? ''), 200)) d.push(erro(`docente.respostas.${etapa.id}.codigo`, `Informe o código que abre o cadeado de "${etapa.titulo}".`));
+      return d;
+    }
+  },
+
+  quiz_grupos: {
+    typeId: 'quiz_grupos',
+    typeVersion: '1.0.0',
+    nome: 'Quiz entre grupos',
+    descricao: 'A cada pergunta o sistema sorteia o grupo da vez (sem repetir até todos jogarem). A pergunta aparece só no celular do líder desse grupo; o telão mostra de quem é a vez e o placar. Se errar, a pergunta passa para outro grupo sorteado ou a resposta é revelada.',
+    configuracao: {
+      perguntas: 'lista (1 a 60) de {id, enunciado, alternativas: [{id, texto}] (2 a 5)}; a correta fica em docente.respostas[etapa].perguntas[id].corretaId',
+      aoErrar: "'repassar' (vai para outro grupo sorteado, uma vez) | 'revelar' (mostra a resposta e segue)",
+      segundos: 'tempo para responder cada pergunta (10 a 600; padrão 60)',
+      mostrarNoTelao: 'booleano (padrão false): o telão mostra a pergunta junto (sem a resposta)',
+      mostrarResposta: 'booleano (padrão true): depois de cada pergunta, o telão mostra a resposta e a explicação'
+    },
+    acceptedInputs: [],
+    producedOutputs: [],
+    participacao: { organizacao: ['grupos'], envio: ['representante'], competicao: ['entre_grupos', 'meta', 'desligada'] },
+    completionPolicy: 'rodadas',
+    assessmentPolicy: 'gabarito_docente',
+    contingencyPolicy: ['aguardar', 'executor_adicional'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      d.push(...validarPerguntas(c.perguntas));
+      if (!['repassar', 'revelar'].includes(c.aoErrar || 'repassar')) d.push(erro('config.aoErrar', "Ao errar: 'repassar' ou 'revelar'."));
+      const s = c.segundos ?? 60;
+      if (!(Number.isFinite(s) && s >= 10 && s <= 600)) d.push(erro('config.segundos', 'Tempo por pergunta entre 10 e 600 segundos.'));
+      if (etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'O quiz entre grupos é sempre em grupos.'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [];
+      for (const p of etapa.config?.perguntas || []) {
+        const certa = r?.perguntas?.[p.id]?.corretaId;
+        if (!(p.alternativas || []).some(a => a.id === certa)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
+      }
+      return d;
+    }
+  },
+
+  cartoes_arrastar: {
+    typeId: 'cartoes_arrastar',
+    typeVersion: '1.0.0',
+    nome: 'Cartões de arrastar',
+    descricao: 'O grupo arrasta cartões num quadro compartilhado: põe em sequência (ordenar), separa em colunas (classificar) ou posiciona cada caso numa linha entre dois polos (termômetro). Cada celular pode segurar só alguns cartões, e o líder confirma o quadro.',
+    configuracao: {
+      formato: "'ordenar' | 'classificar' | 'termometro'",
+      enunciado: 'texto opcional: o comando para o grupo (ex.: "Ponha a cascata na ordem")',
+      cartoes: 'lista (2 a 20) de {id, texto}; no formato ordenar, a ordem certa fica em docente.respostas[etapa].ordem (lista de ids)',
+      colunas: "formato 'classificar': lista (2 a 6) de {id, titulo}; a coluna certa de cada cartão fica em docente.respostas[etapa].colunaDe {cartaoId: colunaId}",
+      polos: "formato 'termometro': {esquerda, direita} (ex.: 'Totalmente antiético' / 'Totalmente ético'); a posição esperada (0 a 100, opcional) fica em docente.respostas[etapa].posicao {cartaoId: n}, com margem (padrão 15). Sem posições, a etapa é só para debate",
+      distribuicao: "'todos' (qualquer um do grupo move qualquer cartão) | 'fracionado' (cada celular segura alguns cartões e só ele os move)",
+      tentativas: "'uma' (o primeiro envio vale) | 'repetir' (errou: espera e tenta de novo)",
+      espera: "segundos de espera depois de um envio errado, em 'repetir' (padrão 30)",
+      conferencia: "formato 'ordenar': 'posicao' (cartões no lugar exato, padrão) | 'vizinhos' (pares vizinhos na ordem certa)",
+      revelarAoEncerrar: 'booleano (padrão true): ao encerrar, o telão mostra a resposta esperada (e, no termômetro, onde cada grupo pôs cada caso)'
+    },
+    acceptedInputs: [],
+    producedOutputs: [],
+    participacao: { organizacao: ['grupos', 'representantes'], envio: ['representante'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado',
+    assessmentPolicy: 'gabarito_docente',
+    contingencyPolicy: ['aguardar'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['ordenar', 'classificar', 'termometro'].includes(c.formato)) d.push(erro('config.formato', "Escolha o formato: 'ordenar', 'classificar' ou 'termometro'."));
+      if (c.enunciado !== undefined && c.enunciado !== '' && !texto(c.enunciado, 500)) d.push(erro('config.enunciado', 'Comando longo demais (até 500 caracteres).'));
+      const cs = c.cartoes;
+      if (!Array.isArray(cs) || cs.length < 2 || cs.length > 20) d.push(erro('config.cartoes', 'Informe de 2 a 20 cartões.'));
+      else {
+        const ids = cs.map(x => x.id);
+        if (new Set(ids).size !== ids.length || ids.some(x => !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(String(x)))) d.push(erro('config.cartoes', 'IDs de cartão ausentes ou repetidos.'));
+        cs.forEach((x, i) => { if (!texto(x.texto, 200)) d.push(erro(`config.cartoes[${i}]`, `Cartão ${i + 1} sem texto (ou com mais de 200 caracteres).`)); });
+        const rep = cs.map(x => String(x.texto || '').trim().toLowerCase()).filter((t, i, l) => t && l.indexOf(t) !== i);
+        if (rep.length && c.formato === 'ordenar') d.push(aviso('config.cartoes', 'Há cartões com o mesmo texto: a ordem entre eles fica ambígua.'));
+      }
+      if (c.formato === 'classificar') {
+        const cols = c.colunas;
+        if (!Array.isArray(cols) || cols.length < 2 || cols.length > 6) d.push(erro('config.colunas', 'Informe de 2 a 6 colunas.'));
+        else {
+          if (new Set(cols.map(x => x.id)).size !== cols.length || cols.some(x => !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(String(x.id)))) d.push(erro('config.colunas', 'IDs de coluna ausentes ou repetidos.'));
+          cols.forEach((x, i) => { if (!texto(x.titulo, 80)) d.push(erro(`config.colunas[${i}]`, `Coluna ${i + 1} sem título.`)); });
+        }
+      }
+      if (c.formato === 'termometro' && (!texto(c.polos?.esquerda, 80) || !texto(c.polos?.direita, 80))) d.push(erro('config.polos', 'Escreva os dois polos da linha (esquerda e direita).'));
+      if (!['todos', 'fracionado'].includes(c.distribuicao || 'todos')) d.push(erro('config.distribuicao', "Distribuição deve ser 'todos' ou 'fracionado'."));
+      if (!['uma', 'repetir'].includes(c.tentativas || 'uma')) d.push(erro('config.tentativas', "Tentativas: 'uma' ou 'repetir'."));
+      const esp = c.espera ?? 30;
+      if (!(Number.isFinite(esp) && esp >= 0 && esp <= 600)) d.push(erro('config.espera', 'Espera deve ficar entre 0 e 600 segundos.'));
+      if (c.formato === 'ordenar' && !['posicao', 'vizinhos'].includes(c.conferencia || 'posicao')) d.push(erro('config.conferencia', "Conferência: 'posicao' ou 'vizinhos'."));
+      if (c.distribuicao === 'fracionado' && Array.isArray(cs) && cs.length < 3) d.push(aviso('config.distribuicao', 'Com tão poucos cartões, vários celulares ficarão sem cartão.'));
+      if (c.modo !== undefined && !(c.modo === 'trechos' && c.formato === 'ordenar')) d.push(erro('config.modo', 'O modo por trechos é só para o formato ordenar.'));
+      if (c.modo === 'trechos' && etapa.participacao?.organizacao !== 'grupos') d.push(erro('config.modo', 'O modo por trechos é em grupos (cada grupo recebe um trecho).'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [], c = etapa.config || {}, ids = (c.cartoes || []).map(x => x.id), local = `docente.respostas.${etapa.id}`;
+      if (c.formato === 'ordenar') {
+        const o = r?.ordem;
+        if (!Array.isArray(o) || o.length !== ids.length || new Set(o).size !== o.length || o.some(id => !ids.includes(id)))
+          d.push(erro(`${local}.ordem`, `Defina a ordem certa de todos os cartões de "${etapa.titulo}".`));
+      }
+      if (c.formato === 'classificar') {
+        const cols = new Set((c.colunas || []).map(x => x.id));
+        const sem = (c.cartoes || []).filter(x => !cols.has(r?.colunaDe?.[x.id]));
+        if (sem.length) d.push(erro(`${local}.colunaDe`, `Escolha a coluna certa de ${sem.length === 1 ? 'um cartão' : sem.length + ' cartões'} em "${etapa.titulo}" (ex.: “${String(sem[0].texto || sem[0].id).slice(0, 30)}”).`));
+      }
+      if (c.formato === 'termometro') {
+        const pos = r?.posicao || {};
+        for (const [id, v] of Object.entries(pos)) if (v !== null && v !== '' && !(ids.includes(id) && Number.isFinite(Number(v)) && v >= 0 && v <= 100)) d.push(erro(`${local}.posicao`, 'Posição esperada deve ficar entre 0 e 100.'));
+        if (r?.margem !== undefined && !(Number.isFinite(Number(r.margem)) && r.margem >= 1 && r.margem <= 50)) d.push(erro(`${local}.margem`, 'A margem deve ficar entre 1 e 50.'));
+      }
+      return d;
+    }
+  },
+
+  pares: {
+    typeId: 'pares',
+    typeVersion: '1.0.0',
+    nome: 'Pares',
+    descricao: 'O professor define pares de conteúdo (ex.: Hemossiderina ↔ Fígado). Ligar: o grupo arrasta cada cartão até o seu par. Memória: cartas viradas, vira duas; se formam par, ficam abertas. Entre grupos, o tabuleiro da memória fica no telão e cada grupo joga na sua vez.',
+    configuracao: {
+      formato: "'ligar' | 'memoria'",
+      enunciado: 'texto opcional: o comando para o grupo',
+      pares: 'lista (2 a 12) de {id, a, b}: os dois lados de cada par (texto)',
+      distribuicao: "ligar: 'todos' | 'fracionado' (cada celular segura alguns cartões)",
+      tentativas: "ligar: 'uma' | 'repetir' (padrão)", espera: 'ligar: segundos de espera depois de errar (padrão 15)',
+      segundos: 'memória entre grupos: tempo de cada vez (padrão 30)',
+      revelarAoEncerrar: 'booleano (padrão true): ao encerrar, o telão mostra todos os pares'
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['grupos', 'representantes'], envio: ['representante'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['ligar', 'memoria'].includes(c.formato)) d.push(erro('config.formato', "Escolha o formato: 'ligar' ou 'memoria'."));
+      const ps = c.pares;
+      if (!Array.isArray(ps) || ps.length < 2 || ps.length > 12) d.push(erro('config.pares', 'Informe de 2 a 12 pares.'));
+      else {
+        if (new Set(ps.map(x => x.id)).size !== ps.length || ps.some(x => !ID_CURTO.test(String(x.id)))) d.push(erro('config.pares', 'IDs de par ausentes ou repetidos.'));
+        ps.forEach((x, i) => { if (!texto(x.a, 150) || !texto(x.b, 150)) d.push(erro(`config.pares[${i}]`, `Par ${i + 1}: escreva os dois lados (até 150 caracteres).`)); });
+        const lados = ps.flatMap(x => [String(x.a || '').trim().toLowerCase(), String(x.b || '').trim().toLowerCase()]).filter(Boolean);
+        if (new Set(lados).size !== lados.length) d.push(aviso('config.pares', 'Há textos repetidos entre os pares: a correspondência pode ficar ambígua.'));
+      }
+      if (c.formato === 'ligar' && !['todos', 'fracionado'].includes(c.distribuicao || 'todos')) d.push(erro('config.distribuicao', "Distribuição: 'todos' ou 'fracionado'."));
+      if (c.formato === 'memoria' && etapa.participacao?.organizacao === 'representantes') { const sg = c.segundos ?? 30; if (!(sg >= 10 && sg <= 300)) d.push(erro('config.segundos', 'Tempo de cada vez entre 10 e 300 segundos.')); }
+      return d;
+    },
+    validarRespostas() { return []; }   // a resposta são os próprios pares
+  },
+
+  corrida: {
+    typeId: 'corrida',
+    typeVersion: '1.0.0',
+    nome: 'Corrida',
+    descricao: 'Cada aluno responde no próprio ritmo e os pontos somam para o grupo. Formatos: quiz (como o Quizizz), corrente de causa e efeito (cada acerto libera a próxima consequência; um erro quebra a corrente) ou escolher a direção (↑, ↓ ou = para cada variável depois de um estímulo). Power-ups opcionais, ganhos com sequências de acertos.',
+    configuracao: {
+      formato: "'quiz' | 'corrente' | 'direcao'",
+      perguntas: "quiz: lista de {id, enunciado, alternativas: [{id, texto}]}; a correta em docente.respostas[etapa].perguntas[id].corretaId",
+      gatilho: 'corrente: o ponto de partida (ex.: "A pessoa sobe para 3.000 m de altitude")',
+      elos: 'corrente: lista (2 a 15), na ordem, de {id, consequencia, distratores: [2 a 4 textos errados]}',
+      aoQuebrar: "corrente: 'recomecar' (volta ao início da corrente) | 'continuar' (só zera a sequência)",
+      rodadas: 'direcao: lista (1 a 15) de {id, estimulo, variaveis: [{id, nome}]}; a direção certa de cada variável fica em docente.respostas[etapa].direcoes {variavelId: "sobe"|"desce"|"igual"}',
+      segundos: 'tempo por pergunta (0 = sem limite; padrão 30)', embaralhar: 'quiz e direção: cada aluno recebe em ordem diferente (padrão true)',
+      powerUps: 'lista: dobrar, congelar, escudo, ajuda (dentro do grupo); congelar_rival, roubar, embaralhar_rival, bloquear (entre grupos)',
+      sequencia: 'acertos seguidos para ganhar um power-up (padrão 3)'
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['individual', 'grupos'], envio: ['individual', 'representante'], competicao: ['entre_grupos', 'meta', 'desligada'] },
+    completionPolicy: 'rodadas', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['quiz', 'corrente', 'direcao'].includes(c.formato)) d.push(erro('config.formato', "Escolha o formato: 'quiz', 'corrente' ou 'direcao'."));
+      if (c.formato === 'quiz') d.push(...validarPerguntas(c.perguntas));
+      if (c.formato === 'corrente') {
+        if (!texto(c.gatilho, 300)) d.push(erro('config.gatilho', 'Escreva o ponto de partida da corrente.'));
+        const es = c.elos;
+        if (!Array.isArray(es) || es.length < 2 || es.length > 15) d.push(erro('config.elos', 'A corrente precisa de 2 a 15 elos.'));
+        else es.forEach((x, i) => {
+          if (!texto(x.consequencia, 200)) d.push(erro(`config.elos[${i}]`, `Elo ${i + 1} sem consequência.`));
+          const ds = (x.distratores || []).filter(t => String(t || '').trim());
+          if (ds.length < 2 || ds.length > 4) d.push(erro(`config.elos[${i}]`, `Elo ${i + 1}: escreva de 2 a 4 alternativas erradas.`));
+        });
+      }
+      if (c.formato === 'direcao') {
+        const rs = c.rodadas;
+        if (!Array.isArray(rs) || rs.length < 1 || rs.length > 15) d.push(erro('config.rodadas', 'Informe de 1 a 15 estímulos.'));
+        else rs.forEach((r, i) => {
+          if (!texto(r.estimulo, 300)) d.push(erro(`config.rodadas[${i}]`, `Estímulo ${i + 1} sem texto.`));
+          if (!Array.isArray(r.variaveis) || r.variaveis.length < 1 || r.variaveis.length > 8 || r.variaveis.some(v => !texto(v.nome, 80))) d.push(erro(`config.rodadas[${i}]`, `Estímulo ${i + 1}: informe de 1 a 8 variáveis com nome.`));
+        });
+      }
+      const sg = c.segundos ?? 30;
+      if (!(Number.isFinite(sg) && sg >= 0 && sg <= 600)) d.push(erro('config.segundos', 'Tempo por pergunta entre 0 (sem limite) e 600 segundos.'));
+      if ((c.powerUps || []).some(p => !POWER_UPS_IDS.includes(p))) d.push(erro('config.powerUps', 'Power-up desconhecido.'));
+      if ((c.powerUps || []).length && !(Number.isInteger(c.sequencia ?? 3) && (c.sequencia ?? 3) >= 2 && (c.sequencia ?? 3) <= 10)) d.push(erro('config.sequencia', 'Acertos seguidos para ganhar power-up: de 2 a 10.'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [], c = etapa.config || {};
+      if (c.formato === 'quiz') for (const p of c.perguntas || []) if (!(p.alternativas || []).some(a => a.id === r?.perguntas?.[p.id]?.corretaId)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
+      if (c.formato === 'direcao') for (const rd of c.rodadas || []) for (const v of rd.variaveis || []) if (!['sobe', 'desce', 'igual'].includes(r?.direcoes?.[v.id])) d.push(erro(`docente.respostas.${etapa.id}.direcoes`, `Marque a direção certa de "${String(v.nome || v.id).slice(0, 30)}" em "${String(rd.estimulo || '').slice(0, 30)}".`));
+      return d;
+    }
+  },
+
+  cruzadas: {
+    typeId: 'cruzadas',
+    typeVersion: '1.0.0',
+    nome: 'Palavras cruzadas',
+    descricao: 'O professor dá a palavra e a dica; a grade se monta sozinha. Cada celular pode ter só algumas dicas: o grupo junta. A grade pode ser de cada grupo (corrida entre grupos) ou uma só, da turma (os grupos se completam, com o resultado no telão).',
+    configuracao: {
+      palavras: 'lista (3 a 25) de {id, palavra, dica}; acentos e espaços são ignorados na conferência',
+      dicas: "'fracionadas' (cada celular tem só algumas dicas, padrão) | 'todas'",
+      grade: "'por_grupo' (cada grupo tem a sua) | 'turma' (uma grade só, os grupos se completam)"
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['grupos'], envio: ['representante', 'individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {}, ps = c.palavras;
+      if (!Array.isArray(ps) || ps.length < 3 || ps.length > 25) d.push(erro('config.palavras', 'Informe de 3 a 25 palavras.'));
+      else {
+        if (new Set(ps.map(x => x.id)).size !== ps.length || ps.some(x => !ID_CURTO.test(String(x.id)))) d.push(erro('config.palavras', 'IDs de palavra ausentes ou repetidos.'));
+        ps.forEach((x, i) => {
+          const n = String(x.palavra || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]/g, '').length;
+          if (n < 2 || n > 15) d.push(erro(`config.palavras[${i}]`, `Palavra ${i + 1}: de 2 a 15 letras.`));
+          if (!texto(x.dica, 200)) d.push(erro(`config.palavras[${i}]`, `Palavra ${i + 1} sem dica.`));
+        });
+      }
+      if (!['fracionadas', 'todas'].includes(c.dicas || 'fracionadas')) d.push(erro('config.dicas', "Dicas: 'fracionadas' ou 'todas'."));
+      if (!['por_grupo', 'turma'].includes(c.grade || 'por_grupo')) d.push(erro('config.grade', "Grade: 'por_grupo' ou 'turma'."));
+      return d;
+    },
+    validarRespostas() { return []; }   // a resposta são as próprias palavras
+  },
+
+  quiz_pensar: {
+    typeId: 'quiz_pensar',
+    typeVersion: '1.0.0',
+    nome: 'Quiz que faz pensar',
+    descricao: 'Em equipe (TBL): cada aluno responde sozinho, depois o grupo debate e manda a resposta do grupo. Tomada de decisão: cada escolha leva a um cenário diferente, até um final bom, neutro ou ruim. Metacognição: junto com a resposta, o aluno diz o quanto tem certeza.',
+    configuracao: {
+      formato: "'equipe' | 'ramificado' | 'metacognicao'",
+      perguntas: "equipe e metacognição: lista de {id, enunciado, alternativas}; a correta em docente.respostas[etapa].perguntas[id].corretaId",
+      consenso: "equipe: 'lider' (o líder manda a resposta do grupo) | 'todos' (vale quando todos votam igual)",
+      mostrarIndividuais: 'equipe: na fase do grupo, cada um vê como o grupo respondeu sozinho (padrão true)',
+      cenarios: 'ramificado: lista de {id, texto, final, desfecho: bom|neutro|ruim, opcoes: [{id, texto, destino (id do cenário), feedback}]}; o primeiro é o início',
+      pontuarConfianca: 'metacognição: certeza vale mais (e perde no erro) (padrão true)',
+      mostrarCalibracao: 'metacognição: ao encerrar, o telão mostra quanto a turma acertou em cada nível de certeza (padrão true)'
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['grupos', 'individual'], envio: ['representante', 'individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'rodadas', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['equipe', 'ramificado', 'metacognicao'].includes(c.formato)) d.push(erro('config.formato', "Escolha o formato: 'equipe', 'ramificado' ou 'metacognicao'."));
+      if (c.formato === 'equipe' || c.formato === 'metacognicao') d.push(...validarPerguntas(c.perguntas));
+      if (c.formato === 'equipe' && etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'O quiz em equipe é sempre em grupos.'));
+      if (c.formato === 'ramificado') {
+        if (etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'A tomada de decisão é sempre em grupos.'));
+        for (const m of problemasRamosTipos(c.cenarios)) d.push(erro('config.cenarios', m));
+      }
+      if (c.formato === 'metacognicao' && etapa.participacao?.organizacao !== 'individual') d.push(aviso('participacao.organizacao', 'A metacognição costuma ser individual: cada um diz o quanto tem certeza.'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [], c = etapa.config || {};
+      if (c.formato !== 'ramificado') for (const p of c.perguntas || []) if (!(p.alternativas || []).some(a => a.id === r?.perguntas?.[p.id]?.corretaId)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
+      return d;
+    }
+  },
+
+  analise_imagem: {
+    typeId: 'analise_imagem',
+    typeVersion: '1.0.0',
+    nome: 'Análise de imagem',
+    descricao: 'O professor envia uma foto, um gráfico ou um modelo 3D (.glb). Os alunos marcam pontos na imagem, respondem perguntas sobre ela ou descrevem o que observam (a descrição de cada grupo vai para o telão). O modelo 3D gira e amplia no celular.',
+    configuracao: {
+      midia: "'foto' | 'grafico' | 'modelo3d'",
+      imagem: 'foto ou gráfico: {dados: data URL (webp/png/jpeg, leve), largura, altura}',
+      modelo: "modelo3d: {url: endereço do .glb} ou {dados: data URL do .glb, até ~800 KB}",
+      enunciado: 'texto: o que fazer com a imagem',
+      tarefa: "'marcar' (tocar onde está cada item; só foto/gráfico) | 'perguntas' (múltipla escolha) | 'observar' (o grupo descreve; vai para o telão)",
+      marcadores: "marcar: lista (1 a 10) de {id, rotulo}; a posição certa (x, y em %) fica em docente.respostas[etapa].posicoes {id: {x, y}}",
+      tolerancia: 'marcar: distância aceita, em % da largura (padrão 8)',
+      perguntas: "perguntas: lista de {id, enunciado, alternativas}; a correta em docente.respostas[etapa].perguntas[id].corretaId",
+      distribuicao: "marcar: 'todos' | 'fracionado' (cada celular com alguns itens)", tentativas: "marcar: 'uma' | 'repetir'"
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['grupos', 'individual', 'representantes'], envio: ['representante', 'individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!['foto', 'grafico', 'modelo3d'].includes(c.midia)) d.push(erro('config.midia', "Escolha a mídia: 'foto', 'grafico' ou 'modelo3d'."));
+      if (c.midia === 'modelo3d') {
+        const ok = (c.modelo?.url && /^https:\/\/\S+\.glb(\?\S*)?$/i.test(c.modelo.url)) || /^data:(model\/gltf-binary|application\/octet-stream);base64,/.test(c.modelo?.dados || '');
+        if (!ok) d.push(erro('config.modelo', 'Informe o endereço https de um arquivo .glb (ou envie um .glb pequeno).'));
+        else if ((c.modelo?.dados || '').length > 950000) d.push(erro('config.modelo', 'Modelo pesado demais para enviar: publique o .glb e informe o endereço.'));
+        if (c.tarefa === 'marcar') d.push(erro('config.tarefa', 'No modelo 3D, use perguntas ou observar (marcar é só para foto e gráfico).'));
+      } else if (c.midia) {
+        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem.'));
+        else if (c.imagem.dados.length > 950000) d.push(erro('config.imagem', 'Imagem pesada demais. Envie de novo para ser reduzida.'));
+      }
+      if (!['marcar', 'perguntas', 'observar'].includes(c.tarefa)) d.push(erro('config.tarefa', "Escolha a tarefa: 'marcar', 'perguntas' ou 'observar'."));
+      if (!texto(c.enunciado, 500)) d.push(erro('config.enunciado', 'Escreva o que fazer com a imagem.'));
+      if (c.tarefa === 'marcar') {
+        const ms = c.marcadores;
+        if (!Array.isArray(ms) || ms.length < 1 || ms.length > 10 || ms.some(m => !texto(m.rotulo, 80) || !ID_CURTO.test(String(m.id)))) d.push(erro('config.marcadores', 'Informe de 1 a 10 itens para marcar, cada um com nome.'));
+        const tol = c.tolerancia ?? 8;
+        if (!(tol >= 2 && tol <= 30)) d.push(erro('config.tolerancia', 'Tolerância entre 2 e 30 (% da largura).'));
+        if (etapa.participacao?.organizacao === 'individual') d.push(erro('participacao.organizacao', 'Marcar é em grupos (ou entre grupos, só os representantes).'));
+      }
+      if (c.tarefa === 'perguntas') d.push(...validarPerguntas(c.perguntas));
+      if (c.tarefa === 'observar' && etapa.participacao?.organizacao !== 'grupos') d.push(erro('participacao.organizacao', 'Observar e descrever é em grupos (o líder escreve pelo grupo).'));
+      return d;
+    },
+    validarRespostas(etapa, r) {
+      const d = [], c = etapa.config || {};
+      if (c.tarefa === 'marcar') for (const m of c.marcadores || []) { const p = r?.posicoes?.[m.id]; if (!(p && Number.isFinite(p.x) && Number.isFinite(p.y))) d.push(erro(`docente.respostas.${etapa.id}.posicoes`, `Marque na imagem onde fica "${String(m.rotulo || m.id).slice(0, 30)}".`)); }
+      if (c.tarefa === 'perguntas') for (const p of c.perguntas || []) if (!(p.alternativas || []).some(a => a.id === r?.perguntas?.[p.id]?.corretaId)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
+      return d;
+    }
+  },
+
+  questao_individual: {
+    typeId: 'questao_individual',
+    typeVersion: '1.0.0',
+    nome: 'Questão individual',
+    descricao: 'Cada participante responde uma questão de múltipla escolha, por exemplo de transferência do que foi integrado.',
+    configuracao: {
+      enunciado: 'texto obrigatório',
+      alternativas: 'lista obrigatória (2 a 5) de {id, texto}'
+    },
+    acceptedInputs: [],
+    producedOutputs: [{
+      portId: 'resposta_individual', escopo: 'participante', cardinalidade: 'uma_por_participante',
+      dados: '{alternativaId}', disponivelQuando: 'envio_confirmado'
+    }],
+    participacao: { organizacao: ['individual'], envio: ['individual'], competicao: ['desligada', 'meta', 'entre_grupos'] },
+    completionPolicy: 'envio_confirmado',
+    assessmentPolicy: 'gabarito_docente',
+    contingencyPolicy: ['aguardar'],
+    usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!texto(c.enunciado, 1000)) d.push(erro('config.enunciado', 'Questão sem enunciado.'));
+      const as = c.alternativas;
+      if (!Array.isArray(as) || as.length < 2 || as.length > 5) d.push(erro('config.alternativas', 'Informe de 2 a 5 alternativas.'));
+      else if (new Set(as.map(a => a.id)).size !== as.length) d.push(erro('config.alternativas', 'IDs de alternativa repetidos.'));
+      if (etapa.participacao?.organizacao !== 'individual') d.push(erro('participacao.organizacao', 'Questão individual exige organização individual.'));
+      return d;
+    }
+  }
+};
+
+/** Lista de perguntas de múltipla escolha (cadeado e quiz). */
+function validarPerguntas(ps) {
+  const d = [];
+  if (!Array.isArray(ps) || ps.length < 1 || ps.length > 60) return [erro('config.perguntas', 'Informe de 1 a 60 perguntas.')];
+  const ids = ps.map(p => p.id);
+  if (new Set(ids).size !== ids.length || ids.some(x => !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(String(x)))) d.push(erro('config.perguntas', 'IDs de pergunta ausentes ou repetidos.'));
+  ps.forEach((p, i) => {
+    if (!texto(p.enunciado, 1000)) d.push(erro(`config.perguntas[${i}]`, `Pergunta ${i + 1} sem enunciado.`));
+    const as = p.alternativas;
+    if (!Array.isArray(as) || as.length < 2 || as.length > 5) d.push(erro(`config.perguntas[${i}]`, `Pergunta ${i + 1}: informe de 2 a 5 alternativas.`));
+    else {
+      if (new Set(as.map(a => a.id)).size !== as.length) d.push(erro(`config.perguntas[${i}]`, `Pergunta ${i + 1}: IDs de alternativa repetidos.`));
+      if (as.some(a => !texto(a.texto, 300))) d.push(erro(`config.perguntas[${i}]`, `Pergunta ${i + 1}: alternativa sem texto.`));
+    }
+  });
+  return d;
+}
+
+export function erro(local, mensagem) { return { severidade: 'erro', local, mensagem }; }
+export function aviso(local, mensagem) { return { severidade: 'aviso', local, mensagem }; }
+export function info(local, mensagem) { return { severidade: 'info', local, mensagem }; }
+
+export function obterTipo(typeId, typeVersion) {
+  const t = TIPOS[typeId];
+  return t && t.typeVersion === typeVersion ? t : null;
+}
+
+/** Resumo do catálogo para anexar ao prompt de importação (sem funções). */
+export function catalogoParaPrompt() {
+  return Object.values(TIPOS).map(t => ({
+    typeId: t.typeId, typeVersion: t.typeVersion, nome: t.nome, descricao: t.descricao,
+    configuracao: t.configuracao, acceptedInputs: t.acceptedInputs, producedOutputs: t.producedOutputs,
+    participacao: t.participacao, completionPolicy: t.completionPolicy, assessmentPolicy: t.assessmentPolicy,
+    contingencyPolicy: t.contingencyPolicy
+  }));
+}
+
+/** Uma saída é compatível com uma entrada se a entrada a declara em `aceita`. */
+export function portasCompativeis(tipoProdutor, portaSaida, tipoConsumidor, portaEntrada) {
+  const entrada = tipoConsumidor.acceptedInputs.find(p => p.portId === portaEntrada);
+  const saida = tipoProdutor.producedOutputs.find(p => p.portId === portaSaida);
+  if (!entrada || !saida) return false;
+  return (entrada.aceita || []).includes(`${tipoProdutor.typeId}.${portaSaida}`);
+}

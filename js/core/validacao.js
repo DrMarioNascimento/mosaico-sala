@@ -152,6 +152,10 @@ export function validarAtividade(a) {
       if (!e) d.push(erro('meta.etapas', `Etapa inexistente: ${id}.`));
       else if (obterTipo(e.typeId, e.typeVersion)?.assessmentPolicy !== 'gabarito_docente')
         d.push(erro('meta.etapas', `"${e.titulo}" não tem resposta esperada; não pode contar para a meta.`));
+      else if (e.typeId === 'cartoes_arrastar' && e.config?.formato === 'termometro' && !Object.values(respostas[e.id]?.posicao || {}).some(v => v !== null && v !== '' && Number.isFinite(Number(v))))
+        d.push(erro('meta.etapas', `"${e.titulo}" é um termômetro só de debate (sem posição esperada); não pode contar para a meta.`));
+      else if ((e.typeId === 'analise_imagem' && e.config?.tarefa === 'observar') || (e.typeId === 'pares' && e.config?.formato === 'memoria' && e.participacao?.organizacao === 'representantes'))
+        d.push(erro('meta.etapas', `"${e.titulo}" não tem acerto por grupo para contar na meta.`));
     });
   }
 
@@ -159,7 +163,11 @@ export function validarAtividade(a) {
   const textos = [['introducao', a.introducao], ['perguntaCentral', a.perguntaCentral],
     ...a.pecas.map((p, i) => [`pecas[${i}].conteudo`, p.conteudo]),
     ...a.etapas.map((e, i) => [`etapas[${i}]`, [e.instrucao, e.config?.pergunta, e.config?.enunciado, e.config?.texto, ...(e.config?.hipotesesCandidatas || e.config?.alternativas || []).map(o => o.texto),
-      ...(e.config?.perguntas || []).flatMap(q => [q.enunciado, ...(q.alternativas || []).map(o => o.texto)]), ...(e.config?.fragmentos || []), e.config?.mensagem].join(' ')])];
+      ...(e.config?.perguntas || []).flatMap(q => [q.enunciado, ...(q.alternativas || []).map(o => o.texto)]), ...(e.config?.fragmentos || []), e.config?.mensagem,
+      ...(e.config?.cartoes || []).map(x => x.texto), ...(e.config?.colunas || []).map(x => x.titulo),
+      ...(e.config?.pares || []).flatMap(x => [x.a, x.b]), e.config?.gatilho, ...(e.config?.elos || []).flatMap(x => [x.consequencia, ...(x.distratores || [])]),
+      ...(e.config?.rodadas || []).flatMap(r => [r.estimulo, ...(r.variaveis || []).map(v => v.nome)]), ...(e.config?.palavras || []).map(x => x.dica), ...(e.config?.termos || []).flatMap(x => [x.termo, x.definicao]),
+      ...(e.config?.cenarios || []).flatMap(c => [c.texto, ...(c.opcoes || []).flatMap(o => [o.texto, o.feedback])]), ...(e.config?.marcadores || []).map(m => m.rotulo)].join(' ')])];
   for (const [local, t] of textos) {
     const tipo = dadoPessoal(t);
     if (tipo) d.push(aviso(local, `Parece conter ${tipo}. Use casos fictícios, sem dados de pessoas reais.`));

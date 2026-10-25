@@ -5,6 +5,9 @@
 import { formaDoGrupo, urlIcone } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { pecasDeTexto, bordas, embaralharSemOrdemCerta, gradeDoCorte } from './core/montagem.js';
+import { respostaEsperadaTexto } from './core/cartoes.js';
+import { montarGrade } from './core/cruzadas.js';
+import { respostaCerta } from './core/desafios.js';
 
 const icone = (a, gid, tam = 44) => `<img src="${new URL(urlIcone(formaDoGrupo(a, gid).forma), location.href).href}" alt="" width="${tam}" height="${tam}" style="vertical-align:middle;margin-right:8px">`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -64,6 +67,66 @@ export function gerarImpressao(a) {
       partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · quiz entre grupos (ler em voz alta)</h3>
         <ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)}<br>${q.alternativas.map((al, k) => `${'ABCDE'[k]}) ${esc(al.texto)}`).join(' &nbsp; ')}<br>Resposta: <strong>${esc(q.alternativas.find(o => o.id === rp.perguntas?.[q.id]?.corretaId)?.texto || '?')}</strong>${rp.perguntas?.[q.id]?.explicacao ? ' — ' + esc(rp.perguntas[q.id].explicacao) : ''}</li>`).join('')}</ol>
         <table><thead><tr><th>Grupo</th><th>Pontos</th></tr></thead><tbody>${a.grupos.map(g => `<tr><td>${icone(a, g.id, 22)}${esc(g.nome)}</td><td></td></tr>`).join('')}</tbody></table></div>`);
+    } else if (e.typeId === 'cartoes_arrastar') {
+      const rp = a.docente?.respostas?.[e.id] || {}, cs = embaralharSemOrdemCerta(cfg.cartoes || []);
+      const cab = { ordenar: 'recortar, embaralhar e pôr na ordem', classificar: 'recortar e separar nas colunas', termometro: 'marcar cada caso na linha' }[cfg.formato];
+      if (cfg.formato === 'termometro') {
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · ${cab} (uma folha por grupo)</p><h2>${esc(e.titulo)}</h2>
+          <p>${esc(e.instrucao || '')}</p>${cfg.enunciado ? `<h3>${esc(cfg.enunciado)}</h3>` : ''}
+          ${cs.map(c => `<div class="termo-imp"><strong>${esc(c.texto)}</strong><div class="termo-linha-imp"><span>${esc(cfg.polos?.esquerda || '')}</span><i></i><span>${esc(cfg.polos?.direita || '')}</span></div></div>`).join('')}</section>`);
+      } else {
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · ${cab}</p><h2>${esc(e.titulo)}</h2>
+          <p>${esc(e.instrucao || '')}</p>${cfg.enunciado ? `<h3>${esc(cfg.enunciado)}</h3>` : ''}
+          ${cfg.formato === 'classificar' ? `<div class="pedacos">${(cfg.colunas || []).map(c => `<div class="pedaco coluna-imp">${esc(c.titulo)}</div>`).join('')}</div>` : ''}
+          <div class="pedacos">${cs.map(c => `<div class="pedaco cartao-imp">${esc(c.texto)}</div>`).join('')}</div></section>`);
+      }
+      const resp = respostaEsperadaTexto(cfg, rp);
+      partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · cartões (${{ ordenar: 'ordenar', classificar: 'classificar', termometro: 'termômetro' }[cfg.formato] || ''})</h3><p>${resp ? '<strong>' + esc(resp) + '</strong>' : 'Só debate (sem posição esperada).'}</p>${rp.explicacao ? `<p>${esc(rp.explicacao)}</p>` : ''}</div>`);
+    } else if (e.typeId === 'pares') {
+      const ps = cfg.pares || [];
+      const cartas = cfg.formato === 'memoria' ? embaralharSemOrdemCerta(ps.flatMap(p => [p.a, p.b])) : null;
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · ${cfg.formato === 'memoria' ? 'cartas para recortar (viradas para baixo)' : 'cartões para recortar e ligar'}</p><h2>${esc(e.titulo)}</h2>
+        <p>${esc(e.instrucao || cfg.enunciado || '')}</p>
+        ${cartas ? `<div class="pedacos">${cartas.map(t => `<div class="pedaco cartao-imp">${esc(t)}</div>`).join('')}</div>`
+          : `<div class="ligar-imp"><div>${ps.map(p => `<div class="pedaco coluna-imp">${esc(p.a)}</div>`).join('')}</div><div>${embaralharSemOrdemCerta(ps).map(p => `<div class="pedaco cartao-imp">${esc(p.b)}</div>`).join('')}</div></div>`}</section>`);
+      partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · pares</h3><ul>${ps.map(p => `<li>${esc(p.a)} ↔ ${esc(p.b)}</li>`).join('')}</ul></div>`);
+    } else if (e.typeId === 'corrida') {
+      const rp = a.docente?.respostas?.[e.id] || {};
+      if (cfg.formato === 'corrente') {
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · corrente de causa e efeito</p><h2>${esc(e.titulo)}</h2><p>${esc(e.instrucao || 'Escolha, em cada passo, o que acontece em seguida.')}</p>
+          <p class="pergunta">${esc(cfg.gatilho || '')}</p>${(cfg.elos || []).map((el, i) => `<div class="questao"><h3>${i + 1}. ${i ? 'E depois?' : 'O que acontece primeiro?'}</h3><ul class="caixas">${embaralharSemOrdemCerta([el.consequencia, ...(el.distratores || [])]).map(t => `<li>☐ ${esc(t)}</li>`).join('')}</ul></div>`).join('')}</section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · corrente</h3><p>${[cfg.gatilho, ...(cfg.elos || []).map(x => x.consequencia)].map(esc).join(' → ')}</p></div>`);
+      } else if (cfg.formato === 'direcao') {
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · escolher a direção</p><h2>${esc(e.titulo)}</h2><p>${esc(e.instrucao || 'Marque se cada variável aumenta (↑), diminui (↓) ou não muda (=).')}</p>
+          ${(cfg.rodadas || []).map(r => `<h3>${esc(r.estimulo)}</h3><table><thead><tr><th>Variável</th><th>↑</th><th>↓</th><th>=</th></tr></thead><tbody>${r.variaveis.map(v => `<tr><td>${esc(v.nome)}</td><td>☐</td><td>☐</td><td>☐</td></tr>`).join('')}</tbody></table>`).join('')}</section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · direções</h3>${(cfg.rodadas || []).map(r => `<p><strong>${esc(r.estimulo)}:</strong> ${r.variaveis.map(v => `${esc(v.nome)} ${({ sobe: '↑', desce: '↓', igual: '=' })[rp.direcoes?.[v.id]] || '?'}`).join(' · ')}</p>`).join('')}</div>`);
+      } else perguntasImp(e, cfg, rp, 'quiz no próprio ritmo');
+    } else if (e.typeId === 'quiz_pensar') {
+      const rp = a.docente?.respostas?.[e.id] || {};
+      if (cfg.formato === 'ramificado') {
+        partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cenários (o professor entrega o próximo conforme a escolha)</p><h2>${esc(e.titulo)}</h2>
+          ${(cfg.cenarios || []).map((c, i) => `<div class="cartao-q"><small>${i === 0 ? 'Início' : c.final ? 'Final' : 'Cenário ' + i}</small><p>${esc(c.texto)}</p>${c.final ? '' : `<ul class="caixas">${c.opcoes.map(o => `<li>☐ ${esc(o.texto)}</li>`).join('')}</ul>`}</div>`).join('')}</section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · mapa da decisão</h3><ul>${(cfg.cenarios || []).filter(c => !c.final).map((c, i) => `<li>${esc(c.texto.slice(0, 60))}…<ul>${c.opcoes.map(o => { const d = cfg.cenarios.find(x => x.id === o.destino); return `<li>${esc(o.texto)} → ${d?.final ? 'FINAL ' + esc(d.desfecho || '') : esc((d?.texto || '?').slice(0, 40))}${o.feedback ? ' — ' + esc(o.feedback) : ''}</li>`; }).join('')}</ul></li>`).join('')}</ul></div>`);
+      } else perguntasImp(e, cfg, rp, cfg.formato === 'equipe' ? 'em equipe: primeiro sozinho, depois o grupo' : 'responda e marque o quanto tem certeza', cfg.formato === 'metacognicao');
+    } else if (e.typeId === 'cruzadas') {
+      const g = montarGrade(cfg.palavras || []), nums = {};
+      g.numeros.forEach((l, r) => l.forEach((n, k) => { if (n) nums[r + ',' + k] = n; }));
+      const grade = cheia => `<div class="cruz-imp" style="grid-template-columns:repeat(${g.colunas},1fr)">${g.celulas.flatMap((l, r) => l.map((ch, k) => ch === null ? '<span class="v"></span>' : `<span class="c">${nums[r + ',' + k] ? `<small>${nums[r + ',' + k]}</small>` : ''}${cheia ? ch : ''}</span>`)).join('')}</div>`;
+      const dicas = d => g.palavras.filter(p => p.dir === d).map(p => `<li value="${p.numero}">${esc(p.dica)} (${p.resposta.length})</li>`).join('');
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · palavras cruzadas</p><h2>${esc(e.titulo)}</h2>${grade(false)}
+        <div class="cruz-dicas-imp"><div><h3>Horizontais →</h3><ol>${dicas('h')}</ol></div><div><h3>Verticais ↓</h3><ol>${dicas('v')}</ol></div></div></section>`);
+      partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · grade resolvida</h3>${grade(true)}${g.naoCouberam.length ? `<p>Não couberam: ${g.naoCouberam.map(x => esc(x.palavra)).join(', ')}</p>` : ''}</div>`);
+    } else if (e.typeId === 'sequencia') {
+      const ts = cfg.termos || [];
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · glossário para estudar depois da sequência (Genius)</p><h2>${esc(e.titulo)} · os termos</h2>
+        ${ts.some(t => t.definicao) ? `<dl class="glossario">${ts.map(t => `<dt>${esc(t.termo)}</dt>${t.definicao ? `<dd>${esc(t.definicao)}</dd>` : ''}`).join('')}</dl>` : `<p>${ts.map(t => esc(t.termo)).join(' · ')}</p>`}</section>`);
+    } else if (e.typeId === 'analise_imagem') {
+      const rp = a.docente?.respostas?.[e.id] || {};
+      const img = cfg.imagem?.dados ? `<img src="${cfg.imagem.dados}" alt="" style="max-width:100%;border:1px solid #999">` : cfg.modelo?.url ? `<p>Modelo 3D: ${esc(cfg.modelo.url)}</p>` : '';
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · análise de imagem</p><h2>${esc(e.titulo)}</h2><p>${esc(cfg.enunciado || '')}</p>${img}
+        ${cfg.tarefa === 'marcar' ? `<p>Marque na imagem: ${(cfg.marcadores || []).map((m, i) => `<strong>${i + 1}</strong> ${esc(m.rotulo)}`).join(' · ')}</p>` : cfg.tarefa === 'observar' ? '<p class="linhas">O que o grupo observa:</p>' : (cfg.perguntas || []).map((q, i) => `<div class="questao"><h3>${i + 1}. ${esc(q.enunciado)}</h3><ul class="caixas">${q.alternativas.map(al => `<li>☐ ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</section>`);
+      if (cfg.tarefa === 'marcar') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · posições</h3><div class="img-marcada">${img}${(cfg.marcadores || []).map((m, i) => rp.posicoes?.[m.id] ? `<span style="left:${rp.posicoes[m.id].x}%;top:${rp.posicoes[m.id].y}%">${i + 1}</span>` : '').join('')}</div></div>`);
+      if (cfg.tarefa === 'perguntas') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · respostas</h3><ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)} → <strong>${esc(respostaCerta(q, rp).texto)}</strong></li>`).join('')}</ol></div>`);
     } else if (e.typeId === 'comparar_hipoteses') {
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · uma folha por grupo</p><h2>${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || '')}</p>
@@ -74,6 +137,11 @@ export function gerarImpressao(a) {
         <p class="linhas">Justificativa do grupo:</p></section>`);
     }
   }
+  function perguntasImp(e, cfg, rp, sub, confianca) {
+    partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · ${esc(sub)}</p><h2>${esc(e.titulo)}</h2><p>${esc(e.instrucao || '')}</p>
+      ${(cfg.perguntas || []).map((q, i) => `<div class="questao"><h3>${i + 1}. ${esc(q.enunciado)}</h3><ul class="caixas">${q.alternativas.map((al, k) => `<li>☐ ${'ABCDE'[k]}) ${esc(al.texto)}</li>`).join('')}</ul>${confianca ? '<p class="sutil">☐ Tenho certeza &nbsp; ☐ Estou em dúvida &nbsp; ☐ Chutei</p>' : ''}</div>`).join('')}</section>`);
+    partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · respostas</h3><ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)} → <strong>${esc(respostaCerta(q, rp).texto)}</strong>${rp.perguntas?.[q.id]?.explicacao ? ' — ' + esc(rp.perguntas[q.id].explicacao) : ''}</li>`).join('')}</ol></div>`);
+  }
   const individuais = ordem(a).filter(e => e.typeId === 'questao_individual');
   if (individuais.length) partes.push(`<section class="folha"><p class="cab">Individual · uma folha por participante</p><h2>Questões individuais</h2>
     <p>Nome: ______________________________</p>
@@ -83,7 +151,7 @@ export function gerarImpressao(a) {
   // Material de quem conduz (separado)
   const r = a.docente?.respostas || {};
   partes.push(`<section class="folha docente"><p class="cab">MATERIAL DE QUEM CONDUZ — NÃO DISTRIBUIR</p><h2>Respostas esperadas</h2>
-    ${ordem(a).filter(e => r[e.id] && !r[e.id].perguntas).map(e => {
+    ${ordem(a).filter(e => r[e.id] && !r[e.id].perguntas && ['investigacao_fragmentos', 'comparar_hipoteses', 'questao_individual'].includes(e.typeId)).map(e => {
       const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r[e.id].corretaId);
       return `<div class="questao"><h3>${esc(e.titulo)}</h3><p><strong>${esc(op?.texto || r[e.id].corretaId)}</strong></p><p>${esc(r[e.id].explicacao || '')}</p></div>`;
     }).join('')}
@@ -111,6 +179,13 @@ export function gerarImpressao(a) {
  .img-corte{position:relative;display:inline-block;max-width:100%}.img-corte img{display:block;max-width:100%}.grade-corte{position:absolute;inset:0;background-image:linear-gradient(to right,#000 2px,transparent 2px),linear-gradient(to bottom,#000 2px,transparent 2px);background-size:calc(100%/var(--c)) calc(100%/var(--l));border-right:2px solid #000;border-bottom:2px solid #000;opacity:.7}
  .cartoes{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cartao-q{border:1.5px dashed #333;border-radius:8px;padding:10px;break-inside:avoid}.cartao-q small{display:block;font:700 9pt Arial,sans-serif;color:#666}
  .pedacos{display:flex;flex-wrap:wrap;gap:12px}.pedaco{border:2px dashed #333;border-radius:10px;padding:14px 18px;font:800 18pt Arial,sans-serif;min-width:3cm;text-align:center}
+ .cartao-imp{font-size:13pt;min-width:4cm}.coluna-imp{background:#f0f0f0;border-style:solid}
+ .termo-imp{margin:14px 0}.termo-linha-imp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font:9pt Arial,sans-serif;color:#555;margin-top:6px}.termo-linha-imp i{display:block;height:0;border-top:2px solid #333;position:relative}
+ .ligar-imp{display:grid;grid-template-columns:1fr 1fr;gap:16px}.ligar-imp>div{display:grid;gap:10px}
+ .glossario{columns:2;column-gap:1cm}.glossario dt{font-weight:800;margin-top:6px;break-after:avoid}.glossario dd{margin:0 0 4px;font-size:10pt}
+ .cruz-imp{display:grid;gap:0;max-width:16cm;margin:10px 0}.cruz-imp span{aspect-ratio:1;position:relative}.cruz-imp .c{border:1px solid #333;display:grid;place-items:center;font:800 12pt Arial,sans-serif}.cruz-imp small{position:absolute;top:1px;left:2px;font:7pt Arial,sans-serif}
+ .cruz-dicas-imp{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:10.5pt}
+ .img-marcada{position:relative;display:inline-block}.img-marcada span{position:absolute;transform:translate(-50%,-50%);background:#c00;color:#fff;border-radius:50%;width:22px;height:22px;display:grid;place-items:center;font:700 10pt Arial,sans-serif}
  .docente{border-top:8px solid #c00}.docente .cab{color:#c00}
  .barra{position:sticky;top:0;background:#222;color:#fff;padding:10px;text-align:center;font:14px Arial,sans-serif}
  .barra button{font:700 14px Arial,sans-serif;padding:8px 16px}

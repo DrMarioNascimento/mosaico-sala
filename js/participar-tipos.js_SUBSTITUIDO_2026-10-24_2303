@@ -1,0 +1,292 @@
+/* MOSAICO · Tela do participante nos tipos novos (junto com participar.js)
+   Pares na memória · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem (mídia, perguntas e observar)
+   O celular só manda a jogada; quem conduz confere e devolve o resultado. */
+
+import { h, corDoGrupo, iconeGrupo } from './ui.js';
+import { POWER_UPS } from './core/corrida.js';
+
+export function criarTelas(ctx) {
+  const { b } = ctx;
+  const S = () => ctx.sala(), uid = () => ctx.uid(), P = id => ctx.pacotes[id];
+  const g = () => ctx.grupoDe(S());
+  const souLider = gr => (S().executores?.[gr] || S().representantes?.[gr]) === uid();
+  const pend = {};                                   // envios à espera da conferência (chave → valor visto)
+  const local = {};                                  // escolhas locais (memória, confiança, direções)
+  const cartao = (...f) => {
+    const el = h('div', { class: 'cartao', style: { '--cor': g() ? corDoGrupo(S().publico.grupos, g()) : '#ff8a3d' } }, ...f);
+    const juntar = el.append.bind(el);
+    el.append = (...x) => juntar(...x.flat(Infinity).filter(v => v !== null && v !== undefined && v !== false && v !== ''));   // nada de "null"/"false" na tela
+    return el;
+  };
+  const nomeGrupo = x => S().publico.grupos.find(y => y.id === x)?.nome || x;
+  const DIR = { sobe: '↑', desce: '↓', igual: '=' }, DIR_NOME = { sobe: 'Aumenta', desce: 'Diminui', igual: 'Não muda' };
+  const tipo = info => {
+    if (info.typeId === 'pares' && info.formato === 'memoria') return info.organizacao === 'representantes' ? 'memoriaTelao' : 'memoria';
+    if (info.typeId === 'corrida') return 'corrida';
+    if (info.typeId === 'cruzadas') return 'cruzadas';
+    if (info.typeId === 'quiz_pensar') return info.formato === 'equipe' ? 'equipe' : info.formato === 'ramificado' ? 'ramos' : 'corrida';
+    if (info.typeId === 'analise_imagem') return info.formato === 'perguntas' ? 'corrida' : info.formato === 'observar' ? 'observar' : null;
+    return null;
+  };
+
+  // ---------- mídia (análise de imagem) ----------
+  let carregandoMV = null;
+  const modelViewer = () => carregandoMV ||= new Promise(ok => {
+    if (customElements.get('model-viewer')) return ok();
+    const s = document.createElement('script'); s.type = 'module'; s.src = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js'; s.onload = ok; s.onerror = ok; document.head.append(s);
+  });
+  function midia(info) {
+    const m = P('revelacao');
+    if (!m || m.etapaId !== S().etapaAtual) return h('p', { class: 'sutil' }, 'Carregando a imagem…');
+    if (m.midia === 'modelo3d') {
+      modelViewer();
+      const mv = document.createElement('model-viewer');
+      mv.setAttribute('src', m.modelo?.url || m.modelo?.dados || ''); mv.setAttribute('camera-controls', ''); mv.setAttribute('touch-action', 'pan-y'); mv.setAttribute('alt', m.enunciado || 'Modelo 3D');
+      mv.className = 'modelo-3d';
+      return h('div', {}, mv, h('small', { class: 'sutil' }, 'Gire com um dedo e amplie com dois.'));
+    }
+    return h('img', { class: 'analise-img', src: m.imagem?.dados, alt: m.enunciado || 'Imagem para analisar' });
+  }
+  const temMidia = info => info.typeId === 'analise_imagem';
+
+  // ---------- corrida (e metacognição, e perguntas sobre a imagem) ----------
+  function corrida(info) {
+    const porGrupo = info.organizacao !== 'individual', jog = porGrupo ? g() : uid(), pk = jog && P(jog), j = S().jogo || {};
+    ctx.explicar('cor-' + S().etapaAtual, info.titulo, info.typeId === 'quiz_pensar'
+      ? ['Responda e diga o quanto tem certeza.', 'Certeza vale mais pontos, mas perde pontos se errar. Seja honesto com você!']
+      : ['Responda no seu ritmo: cada acerto soma pontos para o seu grupo.', 'Acertos seguidos dão power-ups. Use na hora certa!']);
+    if (pk === undefined) return ctx.carregando();
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    if (temMidia(info)) caixa.append(midia(info));
+    if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(h('p', { class: 'aviso' }, porGrupo ? 'Aguardando o pacote do grupo…' : 'Você entrou depois do início. Ajude o seu grupo!')); return caixa; }
+    if (j.placar) caixa.append(placar(j.placar));
+    if ((j.feed || []).length) caixa.append(h('div', { class: 'feed-pu' }, j.feed.slice(-3).reverse().map(f => h('small', {}, `${POWER_UPS[f.usar]?.icone || '⚡'} ${f.quem} usou ${f.nome}${f.alvo ? ' em ' + nomeGrupo(f.alvo) : ''}${f.bloqueado ? ' (bloqueado!)' : ''}`))));
+    if (pk.ultimo && (pk.ultimo.item !== undefined)) caixa.append(h('p', { class: 'aviso flash', 'data-tipo': pk.ultimo.certo ? 'ok' : 'erro' },
+      pk.ultimo.certo ? `✔ Acertou! +${pk.ultimo.pts}` : pk.ultimo.tempo ? '⏱ Tempo esgotado.' : `✗ ${pk.ultimo.pts > 0 ? 'Quase: +' + pk.ultimo.pts : 'Errou' + (pk.ultimo.pts < 0 ? ' (' + pk.ultimo.pts + ')' : '')}.`,
+      !pk.ultimo.certo && pk.ultimo.certaTexto && h('span', {}, ' Certo: ' + pk.ultimo.certaTexto), pk.ultimo.explicacao && h('small', { style: { display: 'block' } }, pk.ultimo.explicacao)));
+    caixa.append(h('div', { class: 'corrida-status' }, h('span', {}, `${Math.min(pk.pos + 1, pk.total)} de ${pk.total}`), h('strong', {}, `${pk.pontos} pts`), pk.sequencia > 1 && h('span', {}, `🔥 ${pk.sequencia} seguidos`), pk.escudo && h('span', {}, '🛡 escudo')));
+    if (pk.terminou) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, `Você terminou${porGrupo ? '' : ''}! ${pk.posicao ? pk.posicao + 'º a terminar. ' : ''}Acompanhe o placar no telão.`)); return caixa; }
+    if (porGrupo && !souLider(g())) { caixa.append(h('p', { class: 'sutil' }, `Quem responde pelo grupo é ${ctx.nomeDe(S(), S().executores?.[g()] || S().representantes?.[g()])}. Ajudem a pensar!`)); }
+    const congelado = j.congelados?.[pk.porGrupo ? jog : g()];
+    if (congelado && congelado > ctx.agora()) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'erro' }, '🧊 Seu grupo foi congelado por outro grupo. Volta em ', ctx.contador(congelado), '.')); return caixa; }
+    const it = pk.item, chave = S().etapaAtual + '#' + pk.pos;
+    if (pend[chave] !== undefined && pend[chave] === pk.pos) { caixa.append(h('p', { class: 'aviso' }, 'Conferindo…')); return caixa; }
+    if (pk.segundos > 0) caixa.append(ctx.agora() > pk.inicioItem + pk.segundos * 1000
+      ? h('p', { class: 'aviso', 'data-tipo': 'alerta' }, '⏱ O tempo desta pergunta acabou: ela conta como erro. Responda para seguir.')
+      : h('p', { class: 'sutil' }, 'Tempo: ', ctx.contador(pk.inicioItem + pk.segundos * 1000, 'relogio')));
+    const pode = !porGrupo || souLider(g());
+    caixa.append(h('div', { class: 'corrida-item' }, it.pergunta ? [h('small', { class: 'sutil' }, info.typeId === 'corrida' && pk.formato === 'corrente' ? (pk.pos === 0 ? 'Ponto de partida' : 'Aconteceu') : ''), h('p', { class: 'corrente-de' }, it.enunciado), h('h3', {}, it.pergunta)] : h('h3', {}, it.enunciado)));
+    const enviar = dados => ctx.enviar(`${S().etapaAtual}__${jog}__t`, pk.proxima.t, { pos: pk.pos, ...dados }, g()).then(() => { pend[chave] = pk.pos; ctx.redesenhar(); }).catch(e => ctx.aviso(e.message, 'erro'));
+    if (it.tipo === 'mc') {
+      let alts = it.alternativas.filter(a => a.id !== pk.tirar);
+      if (pk.embaralhado) alts = [...alts].reverse();
+      const conf = local[chave];
+      if (pk.confianca && conf) {
+        caixa.append(h('p', {}, 'Sua resposta: ', h('strong', {}, it.alternativas.find(a => a.id === conf)?.texto)), h('p', {}, 'O quanto você tem certeza?'),
+          h('div', { class: 'conf-botoes' }, [['certeza', 'Tenho certeza'], ['duvida', 'Estou em dúvida'], ['chute', 'Chutei']].map(([id, t]) => h('button', { class: 'btn', 'data-auto': 'conf', onclick: () => enviar({ alternativaId: conf, confianca: id }) }, t))),
+          h('button', { class: 'btn discreto pequeno', onclick: () => { delete local[chave]; ctx.redesenhar(); } }, 'Trocar a resposta'));
+      } else caixa.append(h('div', { class: 'corrida-alts' }, alts.map(a => h('button', { class: 'corrida-alt', disabled: !pode, 'data-auto': 'alt', onclick: () => { if (pk.confianca) { local[chave] = a.id; ctx.redesenhar(); } else enviar({ alternativaId: a.id }); } }, a.texto))));
+    } else {
+      const esc = local[chave] ||= {};
+      caixa.append(h('div', { class: 'direcoes' }, it.variaveis.map(v => h('div', { class: 'direcao-linha' }, h('span', {}, v.nome),
+        h('div', { class: 'direcao-botoes' }, ['sobe', 'desce', 'igual'].map(d => h('button', { class: 'direcao' + (esc[v.id] === d ? ' ativo' : ''), disabled: !pode, title: DIR_NOME[d], 'aria-label': `${v.nome}: ${DIR_NOME[d]}`, 'data-auto': 'dir', onclick: () => { esc[v.id] = d; ctx.redesenhar(); } }, DIR[d])))))));
+      const ok = it.variaveis.every(v => esc[v.id]);
+      caixa.append(h('button', { class: 'btn primario bloco', disabled: !pode || !ok, 'data-auto': 'enviar', onclick: () => enviar({ direcoes: { ...esc } }) }, ok ? 'Enviar' : 'Marque todas as variáveis'));
+    }
+    if ((pk.inventario || []).length && pode) caixa.append(h('div', { class: 'pu-lista' }, h('small', { class: 'sutil' }, 'Seus power-ups:'),
+      pk.inventario.map((p, k) => h('button', { class: 'pu', 'data-auto': 'pu', title: POWER_UPS[p]?.efeito, onclick: () => ctx.enviar(`${S().etapaAtual}__${jog}__u`, pk.proxima.u, { usar: p }, g()).then(ctx.redesenhar).catch(e => ctx.aviso(e.message, 'erro')) },
+        h('span', {}, POWER_UPS[p]?.icone || '⚡'), POWER_UPS[p]?.nome || p))));
+    else if ((pk.powerUps || []).length) caixa.append(h('small', { class: 'sutil' }, `Acerte ${pk.sequenciaPU} seguidas para ganhar um power-up.`));
+    return caixa;
+  }
+  const placar = pl => h('div', { class: 'quiz-placar' }, Object.entries(pl).sort((x, y) => y[1] - x[1]).map(([gr, n]) =>
+    h('span', { class: 'chip', style: { '--cor': corDoGrupo(S().publico.grupos, gr) } }, iconeGrupo(S().publico.grupos, gr, 22), nomeGrupo(gr), h('strong', {}, ' ' + n))));
+
+  // ---------- memória ----------
+  function memoria(info, telao) {
+    const j = S().jogo || {}, pk = telao ? (j.tipo === 'memoria' ? j : null) : P(g());
+    ctx.explicar('mem-' + S().etapaAtual, info.titulo, telao ? ['O tabuleiro está no telão. Na vez do seu grupo, o líder escolhe duas cartas pelo celular.', 'Acertou, joga de novo. Errou, passa a vez.'] : ['Virem duas cartas: se formam par, ficam abertas.', 'Combinem antes: o tabuleiro é do grupo inteiro.']);
+    if (pk === undefined) return ctx.carregando();
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), pk?.enunciado && h('h3', {}, pk.enunciado));
+    if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
+    if (!pk.cartas) { caixa.append(ctx.carregando()); return caixa; }
+    const minha = telao ? (pk.vez === g() && souLider(g())) : true;
+    caixa.append(h('p', {}, h('strong', {}, `${pk.achados} de ${pk.total} pares`), telao ? '' : ` · ${pk.tentativas} jogada(s)`));
+    if (telao) {
+      caixa.append(placar(pk.placar || {}));
+      if (pk.concluido) caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Todos os pares foram achados!'));
+      else if (!minha) { caixa.append(h('p', { class: 'aviso' }, pk.vez === g() ? `É a vez do seu grupo! ${ctx.nomeDe(S(), S().representantes?.[g()])} escolhe as cartas.` : `${/^grupo\b/i.test(nomeGrupo(pk.vez)) ? 'Vez do ' : 'Vez do grupo '}${nomeGrupo(pk.vez)}. Acompanhe no telão.`)); return caixa; }
+      else caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Sua vez! Escolha duas cartas. ', ctx.contador((pk.vezDesde || 0) + (pk.segundos || 30) * 1000)));
+    } else if (pk.concluido) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, `Completo!${pk.posicao ? ' (' + pk.posicao + 'º)' : ''}`)); }
+    const chave = S().etapaAtual + '#mem', sel = local[chave] ||= { cartas: [], vista: null };
+    const marca = JSON.stringify([pk.ultima, pk.achados, telao ? pk.jogadas : pk.tentativas]);
+    if (sel.vista !== marca) { sel.vista = marca; sel.cartas = []; sel.mostrarErradas = true; }
+    const esperando = pend[chave] && pend[chave] === marca;
+    const grade = h('div', { class: 'memoria', style: { '--n': Math.ceil(Math.sqrt(pk.cartas.length * 1.4)) } }, pk.cartas.map((c, i) => {
+      const aberta = c.achada || (c.errada && sel.mostrarErradas) || sel.cartas.includes(i);
+      const btn = h('button', { class: 'carta' + (aberta ? ' aberta' : '') + (c.achada ? ' achada' : '') + (c.errada && sel.mostrarErradas ? ' errada' : ''), disabled: !minha || c.achada || pk.concluido || esperando, 'data-auto': c.achada ? null : 'carta', 'aria-label': aberta ? (c.texto || 'carta') : 'Carta virada ' + (i + 1) },
+        aberta ? (c.texto || '…') : h('span', { class: 'verso' }, i + 1));
+      btn.onclick = () => {
+        sel.mostrarErradas = false;
+        if (sel.cartas.includes(i)) return;
+        sel.cartas.push(i);
+        if (sel.cartas.length === 2) {
+          const [a, bb] = sel.cartas;
+          const id = telao ? `${S().etapaAtual}__${g()}__r` : `${S().etapaAtual}__${uid()}__j`;
+          ctx.enviar(id, telao ? pk.proxima : 1, { cartas: [a, bb] }, g()).then(() => { pend[chave] = marca; ctx.redesenhar(); }).catch(e => { sel.cartas = []; ctx.aviso(e.message, 'erro'); ctx.redesenhar(); });
+        }
+        ctx.redesenhar();
+      };
+      return btn;
+    }));
+    // a carta escolhida mostra o texto? só depois que quem conduz devolver (o texto não está no celular)
+    caixa.append(grade, esperando ? h('p', { class: 'sutil' }, 'Conferindo…') : sel.cartas.length === 1 ? h('p', { class: 'sutil' }, 'Escolha a segunda carta.') : null);
+    if (pk.ultima && !pk.ultima.acertou && sel.mostrarErradas) caixa.append(h('p', { class: 'sutil' }, `Não formam par${pk.ultima.quem && !telao ? ' (' + pk.ultima.quem + ')' : ''}. Memorizem!`));
+    return caixa;
+  }
+
+  // ---------- palavras cruzadas ----------
+  function cruzadas(info) {
+    const dk = P(uid()), gpk = dk && P(dk.pacoteGrade);
+    ctx.explicar('cruz-' + S().etapaAtual, info.titulo, ['Cada um tem algumas dicas. Resolva as suas e ajude os colegas.', 'Acentos não importam. A palavra certa aparece na grade de todos.']);
+    if (dk === undefined) return ctx.carregando();
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    if (!dk || dk.etapaId !== S().etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'Você entrou depois da distribuição das dicas. Ajude seu grupo!')); return caixa; }
+    if (!gpk || gpk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
+    caixa.append(h('p', {}, h('strong', {}, `${gpk.acertos} de ${gpk.total} palavras`), gpk.conjunto === 'turma' ? ' · a grade é da turma inteira' : ''), gpk.concluido && h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Grade completa!'));
+    caixa.append(gradeCruzadas(gpk.grade));
+    const resolvida = i => gpk.palavras.find(p => p.i === i)?.resolvida;
+    if (dk.ultimo) caixa.append(h('p', { class: 'aviso', 'data-tipo': dk.ultimo.certo ? 'ok' : 'erro' }, dk.ultimo.certo ? '✔ Certa!' : `✗ “${dk.ultimo.texto}” não é.`));
+    const dir = d => d === 'h' ? '→' : '↓';
+    caixa.append(h('h3', {}, 'Suas dicas'), dk.minhas.length ? h('div', { class: 'dicas' }, dk.minhas.map(m => {
+      if (resolvida(m.i)) return h('div', { class: 'dica feita' }, h('strong', {}, `${m.numero} ${dir(m.dir)} `), m.dica, ' ✔');
+      const r = ctx.rascunho('cz-' + S().etapaAtual + '-' + m.i);
+      const inp = h('input', { type: 'text', maxlength: 20, autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': `Resposta da dica ${m.numero}`, value: r.justificativa || '', placeholder: `${m.tamanho} letras`, 'data-auto': 'palavra', oninput: e => { r.justificativa = e.target.value; } });
+      const btn = h('button', { class: 'btn primario pequeno', onclick: () => { const v = inp.value.trim(); if (!v) return; ctx.enviar(`${S().etapaAtual}__${uid()}__w`, dk.proxima, { palavra: m.i, texto: v.slice(0, 30) }, g()).then(() => { r.justificativa = ''; }).catch(e => ctx.aviso(e.message, 'erro')); } }, 'Enviar');
+      return h('div', { class: 'dica' }, h('div', {}, h('strong', {}, `${m.numero} ${dir(m.dir)} `), m.dica, h('small', { class: 'sutil' }, ` (${m.tamanho})`)), h('div', { class: 'dica-resp' }, inp, btn));
+    })) : h('p', { class: 'sutil' }, 'Você não tem dicas: ajude os colegas a pensar.'));
+    const outras = gpk.palavras.filter(p => !dk.minhas.some(m => m.i === p.i));
+    if (outras.length) caixa.append(h('details', {}, h('summary', {}, 'Quem tem as outras dicas'), h('ul', {}, outras.map(p => h('li', {}, `${p.numero} ${dir(p.dir)} (${p.tamanho}) — `, p.resolvida ? `resolvida por ${p.por}` : (p.com.join(', ') || '—'))))));
+    return caixa;
+  }
+  function gradeCruzadas(gr) {
+    const nums = {}; for (const x of gr.numeros || []) nums[x.r + ',' + x.c] = x.n;
+    return h('div', { class: 'cruz-grade', style: { '--c': gr.colunas } }, gr.letras.flatMap((linha, r) => [...linha].map((ch, c) =>
+      ch === '#' ? h('span', { class: 'cruz-vazio' }) : h('span', { class: 'cruz-cel' + (ch !== '.' ? ' cheia' : '') }, nums[r + ',' + c] && h('small', {}, nums[r + ',' + c]), ch !== '.' ? ch : ''))));
+  }
+
+  // ---------- quiz em equipe (TBL) ----------
+  function equipe(info) {
+    const pk = P(g());
+    ctx.explicar('eq-' + S().etapaAtual, info.titulo, ['Primeiro cada um responde sozinho, sem conversar.', 'Depois o grupo debate e decide a resposta do grupo. A resposta do grupo vale mais!']);
+    if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
+    if (pk === undefined) return ctx.carregando();
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
+    caixa.append(h('p', { class: 'sutil' }, `Pergunta ${pk.q + 1} de ${pk.total} · grupo: ${pk.placar?.pontos ?? 0} pts`));
+    if (pk.fase === 'espera') { caixa.append(h('p', { class: 'aviso' }, 'Aguardem: quem conduz vai abrir a pergunta.')); return caixa; }
+    caixa.append(h('h3', {}, pk.pergunta.enunciado));
+    const meuNome = S().nomes?.[uid()], chave = S().etapaAtual + '#eq' + pk.q;
+    if (pk.fase === 'individual') {
+      const ja = pk.respondidos.includes(meuNome) || pend[chave + 'i'];
+      if (ja) caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta individual enviada. Aguarde a fase do grupo.'), h('small', { class: 'sutil' }, `${pk.respondidos.length} de ${pk.membros} do grupo responderam.`));
+      else caixa.append(h('p', { class: 'sutil' }, 'Responda sozinho, sem conversar.'), h('div', { class: 'corrida-alts' }, pk.pergunta.alternativas.map(a => h('button', { class: 'corrida-alt', 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__t`, 1, { q: pk.q, alternativaId: a.id }, g()).then(() => { pend[chave + 'i'] = true; ctx.redesenhar(); }).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))));
+      return caixa;
+    }
+    if (pk.individuais) {
+      const tot = Object.values(pk.individuais).reduce((x, y) => x + y, 0) || 1;
+      caixa.append(h('p', { class: 'sutil' }, 'Como o grupo respondeu sozinho:'), h('div', { class: 'dist' }, pk.pergunta.alternativas.map(a => h('div', { class: 'dist-linha' }, h('span', {}, a.texto), h('div', { class: 'dist-barra' }, h('i', { style: { width: Math.round(100 * (pk.individuais[a.id] || 0) / tot) + '%' } })), h('small', {}, pk.individuais[a.id] || 0)))));
+    }
+    if (pk.fase === 'grupo') {
+      if (pk.doGrupo) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta do grupo: ', h('strong', {}, pk.pergunta.alternativas.find(a => a.id === pk.doGrupo)?.texto), '. Aguardem a revelação.')); return caixa; }
+      if (pk.consenso === 'todos') {
+        const meu = pk.votos?.[meuNome];
+        caixa.append(h('p', {}, 'Debatam. A resposta do grupo vale quando todos votarem igual.'), h('div', { class: 'corrida-alts' }, pk.pergunta.alternativas.map(a => h('button', { class: 'corrida-alt' + (meu === a.id ? ' ativo' : ''), 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__v`, 1, { q: pk.q, alternativaId: a.id }, g()).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))),
+          pk.votos && h('small', { class: 'sutil' }, 'Votos: ' + Object.entries(pk.votos).map(([n, v]) => `${n} → ${pk.pergunta.alternativas.find(a => a.id === v)?.texto?.slice(0, 18)}`).join(' · ')));
+      } else if (souLider(g())) {
+        const r = ctx.rascunho('eqg-' + chave);
+        caixa.append(h('p', {}, 'Debatam e marque a resposta do grupo.'), ctx.listaOpcoes(pk.pergunta.alternativas, r, true, 'eqg' + chave));
+        const msg = h('p', { class: 'aviso', hidden: true });
+        caixa.append(ctx.botaoConfirmar('Enviar a resposta do grupo', async () => { if (!r.escolha) throw new Error('Escolham uma alternativa.'); await ctx.enviar(`${S().etapaAtual}__${g()}__g`, pk.proximaG, { q: pk.q, alternativaId: r.escolha }, g()); }, msg), msg);
+      } else caixa.append(h('p', { class: 'sutil' }, `Debatam. ${ctx.nomeDe(S(), S().representantes?.[g()])} envia a resposta do grupo.`));
+      return caixa;
+    }
+    // revelada
+    const certo = pk.doGrupo && pk.doGrupo === pk.certaId;
+    caixa.append(h('p', { class: 'aviso', 'data-tipo': certo ? 'ok' : 'erro' }, pk.doGrupo ? (certo ? '✔ O grupo acertou!' : '✗ O grupo errou.') : 'O grupo não respondeu.'),
+      h('p', {}, h('strong', {}, 'Resposta: '), pk.revelacao?.texto), pk.revelacao?.explicacao && h('p', { class: 'sutil' }, pk.revelacao.explicacao));
+    return caixa;
+  }
+
+  // ---------- tomada de decisão ----------
+  function ramos(info) {
+    const pk = P(g());
+    ctx.explicar('ram-' + S().etapaAtual, info.titulo, ['Cada escolha do grupo leva a um cenário diferente.', 'Discutam as consequências antes: o líder confirma a escolha.']);
+    if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
+    if (pk === undefined) return ctx.carregando();
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    if (!pk || pk.etapaId !== S().etapaAtual || !pk.cenario) { caixa.append(ctx.carregando()); return caixa; }
+    if (pk.escolhaAnterior) caixa.append(h('p', { class: 'sutil' }, 'Vocês escolheram: ', h('strong', {}, pk.escolhaAnterior)), pk.feedback && h('p', { class: 'aviso' }, pk.feedback));
+    caixa.append(h('div', { class: 'cenario' + (pk.final ? ' final ' + pk.desfecho : '') }, h('p', {}, pk.cenario.texto)));
+    if (pk.final) { caixa.append(h('p', { class: 'aviso', 'data-tipo': pk.desfecho === 'bom' ? 'ok' : pk.desfecho === 'ruim' ? 'erro' : 'alerta' }, { bom: 'Final bom.', neutro: 'Final neutro.', ruim: 'Final ruim.' }[pk.desfecho] + ' Aguardem a discussão.')); return caixa; }
+    if (!souLider(g())) { caixa.append(h('p', { class: 'sutil' }, 'O que vocês fariam? ', `${ctx.nomeDe(S(), S().representantes?.[g()])} confirma a escolha do grupo.`), ctx.listaOpcoes(pk.cenario.opcoes, {}, false, 'rv')); return caixa; }
+    const r = ctx.rascunho('ram-' + S().etapaAtual + pk.cenario.id), msg = h('p', { class: 'aviso', hidden: true });
+    caixa.append(ctx.listaOpcoes(pk.cenario.opcoes, r, true, 'ram' + pk.cenario.id),
+      ctx.botaoConfirmar('Confirmar a escolha do grupo', async () => { if (!r.escolha) throw new Error('Escolham uma opção.'); await ctx.enviar(`${S().etapaAtual}__${g()}__d`, pk.proxima, { cenario: pk.cenario.id, opcao: r.escolha }, g()); }, msg), msg);
+    return caixa;
+  }
+
+  // ---------- observar e descrever ----------
+  function observar(info) {
+    const pk = P(g());
+    if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), midia(info));
+    if (pk === undefined || !pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
+    caixa.append(h('h3', {}, pk.enunciado));
+    if (!souLider(g())) { caixa.append(h('p', { class: 'sutil' }, `Observem juntos. ${ctx.nomeDe(S(), S().representantes?.[g()])} escreve pelo grupo.`), pk.minha && h('p', { class: 'aviso' }, 'O grupo escreveu: ', pk.minha)); return caixa; }
+    const r = ctx.rascunho('obs-' + S().etapaAtual);
+    if (!r.justificativa && pk.minha) r.justificativa = pk.minha;
+    const ta = h('textarea', { maxlength: 400, rows: 4, 'data-auto': 'texto', oninput: e => { r.justificativa = e.target.value; } }, r.justificativa || '');
+    caixa.append(h('label', {}, 'O que o grupo observa (vai para o telão)'), ta,
+      h('button', { class: 'btn primario bloco', onclick: () => { const v = ta.value.trim(); if (v.length < 5) return ctx.aviso('Escrevam um pouco mais.', 'erro'); ctx.enviar(`${S().etapaAtual}__${g()}__o`, pk.proxima, { texto: v.slice(0, 400) }, g()).then(() => ctx.aviso('Enviado! Vocês podem melhorar e enviar de novo.', 'ok')).catch(e => ctx.aviso(e.message, 'erro')); } }, pk.minha ? 'Enviar de novo (substitui)' : 'Enviar'));
+    return caixa;
+  }
+
+  return {
+    tem: info => !!tipo(info),
+    pacotes(info) {
+      const t = tipo(info), extra = temMidia(info) ? ['revelacao'] : [];
+      if (t === 'corrida') return [info.organizacao === 'individual' ? uid() : g(), ...extra].filter(Boolean);
+      if (t === 'memoria' || t === 'equipe' || t === 'ramos' || t === 'observar') return [g(), ...extra].filter(Boolean);
+      if (t === 'cruzadas') return [uid(), P(uid())?.pacoteGrade || g()].filter(Boolean);
+      return extra;
+    },
+    chave(info) {
+      const t = tipo(info), ids = this.pacotes(info);
+      return JSON.stringify([ids.map(i => P(i) === undefined ? 'c' : P(i)), t === 'memoriaTelao' || t === 'corrida' || t === 'equipe' ? S().jogo : null, Object.keys(local).length, JSON.stringify(local), Object.keys(pend)]);
+    },
+    tarefa(info) {
+      const t = tipo(info);
+      if (t === 'corrida') return corrida(info);
+      if (t === 'memoria') return memoria(info, false);
+      if (t === 'memoriaTelao') return memoria(info, true);
+      if (t === 'cruzadas') return cruzadas(info);
+      if (t === 'equipe') return equipe(info);
+      if (t === 'ramos') return ramos(info);
+      if (t === 'observar') return observar(info);
+    },
+    midia,
+    /** Piloto automático (simulador): uma ação de cada vez, como uma pessoa. */
+    auto(raiz) {
+      const um = l => l[Math.floor(Math.random() * l.length)];
+      const pega = sel => [...raiz.querySelectorAll(sel)].filter(x => !x.disabled);
+      const pu = pega('[data-auto=pu]'); if (pu.length && Math.random() < 0.3) return um(pu).click();
+      const conf = pega('[data-auto=conf]'); if (conf.length) return um(conf).click();
+      const alts = pega('[data-auto=alt]'); if (alts.length) return um(alts).click();
+      const dirs = pega('.direcao-linha'); if (dirs.length) { for (const l of dirs) { const bs = [...l.querySelectorAll('button')].filter(x => !x.disabled); if (bs.length && !l.querySelector('.ativo')) { um(bs).click(); return; } } const env = pega('[data-auto=enviar]'); if (env.length) return env[0].click(); }
+      const cartas = pega('[data-auto=carta]'); if (cartas.length) { um(cartas).click(); setTimeout(() => { const c2 = pega('[data-auto=carta]').filter(x => !x.classList.contains('aberta')); if (c2.length) um(c2).click(); }, 300); return; }
+      const pal = pega('[data-auto=palavra]'); if (pal.length) { const i = um(pal); i.value = 'chute'; i.dispatchEvent(new Event('input')); i.parentElement.querySelector('button')?.click(); return; }
+      const tx = pega('[data-auto=texto]'); if (tx.length && !tx[0].value) { tx[0].value = 'Observação do participante simulado.'; tx[0].dispatchEvent(new Event('input')); tx[0].nextElementSibling?.click(); }
+    }
+  };
+}

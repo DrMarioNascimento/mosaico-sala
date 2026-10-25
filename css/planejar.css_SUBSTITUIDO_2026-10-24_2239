@@ -1,0 +1,80 @@
+/* MOSAICO · Planejamento (pensado para o PC; funciona no celular) */
+.plan-pagina { max-width: 1280px; margin: 0 auto; padding: 0 16px 96px; }
+.plan-barra { max-width: 1280px !important; flex-wrap: wrap; }
+.plan-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.plan-acoes .btn { min-height: 42px; padding: 0 14px; font-size: .92rem; }
+.plan-login { max-width: 520px; margin: 40px auto; }
+
+.plan-inicio { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 18px; }
+.plan-inicio .cartao { margin: 0; }
+.lista-bib { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.lista-bib li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--fundo-2); border: 1px solid var(--linha); }
+.lista-bib li .tit { flex: 1; min-width: 0; }
+.lista-bib li .tit strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.etiqueta { font-size: .75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #13263d; color: var(--acento-2); }
+
+.plan-grade { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; margin-top: 16px; align-items: start; }
+.plan-nav { position: sticky; top: 76px; display: grid; gap: 6px; }
+.plan-nav button { text-align: left; min-height: 44px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--texto-2); font: 600 .98rem var(--fonte); padding: 8px 12px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+.plan-nav button:hover { background: var(--fundo-2); }
+.plan-nav button[aria-current=true] { background: linear-gradient(180deg, #26324f, #1d2740); color: var(--texto); border-color: var(--linha); box-shadow: inset 3px 0 0 var(--acento), 0 3px 0 #0c111d; }
+.plan-nav .sub { padding-left: 20px; font-size: .92rem; }
+.plan-nav .num { font-family: var(--fonte-titulo); font-weight: 800; color: var(--acento); min-width: 1.4em; }
+.plan-nav .rot { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-nav .selo { font-size: .72rem; font-weight: 800; border-radius: 999px; padding: 1px 8px; }
+.plan-nav .selo.erro { background: #3b1414; color: var(--erro); }
+.plan-nav .selo.ok { background: #0f3b2a; color: var(--ok); }
+.plan-nav .divisor { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-2); margin: 10px 4px 2px; }
+
+.plan-editor .cartao { margin: 0 0 16px; }
+.campos-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.campos-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.linha-item { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin: 8px 0; }
+.linha-item input { min-height: 46px; }
+.mini { display: flex; gap: 4px; }
+.mini .btn { min-height: 40px; min-width: 40px; padding: 0 10px; }
+.opcao-edit { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; margin: 8px 0; }
+.opcao-edit .correta { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--texto-2); margin: 12px 0 0; }
+.opcao-edit .correta input { width: 22px; height: 22px; accent-color: var(--ok); }
+.opcao-edit textarea { min-height: 54px; }
+
+.peca-edit { background: #f6f1e7; color: #1b1b1b; border-radius: 12px; padding: 12px; margin: 12px 0; box-shadow: 0 3px 0 #b9ab92, 0 10px 18px rgba(0,0,0,.3); }
+.peca-edit textarea { background: #fffdf8; color: #1b1b1b; border-color: #d8ccb4; min-height: 80px; }
+.peca-edit select { background: #fffdf8; color: #1b1b1b; border-color: #d8ccb4; min-height: 42px; }
+.peca-edit label { color: #5a4a2e; margin: 8px 0 4px; font-size: .88rem; }
+.peca-edit .rodape { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; justify-content: space-between; }
+.alvos { display: flex; flex-wrap: wrap; gap: 6px; }
+.alvo { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 12px 4px 6px; border-radius: 999px; border: 2px solid #d8ccb4; background: #fff; color: #333; font: 700 .85rem var(--fonte); cursor: pointer; }
+.alvo[aria-pressed=true] { border-color: var(--cor, #ff8a3d); background: color-mix(in srgb, var(--cor, #ff8a3d) 22%, #fff); color: #111; }
+.alvo img { width: 24px; height: 24px; }
+
+.resumo-dist { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; }
+.tipo-cartoes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.tipo-cartao { text-align: left; padding: 14px; border-radius: 14px; border: 2px solid var(--linha); background: var(--fundo-2); color: var(--texto); cursor: pointer; font: inherit; box-shadow: 0 3px 0 #0c111d; }
+.tipo-cartao:hover { border-color: var(--acento-2); }
+.tipo-cartao strong { display: block; font-family: var(--fonte-titulo); margin-bottom: 4px; }
+.tipo-cartao small { color: var(--texto-2); }
+
+@media (max-width: 860px) {
+  .plan-grade { grid-template-columns: 1fr; }
+  .plan-nav { position: static; display: flex; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .plan-nav button { white-space: nowrap; flex: none; }
+  .plan-nav .divisor { display: none; }
+  .plan-nav .sub { padding-left: 12px; }
+  .campos-2, .campos-3 { grid-template-columns: 1fr; }
+}
+
+/* Cadeado do grupo e Quiz entre grupos */
+.pergunta-edit { border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; margin: 10px 0; display: grid; gap: 6px; }
+.pergunta-edit .opcao-edit input[type=text] { margin: 0; }
+.fragmentos-fila { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.fragmento.mini { display: inline-block; padding: 6px 12px; margin: 0; font-family: var(--fonte-titulo, 'Archivo'), system-ui, sans-serif; font-weight: 800; font-size: 1.05em; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.cad-exemplo { background: rgba(255,255,255,.04); border-radius: 10px; padding: 10px 12px; }
+.cad-exemplo ul { margin: 6px 0; padding-left: 18px; }
+.cad-exemplo li { font-size: .92em; }
+
+/* Cartões de arrastar (editor) */
+.linha-item .num { font-family: var(--fonte-titulo); font-weight: 800; color: var(--acento); min-width: 1.6em; text-align: center; }
+.cartao-edit { grid-template-columns: auto 1fr auto auto; }
+.cartao-edit select, .cartao-edit input[type=number] { min-height: 46px; }
+@media (max-width: 640px) { .cartao-edit { grid-template-columns: auto 1fr; } .cartao-edit > :nth-child(n+3) { grid-column: 2; } }

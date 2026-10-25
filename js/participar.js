@@ -3,6 +3,9 @@ import { cadeadoIcone } from './lock-icons.js';
 import { backend } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
+import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arrastar.js';
+import { aplicarMovimento } from './core/cartoes.js';
+import { criarTelas } from './participar-tipos.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
@@ -12,6 +15,11 @@ const SESSAO = 'mosaico-participante' + (PERFIL ? '-' + PERFIL : '');
 let auto = !!PERFIL && params.has('auto');
 let uid = null, codigo = null, sala = null, meuNome = '';
 const pacotes = {}, inscricoes = {};
+// Tipos novos (memória, corrida, cruzadas, quiz que faz pensar, análise de imagem): js/participar-tipos.js
+const TP = criarTelas({ sala: () => sala, uid: () => uid, pacotes, b, explicar: (...a) => explicar(...a), carregando: () => carregando(),
+  enviar: (prefixo, minimo, dados, grupoId) => enviarTentativa(prefixo, minimo, dados, grupoId), botaoConfirmar: (...a) => botaoConfirmar(...a), listaOpcoes: (...a) => listaOpcoes(...a),
+  rascunho: k => rascunho(k), contador: (...a) => contador(...a), agora: () => Date.now(), grupoDe: s => grupoDe(s), nomeDe: (s, u) => nomeDe(s, u),
+  redesenhar: () => { chaveRenderizada = ''; render(); }, aviso: (t, k) => aviso($('status'), t, k) });
 const rascunhos = {};
 let chaveRenderizada = '', autoTimer = null;
 
@@ -85,6 +93,8 @@ const nomeDe = (s, u) => s.nomes?.[u] || 'alguém';
 function pacotesNecessarios() {
   if (!sala || sala.fase !== 'etapa') return [];
   if (['montagem_pecas', 'cadeado_grupo', 'quiz_grupos'].includes(sala.etapaInfo?.typeId)) return [uid];
+  if (sala.etapaInfo?.quadro || sala.etapaInfo?.typeId === 'cartoes_arrastar') return [...(sala.etapaInfo.organizacao === 'representantes' ? [uid] : [grupoDe(sala)].filter(Boolean)), ...(sala.etapaInfo.midia ? ['revelacao'] : [])];
+  if (sala.etapaInfo && TP.tem(sala.etapaInfo)) return TP.pacotes(sala.etapaInfo);
   if (sala.etapaInfo?.organizacao === 'individual') return ['individual'];
   const g = grupoDe(sala);
   return [g, ...coberturas(sala)].filter(Boolean);
@@ -96,7 +106,9 @@ function sincronizarPacotes() {
 }
 
 // ---------- renderização ----------
+definirAoSoltar(() => { chaveRenderizada = ''; render(); });
 function render() {
+  if (arrastando()) return;          // não redesenha no meio de um arraste (redesenha ao soltar)
   if (!sala || sala.status !== 'open') {
     limpar($('status')); limpar($('tarefa'), h('div', { class: 'cartao' }, h('h2', {}, 'Sala encerrada'), h('p', {}, 'Obrigado por participar!')));
     try { sessionStorage.removeItem(SESSAO); } catch {}
@@ -123,8 +135,11 @@ function autoAgir() {
   if (!auto) return;
   const escolher = l => l[Math.floor(Math.random() * l.length)];
   for (const inp of $('tarefa').querySelectorAll('input[data-codigo]')) { inp.value = String(Math.floor(Math.random() * 100)); inp.dispatchEvent(new Event('input')); }
+  if ($('tarefa').querySelector('.quadro-cartoes')) window.__autoCartoes?.();
+  else if (sala?.etapaInfo && TP.tem(sala.etapaInfo)) TP.auto($('tarefa'));
   for (const btn of $('tarefa').querySelectorAll('button.primario:not(:disabled)')) {
     const caixa = btn.parentElement;
+    if (btn.dataset.auto === 'confirmar') { btn.click(); setTimeout(() => btn.click(), 400); continue; }
     if (btn.dataset.codigo !== undefined) { btn.click(); continue; }
     const radios = [...caixa.querySelectorAll(':scope > .opcoes input[type=radio]')];
     if (!radios.length) continue;
@@ -148,7 +163,7 @@ function renderStatus() {
   const s = sala, g = grupoDe(s), p = s.progresso;
   const partes = [];
   if (g) partes.push(chipGrupo(s.publico.grupos, g, nomeGrupo(s, g)));
-  if (s.fase === 'etapa' && p && !p.montagem && !p.cadeado && !p.quiz) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
+  if (s.fase === 'etapa' && p && !p.montagem && !p.cadeado && !p.quiz && !p.cartoes && !p.novo) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   limpar($('status'), partes.length ? h('div', { class: 'linha-botoes' }, partes) : null);
 }
 
@@ -166,6 +181,8 @@ function renderTarefa() {
   if (info.typeId === 'montagem_pecas') return limpar(alvo, tarefaMontagem(info));
   if (info.typeId === 'cadeado_grupo') return limpar(alvo, tarefaCadeado(info));
   if (info.typeId === 'quiz_grupos') return limpar(alvo, tarefaQuiz(info));
+  if (info.quadro || info.typeId === 'cartoes_arrastar') return limpar(alvo, tarefaCartoes(info));
+  if (TP.tem(info)) return limpar(alvo, TP.tarefa(info));
   if (info.organizacao === 'individual') {
     const pk = pacotes.individual;
     if (!pk || pk.etapaId !== s.etapaAtual) return limpar(alvo, carregando());
@@ -233,6 +250,12 @@ function chaveDesafio() {
     if (!pk || pk.etapaId !== sala.etapaAtual) return 'c-' + (pk === undefined);
     return JSON.stringify([pk, (pk.tarefas || []).map(liberado), pk.codigo ? agora() >= pk.codigo.liberaEm : null, Object.keys(pendentes).filter(k => pendentes[k] && agora() - pendentes[k].em < 8000)]);
   }
+  if (i.quadro || i.typeId === 'cartoes_arrastar') {
+    const pk = pacotes[i.organizacao === 'representantes' ? uid : grupoDe(sala)];
+    if (!pk || pk.etapaId !== sala.etapaAtual) return 'k-' + (pk === undefined);
+    return JSON.stringify([pk, agora() >= (pk.liberaEm || 0), (movsPendentes[pk.etapaId + '#' + pk.conjunto] || []).map(m => [m.cartao, m.para, m.enviado]), !!pacotes.revelacao?.imagem]);
+  }
+  if (TP.tem(i)) return TP.chave(i);
   if (i.typeId === 'quiz_grupos') {
     const pk = pacotes[uid], j = sala.jogo || {};
     return JSON.stringify([j, pk?.etapaId === sala.etapaAtual ? pk : null, j.estado === 'respondendo' && j.inicio && agora() > j.inicio + j.segundos * 1000]);
@@ -241,7 +264,7 @@ function chaveDesafio() {
 }
 setInterval(() => {
   const t = sala?.etapaInfo?.typeId;
-  if (t === 'cadeado_grupo' || t === 'quiz_grupos') render();
+  if (t === 'cadeado_grupo' || t === 'quiz_grupos' || t === 'cartoes_arrastar' || sala?.etapaInfo?.quadro || (sala?.etapaInfo && TP.tem(sala.etapaInfo))) render();
   for (const el of document.querySelectorAll('[data-ate]')) {
     const r = Math.max(0, Math.ceil((Number(el.dataset.ate) - agora()) / 1000));
     el.textContent = el.dataset.formato === 'relogio' ? `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}` : `${r} s`;
@@ -380,6 +403,99 @@ function tarefaQuiz(info) {
     if (!j.fim) caixa.append(h('p', { class: 'sutil' }, 'Aguardem o sorteio da próxima pergunta.'));
   }
   caixa.append(h('h3', {}, 'Placar'), placar());
+  return caixa;
+}
+
+// ---------- cartões de arrastar ----------
+// Cada movimento vira um envio (etapa__uid__mN); o quadro mostra o movimento na hora
+// (otimista) até quem conduz devolver o quadro oficial com ele aplicado.
+const movsPendentes = {}, proxMov = {};
+let filaMov = Promise.resolve();
+function quadroAtual(pk) {
+  const k = pk.etapaId + '#' + pk.conjunto, visto = pk.ultimoMov?.[uid] || 0;
+  const lista = (movsPendentes[k] || []).filter(m => !pk.travado && !(m.enviado && m.n <= visto) && agora() - m.em < 15000);
+  movsPendentes[k] = lista;
+  return lista.reduce((q, m) => aplicarMovimento({ formato: pk.formato, colunas: pk.colunas }, q, m.cartao, m.para), { ...pk.quadro });
+}
+function moverCartao(pk, cartao, para) {
+  if (pk.travado) return;
+  const k = pk.etapaId + '#' + pk.conjunto, m = { cartao, para: para ?? null, enviado: false, em: agora() };
+  (movsPendentes[k] ||= []).push(m);
+  chaveRenderizada = ''; render();
+  filaMov = filaMov.then(async () => {
+    let n = Math.max(proxMov[k] || 1, (pk.ultimoMov?.[uid] || 0) + 1);
+    for (let t = 0; t < 8; t++, n++) {
+      try {
+        await b.enviar(codigo, `${pk.etapaId}__${uid}__m${n}`, { etapaId: pk.etapaId, escopo: 'tentativa', grupoId: grupoDe(sala), autor: uid, dados: { cartao, para: m.para }, contingencia: false });
+        m.n = n; m.enviado = true; proxMov[k] = n + 1; return;
+      } catch (e) { if (e.message !== 'ja-enviado') break; }
+    }
+    movsPendentes[k] = (movsPendentes[k] || []).filter(x => x !== m);
+    aviso($('status'), 'Um movimento não foi aceito (a etapa pode ter sido encerrada).', 'erro');
+  }).finally(() => { chaveRenderizada = ''; render(); });
+}
+
+function tarefaCartoes(info) {
+  const rep = info.organizacao === 'representantes', g = grupoDe(sala);
+  const pk = rep ? pacotes[uid] : pacotes[g];
+  explicar('cart-' + sala.etapaAtual, info.titulo, [
+    'Arraste os cartões até o lugar certo. Se preferir, toque no cartão e depois toque no lugar.',
+    rep ? 'Os representantes de cada grupo montam um quadro só, juntos.' : 'O quadro é do grupo: o que um move aparece no celular de todos.',
+    'Quando estiver pronto, quem envia confirma o quadro.']);
+  if (!rep && !g) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
+  if (pk === undefined) return carregando();
+  if (!pk || pk.etapaId !== sala.etapaAtual) return rep
+    ? h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), h('p', { class: 'aviso' }, 'Os representantes dos grupos estão montando um quadro só, juntos. Acompanhe no telão e ajude o representante do seu grupo.'))
+    : carregando();
+  const quadro = quadroAtual(pk), total = pk.cartoes.length;
+  const colocados = Object.values(quadro).filter(v => v !== null && v !== undefined).length;
+  const k = pk.etapaId + '#' + pk.conjunto, pend = (movsPendentes[k] || []).length;
+  const lider = rep ? uid : (sala.executores?.[g] || sala.representantes?.[g]);
+  const cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
+  const meus = pk.cartoes.filter(c => pk.dono?.[c.id] === uid).length, fracionado = Object.keys(pk.dono || {}).length > 0;
+  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && h('p', {}, pk.instrucao), pk.enunciado && h('h3', {}, pk.enunciado),
+    pk.trecho && h('p', { class: 'aviso' }, `Seu grupo tem o trecho ${pk.trecho.de} de ${pk.trecho.total} da cadeia. Ponham na ordem: no fim, o telão junta os trechos de todos os grupos.`));
+
+  const u = pk.ultimo, liberado = agora() >= (pk.liberaEm || 0);
+  let placa;
+  if (pk.travado && u?.semGabarito) placa = h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Posições fechadas. Aguardem a discussão no telão.');
+  else if (pk.travado && pk.concluido) placa = h('p', { class: 'aviso', 'data-tipo': 'ok' }, `✔ Quadro certo!${pk.posicao ? ' (' + pk.posicao + 'º)' : ''} Aguardem a próxima etapa.`);
+  else if (pk.travado) placa = h('p', { class: 'aviso', 'data-tipo': 'alerta' }, `Quadro enviado: ${u.acertos} de ${u.total} certos. Aguardem a discussão.`);
+  else if (u && !u.certo) placa = liberado
+    ? h('p', { class: 'aviso', 'data-tipo': 'alerta' }, `A conferência deu ${u.acertos} de ${u.total}. Ajustem e enviem de novo.`)
+    : h('p', { class: 'aviso', 'data-tipo': 'erro' }, `A conferência deu ${u.acertos} de ${u.total}. Nova tentativa em `, contador(pk.liberaEm), '.');
+  else placa = h('div', { class: 'cadeado-placa' }, h('div', { style: { flex: 1, display: 'grid', gap: '4px' } },
+    h('strong', {}, `${colocados} de ${total} cartões ${pk.formato === 'termometro' ? 'posicionados' : 'colocados'}`),
+    h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * colocados / Math.max(1, total)) + '%' } }))));
+  caixa.append(placa);
+  if (fracionado && !pk.travado) caixa.append(h('p', { class: 'sutil' }, meus
+    ? `Você segura ${meus} cartão(ões) (os destacados). Só você pode movê-los: combinem quem põe o quê.`
+    : 'Os cartões estão com seus colegas. Ajude a decidir onde vai cada um.'));
+
+  caixa.append(quadroCartoes({ pk, quadro, uid, nomes: sala.nomes || {}, mover: (id, para) => moverCartao(pk, id, para), imagemDados: pacotes.revelacao?.etapaId === pk.etapaId ? pacotes.revelacao.imagem?.dados : null }));
+
+  if (!pk.travado) {
+    if (lider === uid) {
+      const msg = h('p', { class: 'aviso', hidden: true });
+      const btn = botaoConfirmar(pk.formato === 'termometro' ? 'Fechar as posições do grupo' : 'Enviar o quadro do grupo', async () => {
+        await enviarTentativa(`${pk.etapaId}__${pk.grupoConfirma}__f`, pk.proximaConf, { confirmar: true }, pk.grupoConfirma);
+      }, msg);
+      btn.dataset.auto = 'confirmar';
+      const falta = colocados < total ? `${pk.formato === 'imagem' ? 'Marquem todos os itens' : 'Coloquem todos os cartões'} para enviar (faltam ${total - colocados}).` : pend ? 'Aguardando o quadro sincronizar…' : !liberado ? 'Aguardem a espera acabar.' : '';
+      btn.disabled = !!falta;
+      caixa.append(...[btn, falta && h('p', { class: 'sutil' }, falta), msg, rep && h('p', { class: 'sutil' }, 'Qualquer representante pode enviar: combinem antes.')].filter(Boolean));
+    } else caixa.append(h('p', { class: 'sutil' }, `Quem envia o quadro: ${nomeDe(sala, lider)}.`));
+  }
+
+  // piloto automático (simulador): coloca um dos próprios cartões; depois de um erro, mexe em algum
+  window.__autoCartoes = () => {
+    if (pk.travado) return;
+    const q = quadroAtual(pk), ids = pk.cartoes.map(c => c.id).filter(id => !pk.dono?.[id] || pk.dono[id] === uid);
+    const soltos = ids.filter(id => q[id] === null || q[id] === undefined);
+    const um = l => l[Math.floor(Math.random() * l.length)];
+    if (soltos.length) return moverCartao(pk, um(soltos), lugarAoAcaso(pk, q));
+    if (u && !u.certo && liberado && ids.length && Math.random() < 0.6) moverCartao(pk, um(ids), lugarAoAcaso(pk, q));
+  };
   return caixa;
 }
 

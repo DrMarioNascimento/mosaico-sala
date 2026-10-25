@@ -11,6 +11,18 @@
      Opcoes     etapa | id | texto | correta      (hipóteses e alternativas; "x" marca a correta)
      Perguntas  etapa | pergunta | enunciado | a | b | c | d | e | correta | explicacao
                 (cadeado do grupo e quiz entre grupos; correta = letra)
+     Cartoes    etapa | id | texto | ordem_certa | coluna_certa | posicao_certa
+                (cartões de arrastar: ordem_certa = 1, 2, 3…; coluna_certa = id da coluna;
+                 posicao_certa = 0 a 100 no termômetro, vazio = só debate)
+     Colunas    etapa | id | titulo     (colunas do formato classificar)
+     Pares      etapa | id | lado_a | lado_b
+     Elos       etapa | ordem | consequencia | distrator_1 … distrator_4   (corrida: corrente de causa e efeito)
+     Direcoes   etapa | rodada | estimulo | variavel | direcao_certa (sobe | desce | igual)   (corrida: escolher a direção)
+     Palavras   etapa | id | palavra | dica   (palavras cruzadas)
+     Termos     etapa | id | termo | definicao   (sequência/Genius: o banco de termos; definição opcional)
+     Cenarios   etapa | id | texto | final | desfecho (bom | neutro | ruim)   (tomada de decisão; o 1º é o início)
+     Ramos      etapa | cenario | id | texto | destino | feedback
+     Marcadores etapa | id | rotulo | x_certo | y_certo   (análise de imagem: posição certa em % da largura e da altura)
      Pecas      id | etapa | grupos | natureza | fonte | conteudo   (grupos separados por ;)
      Fontes     id | descricao | localizacao | trecho
    A resposta correta e a explicação são material de quem conduz: quem for
@@ -25,9 +37,26 @@ export const ABAS = {
   Grupos: ['ordem', 'id', 'nome', 'funcao'],
   Etapas: ['ordem', 'id', 'titulo', 'tipo', 'organizacao', 'envio', 'competicao', 'tempo_min', 'instrucao', 'pergunta', 'enunciado', 'justificativa', 'min_evidencias', 'aceita_parcial', 'recebe_de', 'explicacao', 'montagem_modo', 'montagem_texto', 'montagem_corte', 'montagem_pecas', 'montagem_colunas', 'montagem_quantidade', 'montagem_ocultar', 'montagem_revelar',
     'cadeado_regra', 'cadeado_distribuicao', 'cadeado_min_acertos', 'cadeado_fragmentos', 'cadeado_codigo', 'cadeado_espera', 'cadeado_mensagem',
-    'quiz_ao_errar', 'quiz_segundos', 'quiz_pergunta_no_telao', 'quiz_mostrar_resposta'],
+    'quiz_ao_errar', 'quiz_segundos', 'quiz_pergunta_no_telao', 'quiz_mostrar_resposta',
+    'cartoes_formato', 'cartoes_polo_esquerda', 'cartoes_polo_direita', 'cartoes_margem', 'cartoes_distribuicao', 'cartoes_tentativas', 'cartoes_espera', 'cartoes_conferencia', 'cartoes_revelar', 'cartoes_modo',
+    'pares_formato', 'pares_distribuicao', 'pares_tentativas', 'pares_espera', 'pares_segundos', 'pares_revelar',
+    'corrida_formato', 'corrida_gatilho', 'corrida_ao_quebrar', 'corrida_segundos', 'corrida_embaralhar', 'corrida_power_ups', 'corrida_sequencia',
+    'cruzadas_dicas', 'cruzadas_grade',
+    'sequencia_botoes', 'sequencia_velocidade', 'sequencia_partidas', 'sequencia_placar', 'sequencia_meta',
+    'pensar_formato', 'pensar_consenso', 'pensar_mostrar_individuais', 'pensar_pontuar_confianca', 'pensar_calibracao',
+    'analise_midia', 'analise_tarefa', 'analise_tolerancia', 'analise_distribuicao', 'analise_tentativas', 'analise_modelo_url'],
   Opcoes: ['etapa', 'id', 'texto', 'correta'],
   Perguntas: ['etapa', 'pergunta', 'enunciado', 'a', 'b', 'c', 'd', 'e', 'correta', 'explicacao'],
+  Cartoes: ['etapa', 'id', 'texto', 'ordem_certa', 'coluna_certa', 'posicao_certa'],
+  Colunas: ['etapa', 'id', 'titulo'],
+  Pares: ['etapa', 'id', 'lado_a', 'lado_b'],
+  Elos: ['etapa', 'ordem', 'consequencia', 'distrator_1', 'distrator_2', 'distrator_3', 'distrator_4'],
+  Direcoes: ['etapa', 'rodada', 'estimulo', 'variavel', 'direcao_certa'],
+  Palavras: ['etapa', 'id', 'palavra', 'dica'],
+  Termos: ['etapa', 'id', 'termo', 'definicao'],
+  Cenarios: ['etapa', 'id', 'texto', 'final', 'desfecho'],
+  Ramos: ['etapa', 'cenario', 'id', 'texto', 'destino', 'feedback'],
+  Marcadores: ['etapa', 'id', 'rotulo', 'x_certo', 'y_certo'],
   Pecas: ['id', 'etapa', 'grupos', 'natureza', 'fonte', 'conteudo'],
   Fontes: ['id', 'descricao', 'localizacao', 'trecho']
 };
@@ -79,6 +108,30 @@ export function atividadeParaAbas(a) {
         cadeado_regra: c.regra || '', cadeado_distribuicao: c.distribuicao || 'diferente', cadeado_min_acertos: c.regra === 'acertos' ? (c.minAcertos || 'todos') : '',
         cadeado_fragmentos: (c.fragmentos || []).join(' | '), cadeado_codigo: r[e.id]?.codigo ?? '', cadeado_espera: c.espera ?? 30, cadeado_mensagem: c.mensagem || ''
       } : {}),
+      ...(e.typeId === 'cartoes_arrastar' ? {
+        cartoes_formato: c.formato || '', cartoes_polo_esquerda: c.polos?.esquerda || '', cartoes_polo_direita: c.polos?.direita || '',
+        cartoes_margem: c.formato === 'termometro' ? (r[e.id]?.margem ?? 15) : '', cartoes_distribuicao: c.distribuicao || 'todos',
+        cartoes_tentativas: c.tentativas || 'uma', cartoes_espera: c.espera ?? 30, cartoes_conferencia: c.formato === 'ordenar' ? (c.conferencia || 'posicao') : '',
+        cartoes_revelar: c.revelarAoEncerrar === false ? 'não' : 'sim', cartoes_modo: c.modo || ''
+      } : {}),
+      ...(e.typeId === 'pares' ? {
+        enunciado: c.enunciado || '', pares_formato: c.formato || '', pares_distribuicao: c.distribuicao || 'todos', pares_tentativas: c.tentativas || 'repetir',
+        pares_espera: c.espera ?? 15, pares_segundos: c.segundos ?? 30, pares_revelar: c.revelarAoEncerrar === false ? 'não' : 'sim'
+      } : {}),
+      ...(e.typeId === 'corrida' ? {
+        corrida_formato: c.formato || '', corrida_gatilho: c.gatilho || '', corrida_ao_quebrar: c.formato === 'corrente' ? (c.aoQuebrar || 'recomecar') : '',
+        corrida_segundos: c.segundos ?? 30, corrida_embaralhar: c.embaralhar === false ? 'não' : 'sim', corrida_power_ups: (c.powerUps || []).join('; '), corrida_sequencia: c.sequencia ?? 3
+      } : {}),
+      ...(e.typeId === 'sequencia' ? { sequencia_botoes: c.botoes ?? 4, sequencia_velocidade: c.velocidade || 'classica', sequencia_partidas: c.partidas ?? 0, sequencia_placar: c.placar || 'soma', sequencia_meta: c.meta ?? 6 } : {}),
+      ...(e.typeId === 'cruzadas' ? { cruzadas_dicas: c.dicas || 'fracionadas', cruzadas_grade: c.grade || 'por_grupo' } : {}),
+      ...(e.typeId === 'quiz_pensar' ? {
+        pensar_formato: c.formato || '', pensar_consenso: c.formato === 'equipe' ? (c.consenso || 'lider') : '', pensar_mostrar_individuais: c.formato === 'equipe' ? (c.mostrarIndividuais === false ? 'não' : 'sim') : '',
+        pensar_pontuar_confianca: c.formato === 'metacognicao' ? (c.pontuarConfianca === false ? 'não' : 'sim') : '', pensar_calibracao: c.formato === 'metacognicao' ? (c.mostrarCalibracao === false ? 'não' : 'sim') : ''
+      } : {}),
+      ...(e.typeId === 'analise_imagem' ? {
+        enunciado: c.enunciado || '', analise_midia: c.midia || '', analise_tarefa: c.tarefa || '', analise_tolerancia: c.tarefa === 'marcar' ? (c.tolerancia ?? 8) : '',
+        analise_distribuicao: c.tarefa === 'marcar' ? (c.distribuicao || 'todos') : '', analise_tentativas: c.tarefa === 'marcar' ? (c.tentativas || 'uma') : '', analise_modelo_url: c.modelo?.url || ''
+      } : {}),
       ...(e.typeId === 'quiz_grupos' ? {
         quiz_ao_errar: c.aoErrar || 'repassar', quiz_segundos: c.segundos ?? 60,
         quiz_pergunta_no_telao: c.mostrarNoTelao ? 'sim' : 'não', quiz_mostrar_resposta: c.mostrarResposta === false ? 'não' : 'sim'
@@ -103,15 +156,44 @@ export function atividadeParaAbas(a) {
     }
   }
 
+  const cartoes = [], colunas = [];
+  for (const e of [...a.etapas].sort((x, y) => x.ordem - y.ordem)) {
+    if (e.typeId !== 'cartoes_arrastar') continue;
+    const rc = r[e.id] || {}, c = e.config || {};
+    for (const col of c.colunas || []) if (c.formato === 'classificar') colunas.push({ etapa: e.id, id: col.id, titulo: col.titulo });
+    for (const x of c.cartoes || []) {
+      const k = (rc.ordem || []).indexOf(x.id);
+      cartoes.push({ etapa: e.id, id: x.id, texto: x.texto,
+        ordem_certa: c.formato === 'ordenar' && k >= 0 ? k + 1 : '',
+        coluna_certa: c.formato === 'classificar' ? (rc.colunaDe?.[x.id] || '') : '',
+        posicao_certa: c.formato === 'termometro' && rc.posicao?.[x.id] !== undefined && rc.posicao[x.id] !== null ? rc.posicao[x.id] : '' });
+    }
+  }
+
+  const pares = [], elos = [], direcoes = [], palavras = [], termos = [], cenarios = [], ramos = [], marcadores = [];
+  for (const e of [...a.etapas].sort((x, y) => x.ordem - y.ordem)) {
+    const c = e.config || {}, rc = r[e.id] || {};
+    if (e.typeId === 'pares') for (const p of c.pares || []) pares.push({ etapa: e.id, id: p.id, lado_a: p.a, lado_b: p.b });
+    if (e.typeId === 'corrida' && c.formato === 'corrente') (c.elos || []).forEach((el, i) => elos.push({ etapa: e.id, ordem: i + 1, consequencia: el.consequencia, ...Object.fromEntries((el.distratores || []).slice(0, 4).map((d, k) => ['distrator_' + (k + 1), d])) }));
+    if (e.typeId === 'corrida' && c.formato === 'direcao') for (const rd of c.rodadas || []) (rd.variaveis || []).forEach((v, k) => direcoes.push({ etapa: e.id, rodada: rd.id, estimulo: k === 0 ? rd.estimulo : '', variavel: v.nome, direcao_certa: rc.direcoes?.[v.id] || '' }));
+    if (e.typeId === 'sequencia') for (const t of c.termos || []) termos.push({ etapa: e.id, id: t.id, termo: t.termo, definicao: t.definicao || '' });
+    if (e.typeId === 'cruzadas') for (const w of c.palavras || []) palavras.push({ etapa: e.id, id: w.id, palavra: w.palavra, dica: w.dica });
+    if (e.typeId === 'quiz_pensar' && c.formato === 'ramificado') for (const ce of c.cenarios || []) {
+      cenarios.push({ etapa: e.id, id: ce.id, texto: ce.texto, final: ce.final ? 'sim' : '', desfecho: ce.final ? (ce.desfecho || 'neutro') : '' });
+      for (const o of ce.opcoes || []) ramos.push({ etapa: e.id, cenario: ce.id, id: o.id, texto: o.texto, destino: o.destino, feedback: o.feedback || '' });
+    }
+    if (e.typeId === 'analise_imagem' && c.tarefa === 'marcar') for (const m of c.marcadores || []) marcadores.push({ etapa: e.id, id: m.id, rotulo: m.rotulo, x_certo: rc.posicoes?.[m.id]?.x ?? '', y_certo: rc.posicoes?.[m.id]?.y ?? '' });
+  }
+
   const pecas = a.pecas.map(p => ({ id: p.id, etapa: p.etapaId, grupos: p.destinatarios.join('; '), natureza: p.origem?.natureza || '', fonte: p.origem?.fonteId || '', conteudo: p.conteudo }));
   const fontes = a.fontes.map(f => ({ id: f.id, descricao: f.descricao || '', localizacao: f.localizacao || '', trecho: f.trecho || '' }));
   const imagens = [];
   for (const e of a.etapas) {
-    const img = e.typeId === 'montagem_pecas' && e.config?.imagem;
+    const img = (e.typeId === 'montagem_pecas' || e.typeId === 'analise_imagem') && (e.config?.imagem || (e.config?.modelo?.dados ? { dados: e.config.modelo.dados } : null));
     if (!img?.dados) continue;
     for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO) });
   }
-  return { Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Perguntas: perguntas, Pecas: pecas, Fontes: fontes, Imagens: imagens };
+  return { Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Perguntas: perguntas, Cartoes: cartoes, Colunas: colunas, Pares: pares, Elos: elos, Direcoes: direcoes, Palavras: palavras, Termos: termos, Cenarios: cenarios, Ramos: ramos, Marcadores: marcadores, Pecas: pecas, Fontes: fontes, Imagens: imagens };
 }
 
 // ---------------------------------------------------------------- abas → atividade
@@ -133,6 +215,15 @@ export function abasParaAtividade(abas) {
   for (const l of tab.atividade || []) g[norm(l.campo)] = LISTAS.includes(norm(l.campo)) ? linhas(l.valor) : txt(l.valor);
 
   const etapasL = (tab.etapas || []).map(l => ({ ...l, ordem: num(l.ordem) }));
+  const lerPerguntas = (id, resp) => (tab.perguntas || []).filter(q => txt(q.etapa) === id).map((q, k) => {
+    const pid = txt(q.pergunta) || 'p' + (k + 1);
+    const alternativas = LETRAS.filter(L => txt(q[L])).map(L => ({ id: L, texto: txt(q[L]) }));
+    const certa = txt(q.correta).toLowerCase().replace(/[^a-e]/g, '').slice(0, 1);
+    if (certa) (resp.perguntas ||= {})[pid] = { corretaId: certa, ...(txt(q.explicacao) ? { explicacao: txt(q.explicacao) } : {}) };
+    return { id: pid, enunciado: txt(q.enunciado), alternativas };
+  });
+  const nao = v => /^(nao|não|n|false|0)$/i.test(txt(v));
+  const imagemDe = id => { const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte)); return partes.length ? { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) } : null; };
   const opcoesL = tab.opcoes || [];
   const respostas = {};
   const etapas = etapasL.map((l, i) => {
@@ -181,6 +272,116 @@ export function abasParaAtividade(abas) {
         config.mostrarNoTelao = sim(l.quiz_pergunta_no_telao);
         config.mostrarResposta = !/^(nao|não|n|false|0)$/i.test(txt(l.quiz_mostrar_resposta) || 'sim');
       }
+      if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
+      respostas[id] = resp;
+    } else if (typeId === 'cartoes_arrastar') {
+      config.formato = txt(l.cartoes_formato) || 'ordenar';
+      if (txt(l.enunciado)) config.enunciado = txt(l.enunciado);
+      const linhasC = (tab.cartoes || []).filter(x => txt(x.etapa) === id);
+      config.cartoes = linhasC.map((x, k) => ({ id: txt(x.id) || 'c' + (k + 1), texto: txt(x.texto) }));
+      const resp = {};
+      if (config.formato === 'ordenar') {
+        const comOrdem = linhasC.map((x, k) => ({ id: config.cartoes[k].id, n: num(x.ordem_certa), k }));
+        resp.ordem = comOrdem.sort((x, y) => ((x.n ?? 1e9) - (y.n ?? 1e9)) || (x.k - y.k)).map(x => x.id);
+        config.conferencia = txt(l.cartoes_conferencia) || 'posicao';
+      } else if (config.formato === 'classificar') {
+        config.colunas = (tab.colunas || []).filter(x => txt(x.etapa) === id).map((x, k) => ({ id: txt(x.id) || 'k' + (k + 1), titulo: txt(x.titulo) }));
+        resp.colunaDe = {};
+        linhasC.forEach((x, k) => { if (txt(x.coluna_certa)) resp.colunaDe[config.cartoes[k].id] = txt(x.coluna_certa); });
+      } else {
+        config.polos = { esquerda: txt(l.cartoes_polo_esquerda), direita: txt(l.cartoes_polo_direita) };
+        resp.posicao = {};
+        linhasC.forEach((x, k) => { const v = num(x.posicao_certa); if (v !== undefined) resp.posicao[config.cartoes[k].id] = v; });
+        resp.margem = num(l.cartoes_margem) ?? 15;
+      }
+      config.distribuicao = txt(l.cartoes_distribuicao) || 'todos';
+      config.tentativas = txt(l.cartoes_tentativas) || 'uma';
+      config.espera = num(l.cartoes_espera) ?? 30;
+      config.revelarAoEncerrar = !/^(nao|não|n|false|0)$/i.test(txt(l.cartoes_revelar) || 'sim');
+      if (txt(l.cartoes_modo)) config.modo = txt(l.cartoes_modo);
+      if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
+      respostas[id] = resp;
+    } else if (typeId === 'pares') {
+      config.formato = txt(l.pares_formato) || 'ligar';
+      if (txt(l.enunciado)) config.enunciado = txt(l.enunciado);
+      config.pares = (tab.pares || []).filter(x => txt(x.etapa) === id).map((x, k) => ({ id: txt(x.id) || 'p' + (k + 1), a: txt(x.lado_a), b: txt(x.lado_b) }));
+      if (config.formato === 'ligar') { config.distribuicao = txt(l.pares_distribuicao) || 'todos'; config.tentativas = txt(l.pares_tentativas) || 'repetir'; config.espera = num(l.pares_espera) ?? 15; }
+      else config.segundos = num(l.pares_segundos) ?? 30;
+      config.revelarAoEncerrar = !nao(l.pares_revelar);
+      respostas[id] = txt(l.explicacao) ? { explicacao: txt(l.explicacao) } : {};
+    } else if (typeId === 'corrida') {
+      const resp = {};
+      config.formato = txt(l.corrida_formato) || 'quiz';
+      if (config.formato === 'quiz') config.perguntas = lerPerguntas(id, resp);
+      if (config.formato === 'corrente') {
+        config.gatilho = txt(l.corrida_gatilho);
+        config.elos = (tab.elos || []).filter(x => txt(x.etapa) === id).sort((x, y) => (num(x.ordem) ?? 0) - (num(y.ordem) ?? 0))
+          .map((x, k) => ({ id: 'e' + (k + 1), consequencia: txt(x.consequencia), distratores: [1, 2, 3, 4].map(n => txt(x['distrator_' + n])).filter(Boolean) }));
+        config.aoQuebrar = txt(l.corrida_ao_quebrar) || 'recomecar';
+      }
+      if (config.formato === 'direcao') {
+        const rodadas = [];
+        resp.direcoes = {};
+        for (const x of (tab.direcoes || []).filter(x => txt(x.etapa) === id)) {
+          let rd = rodadas.find(r => r.id === (txt(x.rodada) || 'r1'));
+          if (!rd) rodadas.push(rd = { id: txt(x.rodada) || 'r1', estimulo: '', variaveis: [] });
+          if (txt(x.estimulo)) rd.estimulo = txt(x.estimulo);
+          const vid = rd.id + '_v' + (rd.variaveis.length + 1);
+          rd.variaveis.push({ id: vid, nome: txt(x.variavel) });
+          if (txt(x.direcao_certa)) resp.direcoes[vid] = txt(x.direcao_certa).toLowerCase();
+        }
+        config.rodadas = rodadas;
+      }
+      config.segundos = num(l.corrida_segundos) ?? 30;
+      config.embaralhar = !nao(l.corrida_embaralhar);
+      config.powerUps = txt(l.corrida_power_ups).split(/[;,]/).map(x => x.trim()).filter(Boolean);
+      config.sequencia = num(l.corrida_sequencia) ?? 3;
+      if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
+      respostas[id] = resp;
+    } else if (typeId === 'sequencia') {
+      config.termos = (tab.termos || []).filter(x => txt(x.etapa) === id && txt(x.termo)).map((x, k) => ({ id: txt(x.id) || 't' + (k + 1), termo: txt(x.termo), definicao: txt(x.definicao) }));
+      config.botoes = num(l.sequencia_botoes) ?? 4;
+      config.velocidade = txt(l.sequencia_velocidade) || 'classica';
+      config.partidas = num(l.sequencia_partidas) ?? 0;
+      config.placar = txt(l.sequencia_placar) || 'soma';
+      config.meta = num(l.sequencia_meta) ?? 6;
+      respostas[id] = {};
+    } else if (typeId === 'cruzadas') {
+      config.palavras = (tab.palavras || []).filter(x => txt(x.etapa) === id).map((x, k) => ({ id: txt(x.id) || 'w' + (k + 1), palavra: txt(x.palavra), dica: txt(x.dica) }));
+      config.dicas = txt(l.cruzadas_dicas) || 'fracionadas';
+      config.grade = txt(l.cruzadas_grade) || 'por_grupo';
+      respostas[id] = txt(l.explicacao) ? { explicacao: txt(l.explicacao) } : {};
+    } else if (typeId === 'quiz_pensar') {
+      const resp = {};
+      config.formato = txt(l.pensar_formato) || 'equipe';
+      if (config.formato === 'ramificado') {
+        config.cenarios = (tab.cenarios || []).filter(x => txt(x.etapa) === id).map((x, k) => ({
+          id: txt(x.id) || 's' + (k + 1), texto: txt(x.texto), final: /^(x|sim|s|true|1)$/i.test(txt(x.final)), desfecho: txt(x.desfecho) || 'neutro',
+          opcoes: (tab.ramos || []).filter(o => txt(o.etapa) === id && txt(o.cenario) === (txt(x.id) || 's' + (k + 1))).map((o, n) => ({ id: txt(o.id) || 'o' + (n + 1), texto: txt(o.texto), destino: txt(o.destino), feedback: txt(o.feedback) }))
+        }));
+        config.cenarios.forEach(ce => { if (!ce.final) delete ce.desfecho; });
+      } else config.perguntas = lerPerguntas(id, resp);
+      if (config.formato === 'equipe') { config.consenso = txt(l.pensar_consenso) || 'lider'; config.mostrarIndividuais = !nao(l.pensar_mostrar_individuais); }
+      if (config.formato === 'metacognicao') { config.pontuarConfianca = !nao(l.pensar_pontuar_confianca); config.mostrarCalibracao = !nao(l.pensar_calibracao); }
+      if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
+      respostas[id] = resp;
+    } else if (typeId === 'analise_imagem') {
+      const resp = {};
+      config.midia = txt(l.analise_midia) || 'foto';
+      config.enunciado = txt(l.enunciado);
+      config.tarefa = txt(l.analise_tarefa) || 'perguntas';
+      if (config.midia === 'modelo3d') { const im = imagemDe(id); config.modelo = txt(l.analise_modelo_url) ? { url: txt(l.analise_modelo_url) } : im ? { dados: im.dados } : {}; }
+      else { const im = imagemDe(id); if (im) config.imagem = im; }
+      if (config.tarefa === 'marcar') {
+        const ms = (tab.marcadores || []).filter(x => txt(x.etapa) === id);
+        config.marcadores = ms.map((x, k) => ({ id: txt(x.id) || 'm' + (k + 1), rotulo: txt(x.rotulo) }));
+        resp.posicoes = {};
+        ms.forEach((x, k) => { const px = num(x.x_certo), py = num(x.y_certo); if (px !== undefined && py !== undefined) resp.posicoes[config.marcadores[k].id] = { x: px, y: py }; });
+        config.tolerancia = num(l.analise_tolerancia) ?? 8;
+        config.distribuicao = txt(l.analise_distribuicao) || 'todos';
+        config.tentativas = txt(l.analise_tentativas) || 'uma';
+      }
+      if (config.tarefa === 'perguntas') config.perguntas = lerPerguntas(id, resp);
       if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
       respostas[id] = resp;
     } else if (typeId === 'questao_individual') {

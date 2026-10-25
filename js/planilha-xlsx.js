@@ -19,10 +19,18 @@ const INSTRUCOES = [
   ['Cada aba guarda uma parte da atividade. Não mude o nome das abas nem das colunas.'],
   ['Atividade: dados gerais, meta (meta_limiar em %), guia e pendências (um item por linha dentro da célula).'],
   ['Grupos: no máximo 10. A coluna ordem define o ícone e quem recebe os excedentes no sorteio.'],
-  ['Etapas: tipo = investigacao_fragmentos | comparar_hipoteses | questao_individual | montagem_pecas | cadeado_grupo | quiz_grupos. recebe_de = id da etapa anterior que alimenta esta.'],
+  ['Etapas: tipo = investigacao_fragmentos | comparar_hipoteses | questao_individual | montagem_pecas | cadeado_grupo | quiz_grupos | cartoes_arrastar | pares | corrida | cruzadas | quiz_pensar | analise_imagem. recebe_de = id da etapa anterior que alimenta esta.'],
   ['Perguntas: perguntas do cadeado do grupo e do quiz entre grupos. Uma linha por pergunta: alternativas nas colunas a até e; em correta, a letra certa.'],
   ['Cadeado: cadeado_regra = acertos | fragmentos. Em fragmentos, escreva os pedaços separados por | (na ordem) e o código que abre em cadeado_codigo.'],
   ['Quiz: quiz_ao_errar = repassar | revelar; quiz_segundos = tempo de cada pergunta.'],
+  ['Cartões de arrastar (tipo cartoes_arrastar): cartoes_formato = ordenar | classificar | termometro. Os cartões ficam na aba Cartoes; as colunas do classificar, na aba Colunas.'],
+  ['Cartoes: ordem_certa = 1, 2, 3… (ordenar); coluna_certa = id da coluna (classificar); posicao_certa = 0 a 100 (termômetro; vazio = só debate). cartoes_distribuicao = todos | fracionado; cartoes_tentativas = uma | repetir.'],
+  ['Pares (tipo pares): pares_formato = ligar | memoria; cada par numa linha da aba Pares (lado_a, lado_b).'],
+  ['Corrida (tipo corrida): corrida_formato = quiz | corrente | direcao. Quiz usa a aba Perguntas; corrente usa a aba Elos (na ordem, com 2 a 4 distratores); direção usa a aba Direcoes (uma linha por variável, direcao_certa = sobe | desce | igual). corrida_power_ups: dobrar; congelar; escudo; ajuda; congelar_rival; roubar; embaralhar_rival; bloquear.'],
+  ['Palavras cruzadas (tipo cruzadas): aba Palavras (palavra, dica). cruzadas_dicas = fracionadas | todas; cruzadas_grade = por_grupo | turma.'],
+  ['Sequência/Genius (tipo sequencia): aba Termos (termo, definicao opcional), de 4 a 300 por etapa. sequencia_botoes = 4 | 6; sequencia_velocidade = classica | calma; sequencia_partidas = 0 (sem limite) a 50; sequencia_placar = soma | media; sequencia_meta = passos que contam como acerto.'],
+  ['Quiz que faz pensar (tipo quiz_pensar): pensar_formato = equipe | ramificado | metacognicao. Equipe e metacognição usam a aba Perguntas; a tomada de decisão usa as abas Cenarios e Ramos (o 1º cenário é o início; destino = id de outro cenário).'],
+  ['Análise de imagem (tipo analise_imagem): analise_midia = foto | grafico | modelo3d; analise_tarefa = marcar | perguntas | observar. Marcar usa a aba Marcadores (x_certo e y_certo em % da largura e da altura). A imagem fica na aba oculta Imagens; o modelo 3D, por endereço em analise_modelo_url.'],
   ['Opcoes: hipóteses e alternativas de cada etapa. Marque com x a correta (só nas etapas com gabarito).'],
   ['Pecas: grupos separados por ponto e vírgula. natureza = citacao | parafrase | inferencia | sintetico.'],
   ['Fontes: referências usadas pelas peças.'],
@@ -50,7 +58,7 @@ export async function baixarPlanilha(atividade) {
   const wb = X.utils.book_new();
   const inst = X.utils.aoa_to_sheet(INSTRUCOES); inst['!cols'] = [{ wch: 120 }];
   X.utils.book_append_sheet(wb, inst, 'Instrucoes');
-  const larguras = { a: 28, b: 28, c: 28, d: 28, e: 28, cadeado_fragmentos: 40, conteudo: 80, texto: 70, instrucao: 50, introducao: 60, valor: 80, descricao: 50, explicacao: 60, pergunta: 50, enunciado: 50, titulo: 30, nome: 26, funcao: 40 };
+  const larguras = { texto_cartao: 50, a: 28, b: 28, c: 28, d: 28, e: 28, cadeado_fragmentos: 40, conteudo: 80, texto: 70, instrucao: 50, introducao: 60, valor: 80, descricao: 50, explicacao: 60, pergunta: 50, enunciado: 50, titulo: 30, nome: 26, funcao: 40 };
   for (const [nome, colunas] of Object.entries(ABAS)) {
     const ws = X.utils.json_to_sheet(abas[nome], { header: colunas });
     ws['!cols'] = colunas.map(c => ({ wch: larguras[c] || 14 }));

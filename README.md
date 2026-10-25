@@ -53,6 +53,7 @@ js/backend.js      Escolhe Firebase ou ensaio local
 js/cloud-*.js      Firebase (Firestore + Auth) / ensaio (localStorage)
 js/qr.js           Gerador de QR Code próprio (mesmo do Eita!)
 casos/             Atividades prontas
+js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
 firestore.rules    Regras do Firestore
 tests/             Testes automáticos (critérios da seção 22)
 ```
@@ -75,6 +76,13 @@ tests/             Testes automáticos (critérios da seção 22)
 | `montagem_pecas` | 1.0.0 | Reconstrução com peças |
 | `cadeado_grupo` | 1.0.0 | Desafio de cadeado por grupo |
 | `quiz_grupos` | 1.0.0 | Quiz entre grupos |
+| `cartoes_arrastar` | 1.0.0 | Cartões de arrastar em quadro compartilhado: ordenar (a cadeia inteira ou por trechos, entre grupos), classificar ou termômetro (entre dois polos) |
+| `pares` | 1.0.0 | Pares de conteúdo: ligar (arrastar até o par) ou jogo da memória (por grupo, ou no telão com a vez de cada grupo) |
+| `corrida` | 1.0.0 | No próprio ritmo, pontos somam para o grupo: quiz, corrente de causa e efeito ou escolher a direção (↑ ↓ =), com power-ups opcionais |
+| `cruzadas` | 1.0.0 | Palavras cruzadas montadas sozinhas; dicas divididas entre os celulares; grade por grupo ou da turma |
+| `sequencia` | 1.0.0 | Sequência (Genius): o painel acende termos sorteados de um banco, com luz e som (Web Audio, notas do Genius original); a sequência cresce a cada acerto; vale o recorde de cada aluno, que soma para o grupo; ranking no telão |
+| `quiz_pensar` | 1.0.0 | Quiz que faz pensar: em equipe (TBL), tomada de decisão com ramos, ou metacognição (resposta + certeza) |
+| `analise_imagem` | 1.0.0 | Foto, gráfico ou modelo 3D (.glb): marcar na imagem, perguntas sobre ela ou observar e descrever (vai para o telão) |
 
 ## Publicação
 
@@ -87,7 +95,7 @@ tests/             Testes automáticos (critérios da seção 22)
 Requer Node 20 ou superior:
 
 ```
-node --test tests/*.test.mjs
+node --test tests/nucleo.test.mjs
 ```
 
 Prof. Mário César Nascimento, PhD ©

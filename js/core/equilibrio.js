@@ -26,10 +26,12 @@ export function elementosDaGramatica(a) {
   const cadeado = etapas.some(e => e.typeId === 'cadeado_grupo');
   // cadeado: perguntas diferentes por aluno ou pedaços do código = informação fracionada dentro do grupo
   const cadeadoFracionado = etapas.some(e => e.typeId === 'cadeado_grupo' && (e.config?.regra === 'fragmentos' || (e.config?.distribuicao || 'diferente') === 'diferente'));
-  const cooperacao = interdependencia || montagem || cadeado || etapas.some(e => e.typeId === 'comparar_hipoteses');
+  const cartoes = etapas.some(e => e.typeId === 'cartoes_arrastar');
+  const cartoesFracionados = etapas.some(e => e.typeId === 'cartoes_arrastar' && e.config?.distribuicao === 'fracionado');
+  const cooperacao = interdependencia || montagem || cadeado || cartoes || etapas.some(e => e.typeId === 'comparar_hipoteses');
   const superacao = (a.meta && a.meta.ativa !== false) || etapas.some(e => e.typeId === 'quiz_grupos' || (e.participacao?.competicao && e.participacao.competicao !== 'desligada'));
   const meta = !!(a.meta && a.meta.ativa !== false);
-  return { fracionamento: fracionamento || montagem || cadeadoFracionado, interdependencia, cooperacao, superacao, meta };
+  return { fracionamento: fracionamento || montagem || cadeadoFracionado || cartoesFracionados, interdependencia, cooperacao, superacao, meta };
 }
 
 /**
