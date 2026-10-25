@@ -199,3 +199,9 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
 .escolha-autoria > .ilu { --tam:64px!important; }
 .autoria-etapa-cab > .ilu { --tam:56px!important; }
 @media(max-width:480px) { .autoria-etapa-cab > .ilu { --tam:48px!important; } }
+
+/* Números de orientação nos três caminhos de preparação. */
+.escolha-autoria { position:relative; }
+.numero-opcao { position:absolute; right:14px; top:14px; width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--acento); color:var(--fundo); font:900 1.1rem var(--fonte); box-shadow:inset 0 2px 2px #fff7,0 3px 0 #0004; }
+.escolha-autoria h3 { padding-right:32px; }
+@media(max-width:900px) { .escolha-autoria .guia-selo { padding-right:30px; }.numero-opcao { width:30px; height:30px; top:12px; right:12px; font-size:1rem; } }
