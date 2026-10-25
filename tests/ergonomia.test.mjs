@@ -45,3 +45,8 @@ test('Uma resposta da IA nunca se declara revisada pelo professor',()=>{
 test('Atividade sem etapas ou sem organização de sala não fica pronta por engano',()=>{
  const a=structuredClone(caso);a.etapas=[];assert.ok(validarAtividade(a).some(x=>x.local==='etapas'&&x.severidade==='erro'));a.grupos=[];assert.ok(validarAtividade(a).some(x=>x.local==='grupos'&&x.severidade==='erro'));
 });
+test('Ajuste por IA preserva identificadores de grupos e respeita participação individual',()=>{
+ assert.throws(()=>lerProposta(JSON.stringify(caso),{organizacao:'grupos',numeroGrupos:5,idsGrupos:['x1','x2','x3','x4','x5']}),/identificadores/);
+ const a=structuredClone(caso);a.grupos=[a.grupos[0]];
+ assert.throws(()=>lerProposta(JSON.stringify(a),{organizacao:'individual',numeroGrupos:1}),/individual/);
+});

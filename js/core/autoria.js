@@ -35,6 +35,8 @@ export function lerProposta(texto, cfg = {}) {
     a.docente.respostas??={}; a.objetivos??=[]; a.pendencias??=[];
     if(!Array.isArray(a.objetivos)||!Array.isArray(a.pendencias)||typeof a.docente.respostas!=='object'||Array.isArray(a.docente.respostas))throw new Error('Confira os objetivos e as respostas esperadas.');
     if (a.grupos.length !== (cfg.organizacao==='individual'?1:Number(cfg.numeroGrupos || a.grupos.length))) throw new Error('A quantidade de grupos não corresponde ao solicitado.');
+    if(cfg.organizacao==='individual' && a.etapas.some(e=>e.participacao.organizacao!=='individual'||e.participacao.envio!=='individual'))throw new Error('A proposta não respeitou a participação individual solicitada.');
+    if(cfg.idsGrupos && JSON.stringify([...cfg.idsGrupos].sort())!==JSON.stringify(a.grupos.map(g=>g.id).sort()))throw new Error('O ajuste tentou trocar os identificadores dos grupos planejados.');
     const diagnosticos = validarAtividade(a);
     if(diagnosticos.some(d=>d.severidade==='erro' && /schemaVersion|typeId|typeVersion/.test(d.local)))throw new Error('A proposta usa um formato não disponível no catálogo.');
     // Rascunhos com pendências são aceitos no editor, mas nunca liberados para a aula silenciosamente.
