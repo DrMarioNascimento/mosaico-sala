@@ -121,3 +121,48 @@
 .passo3 small.pend { color: var(--alerta, #f3bf0a); }
 @media (max-width: 640px) { .passo3 { grid-template-columns: 1fr; grid-template-areas: "n" "rot" "est"; justify-items: center; text-align: center; font-size: .85rem; } }
 .tipo-cartao .tipo-quem { display: block; color: var(--acento-2); font-weight: 700; font-size: .85rem; margin: 2px 0 4px; }
+/* Ergonomia docente: conteúdo, navegação e menus compactos. */
+.plan-nav { min-width: 0; }
+.plan-nav button { min-width: 0; width: 100%; max-width: 100%; }
+.plan-nav .rot { min-width: 0; }
+.plan-nav .selo { flex: none; }
+.plan-acoes { align-items: center; }
+.estado-salvamento { font-size: .8rem; color: var(--ok); flex-basis: 100%; text-align: right; }
+.estado-salvamento[data-tipo=erro] { color: var(--erro); }
+.acoes-mais { position: relative; }
+.acoes-mais > summary { list-style: none; cursor: pointer; }
+.acoes-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; padding: 12px; min-width: 230px; max-height: 65vh; overflow-y: auto; display: grid; gap: 8px; border: 1px solid var(--linha); border-radius: 14px; background: var(--cartao); box-shadow: 0 12px 28px #0008; }
+.inicio-docente .linha-botoes { margin-bottom: 0; }
+.revisao-item { border: 1px solid var(--linha); border-radius: 10px; padding: 12px; margin: 12px 0; }
+.revisao-item > summary { font-weight: 700; cursor: pointer; }
+.resposta-docente { white-space: pre-wrap; overflow-wrap: anywhere; font: .92rem/1.5 var(--fonte); background: var(--fundo-2); padding: 12px; border-radius: 10px; }
+.evidencia-revisao { padding: 12px; margin: 10px 0; border-left: 3px solid var(--acento-2); background: var(--fundo-2); }
+.evidencia-revisao blockquote { margin: 10px 0 0; font-size: .9rem; }
+.autoria-dialog { width: min(1000px, calc(100% - 24px)); max-height: 92dvh; overflow-y: auto; padding: 22px; background: var(--cartao); color: var(--texto); border: 1px solid var(--acento); border-radius: 18px; }
+.autoria-cab { display: flex; gap: 14px; align-items: center; justify-content: space-between; }
+.autoria-cab h2 { margin: 0; }
+.autoria-passos { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.autoria-passos [aria-current=step] { border-color: var(--acento); box-shadow: inset 0 -3px var(--acento); }
+.autoria-dialog textarea { min-height: 100px; }
+.autoria-dialog .opcoes { margin-top: 12px; }
+.autoria-dialog .opcao span { min-width: 0; }
+.autoria-externa { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--linha); }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--acento-2); outline-offset: 3px; }
+@media(max-width:860px) { .plan-nav button { width: auto; max-width: 85vw; } }
+@media(max-width:640px) {
+  .plan-barra { padding: 8px 12px !important; gap: 6px !important; }
+  .plan-barra .marca { font-size: .95rem; }
+  .plan-barra > .status { font-size: .75rem; max-width: 48%; }
+  .plan-acoes { width: 100%; margin: 0; gap: 6px; }
+  .plan-acoes .btn { min-height: 40px; padding: 0 10px; font-size: .8rem; }
+  .estado-salvamento { text-align: left; }
+  .plan-acoes > .btn.discreto { display: none; }
+  .plan-acoes > .btn:nth-of-type(2) { display: none; }
+  .autoria-dialog { padding: 14px; }
+  .autoria-cab h2 { font-size: 1.1rem; }
+}
+.so-celular { display: none; }
+@media(max-width:640px) {
+  .plan-acoes > .btn:nth-of-type(1), .plan-acoes > .btn:nth-of-type(2) { display:none; }
+  .plan-acoes .acoes-menu .so-celular { display:inline-flex; }
+}

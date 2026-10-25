@@ -33,12 +33,12 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 2. **Sala:** abrir sala → QR Code e código → abrir o telão (no PC da sala, digitar os 6 números já abre o telão).
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
-5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.
+5. **Resultado:** discutir a meta e as explicações, exportar o relatório e encerrar a sala pelo fechamento guiado. Encerrar apaga os dados da sessão.
 
 ## Planejamento e dois modos de uso
 
 - **Fechado (biblioteca):** contas da lista de mestres guardam atividades no Firestore (`biblioteca/`). Cada conta lê e edita as suas; pode compartilhar com os outros mestres (leitura e cópia). Nenhum dado de participante fica na biblioteca.
-- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
+- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais, por conta e navegador, com indicação de salvamento; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
 - Formato da planilha: abas Atividade, Grupos, Etapas, Opcoes, Pecas e Fontes (ver `js/core/planilha.js`). A planilha contém o gabarito: não distribuir aos participantes.
 - LGPD: nomes dos participantes só durante a sessão (apagados ao encerrar); a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Casos devem ser fictícios.
 

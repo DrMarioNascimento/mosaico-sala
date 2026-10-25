@@ -1,4 +1,7 @@
 import { cadeadoIcone } from './lock-icons.js';
+import { criarHistorico, recortarPrevia } from './core/ergonomia.js';
+import { abrirAutoria } from './autoria-docente.js';
+import { painelRevisaoDocente } from './revisao-docente.js';
 /* MOSAICO · Planejamento: montar, revisar, guardar e pré-visualizar atividades.
    - Contas da lista de mestres: biblioteca fechada no Firestore.
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
@@ -22,7 +25,8 @@ import { criarEditores } from './planejar-tipos.js';
 import { ico, ilustra } from './icones.js';
 
 const b = await backend();
-const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
+const RASCUNHO_BASE = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
+let RASCUNHO = RASCUNHO_BASE, RASCUNHOS = '', historico = null, salvoEm = null, falhaRascunho = false, rascunhoId = null;
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
@@ -54,13 +58,13 @@ $('entrarGoogle').onclick = () => {
   const p = b.entrarGoogle(); $('entrarGoogle').disabled = true;
   p.then(iniciar).catch(e => { $('entrarGoogle').disabled = false; aviso($('avisoLogin'), e.code === 'auth/popup-closed-by-user' ? 'Login cancelado.' : 'Não foi possível entrar. Confira a internet.', 'erro'); });
 };
-(async () => { const c = await b.contaAtual(); if (c) iniciar(c); })();
+(async () => { const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO && new URLSearchParams(location.search).has('demonstracao')) iniciar(await b.entrarGoogle()); })();
 
 async function iniciar(conta) {
-  P.conta = conta; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
+  P.conta = conta; RASCUNHO = RASCUNHO_BASE + ':' + conta.uid; RASCUNHOS = RASCUNHO + ':lista'; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
   if (souAdmin()) carregarMestres();
-  try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
+  try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; rascunhoId = r.rascunhoId; salvoEm = r.salvoEm; historico = criarHistorico(P.A); marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   render();
 }
 
@@ -72,12 +76,37 @@ const temBiblioteca = () => Array.isArray(P.bib);
 const souAdmin = () => EM_ENSAIO || ehAdmin(P.conta?.email);
 
 // ============================================================ estado
-function salvarRascunho() { try { localStorage.setItem(RASCUNHO, JSON.stringify({ A: P.A, origem: P.origem, sujo: P.sujo })); } catch {} }
+function rascunhosLocais() { try { return JSON.parse(localStorage.getItem(RASCUNHOS) || '[]'); } catch { return []; } }
+function salvarRascunho() {
+  if (!P.A) return;
+  const agora = Date.now(); rascunhoId ||= 'r' + agora.toString(36) + Math.random().toString(36).slice(2,6);
+  const r = { A:P.A, origem:P.origem, sujo:P.sujo, rascunhoId, salvoEm:agora };
+  try {
+    localStorage.setItem(RASCUNHO, JSON.stringify(r));
+    const lista = rascunhosLocais().filter(x => x.rascunhoId !== rascunhoId); lista.unshift(r);
+    localStorage.setItem(RASCUNHOS, JSON.stringify(lista)); salvoEm = agora; falhaRascunho = false;
+  } catch { falhaRascunho = true; }
+  estadoSalvamento();
+}
+function estadoSalvamento() {
+  const alvo = document.getElementById('estadoSalvamento'); if (!alvo) return;
+  alvo.textContent = falhaRascunho ? 'Falha ao guardar rascunho: exporte uma cópia antes de sair.' : P.sujo ? 'Rascunho salvo neste navegador' + (salvoEm ? ' às ' + new Date(salvoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '') : 'Salvo na sua biblioteca';
+  alvo.dataset.tipo = falhaRascunho ? 'erro' : 'ok';
+}
+function restaurarHistorico(refazer = false) {
+  clearTimeout(tempo); historico?.registrar(P.A);
+  const a = refazer ? historico?.refazer() : historico?.desfazer(); if (!a) return;
+  P.A = a; P.sujo = true; salvarRascunho(); render();
+}
+addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName) || !P.A || document.querySelector('dialog[open]')) return;
+  e.preventDefault(); restaurarHistorico(e.shiftKey);
+});
 let tempo = null;
 /** Mudança de texto: guarda sem redesenhar (não perde o foco); atualiza navegação/revisão logo depois. */
-function tocar() { P.sujo = true; salvarRascunho(); clearTimeout(tempo); tempo = setTimeout(() => { renderNav(); renderAcoes(); atualizarRevEtapa(); }, 350); }
+function tocar() { P.sujo = true; if(P.A.docente) { delete P.A.docente.revisadoEm; if(P.secao.startsWith('etapa:')) delete P.A.docente.revisoes?.[P.secao.slice(6)]; else delete P.A.docente.revisoes; } salvarRascunho(); clearTimeout(tempo); tempo = setTimeout(() => { historico?.registrar(P.A); renderNav(); renderAcoes(); atualizarRevEtapa(); }, 350); }
 /** Mudança de estrutura: guarda e redesenha. */
-function mudar(fn) { fn(P.A); P.sujo = true; salvarRascunho(); render(); }
+function mudar(fn) { clearTimeout(tempo); historico?.registrar(P.A); const antes=JSON.stringify(P.A); fn(P.A); if(JSON.stringify(P.A)!==antes) { P.sujo = true; if(P.A.docente) { delete P.A.docente.revisadoEm; if(P.secao.startsWith('etapa:')) delete P.A.docente.revisoes?.[P.secao.slice(6)]; else delete P.A.docente.revisoes; } historico?.registrar(P.A); salvarRascunho(); } render(); }
 
 const slug = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'atividade';
 function novoId(prefixo, usados) { let i = 1; while (usados.has(`${prefixo}${i}`)) i++; return `${prefixo}${i}`; }
@@ -105,11 +134,11 @@ function modelo(titulo, nGrupos, completo) {
   return a;
 }
 
-function abrir(atividade, origem) {
-  P.A = JSON.parse(JSON.stringify(atividade)); P.origem = origem || null; P.sujo = !origem; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];   // sujo: nova, importada ou modelo ainda não está na biblioteca
+function abrir(atividade, origem, idRascunho = null) {
+  rascunhoId = idRascunho || (origem?.bibId ? rascunhosLocais().find(r=>r.origem?.bibId===origem.bibId)?.rascunhoId : null); P.A = JSON.parse(JSON.stringify(atividade)); historico = criarHistorico(P.A); P.origem = origem || null; P.sujo = !origem; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];   // sujo: nova, importada ou modelo ainda não está na biblioteca
   salvarRascunho(); marcarHistorico(); render(); window.scrollTo({ top: 0 });
 }
-function fechar() { P.A = null; P.origem = null; P.sujo = false; try { localStorage.removeItem(RASCUNHO); } catch {} render(); window.scrollTo({ top: 0 }); }
+function fechar() { clearTimeout(tempo); if(P.A) salvarRascunho(); P.A = null; P.origem = null; P.sujo = false; historico = null; try { localStorage.removeItem(RASCUNHO); } catch {} render(); window.scrollTo({ top: 0 }); }
 
 // ============================================================ navegação (botões e o “voltar” do navegador)
 /** Partes da atividade, na ordem em que se planeja. */
@@ -124,10 +153,10 @@ function marcarHistorico() { try { history.pushState({ plan: P.secao }, '', loca
 function irPara(secao) {
   if (!P.A) return;
   if (P.secao !== secao) { P.secao = secao; marcarHistorico(); }
-  renderNav(); renderEditor(); renderMigalhas(); window.scrollTo({ top: 0 });
+  renderNav(); renderEditor(); renderMigalhas(); window.scrollTo({ top: 0 }); const titulo=document.querySelector('#editor h2'); if(titulo){titulo.setAttribute('tabindex','-1');titulo.focus({preventScroll:true});}
 }
 function voltarMinhas() {
-  if (P.sujo && !confirmar(temBiblioteca() ? 'Voltar para Minhas atividades sem salvar? O rascunho será descartado.' : 'Voltar para Minhas atividades? Exporte a planilha antes: o rascunho será descartado.')) return false;
+  if (falhaRascunho && !confirmar('Não foi possível guardar o rascunho. Exporte uma cópia antes de voltar. Voltar mesmo assim?')) return false;
   fechar(); try { history.replaceState(null, '', location.pathname + location.search); } catch {}
   return true;
 }
@@ -159,7 +188,7 @@ function passosSecao() {
 // ============================================================ renderização geral
 function render() {
   renderAcoes();
-  $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
+  $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
   limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
@@ -170,14 +199,25 @@ function renderAcoes() {
   if (!P.A) return limpar(alvo);
   const diags = validarAtividade(P.A);
   limpar(alvo,
-    temBiblioteca() && h('button', { class: 'btn primario', onclick: dialogoSalvar }, P.sujo ? 'Salvar na biblioteca' : 'Salvo ✓'),
-    h('button', { class: 'btn', disabled: temErros(diags), title: temErros(diags) ? 'Corrija os erros (veja Revisão)' : 'Abrir telão, condução e turma simulados', onclick: previa }, 'Ver como fica'),
-    temBiblioteca() && h('button', { class: 'btn', 'data-ico': 'conduzir', disabled: temErros(diags), title: temErros(diags) ? 'Corrija os erros (veja Revisão)' : 'Levar esta atividade para a Condução e abrir a sala', onclick: conduzirAgora }, 'Dar esta aula'),
-    h('button', { class: 'btn', onclick: () => baixarPlanilha(P.A).catch(e => avisoGeral(e.message, 'erro')) }, 'Planilha'),
-    h('button', { class: 'btn', onclick: () => baixarJSON(P.A) }, 'JSON'),
-    h('button', { class: 'btn', onclick: () => abrirImpressao(P.A) }, 'Imprimir'),
-    h('button', { class: 'btn discreto', onclick: () => { if (!P.sujo || confirmar('Fechar sem salvar? O rascunho será descartado.')) fechar(); } }, 'Fechar'));
-  $('statusTopo').textContent = (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '');
+    h('span', { id:'estadoSalvamento', class:'estado-salvamento', role:'status', 'aria-live':'polite' }),
+    h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
+    h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
+    h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
+    h('button', { class:'btn', disabled:temErros(diags), title:temErros(diags)?'Complete os itens da Revisão para ensaiar a aula inteira':'Experimentar a aula com turma simulada', onclick:()=>previa() }, 'Ver como fica'),
+    
+    h('details',{class:'acoes-mais'},h('summary',{class:'btn'},'Guardar e exportar'),
+      h('div',{class:'acoes-menu'},
+        h('button',{class:'btn so-celular',disabled:!historico?.podeDesfazer,onclick:()=>restaurarHistorico()},'Desfazer'),
+        h('button',{class:'btn so-celular',disabled:!historico?.podeRefazer,onclick:()=>restaurarHistorico(true)},'Refazer'),
+        temBiblioteca() && h('button',{class:'btn',onclick:()=>dialogoSalvar()},P.sujo?'Salvar na biblioteca':'Salvo na biblioteca ✓'),
+        temBiblioteca() && h('button',{class:'btn',onclick:continuarNoCelular},'Continuar no celular'),
+        h('button',{class:'btn',onclick:()=>baixarPlanilha(P.A).catch(e=>avisoGeral(e.message,'erro'))},'Baixar planilha'),
+        h('button',{class:'btn',onclick:()=>baixarJSON(P.A)},'Baixar arquivo da atividade'),
+        h('button',{class:'btn',onclick:()=>abrirImpressao(P.A)},'Imprimir'),
+        h('button',{class:'btn',onclick:()=>abrirIA(P.A)},'Ajustar com IA'))),
+    h('button',{class:'btn discreto',onclick:()=>voltarMinhas()},'Minhas atividades'));
+  estadoSalvamento();
+  $('statusTopo').textContent = (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '');
 }
 const confirmar = t => window.confirm(t);
 
@@ -195,7 +235,7 @@ function renderNav() {
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
-    item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' erro(s)' : 'ok')]));
+    item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' a completar' : 'ok')]));
 }
 
 /** Os 3 passos do planejamento (Sobre a turma → Etapas → Revisar), com as pendências de cada um. */
@@ -205,11 +245,11 @@ function renderPassos3(nErros, nErrosEtapas) {
   const passos = [
     ['Sobre a turma', s === 'geral' || s === 'grupos', 'geral', nErros - nErrosEtapas],
     ['Etapas', s.startsWith('etapa:') || s === 'nova-etapa' || s === 'fontes', primeira ? 'etapa:' + primeira.id : 'nova-etapa', P.A.etapas.length ? nErrosEtapas : -1],
-    ['Revisar e dar a aula', s === 'revisao', 'revisao', nErros]
+    ['Revisar e preparar aula', s === 'revisao', 'revisao', nErros]
   ];
   limpar(alvo, passos.map(([rot, atual, destino, n], i) => h('button', { class: 'passo3', 'aria-current': atual ? 'step' : null, onclick: () => irPara(destino) },
     h('span', { class: 'n' }, i + 1), h('span', { class: 'rot' }, rot),
-    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? 'pronta' : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
+    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? (P.A.docente?.revisadoEm ? 'revisada' : 'estrutura completa') : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
 }
 
 function renderEditor() {
@@ -229,8 +269,9 @@ function renderEditor() {
 function campo(rotulo, valor, aoMudar, { tipo = 'text', area = false, linhas = 3, id, ajuda, max } = {}) {
   const idc = id || 'c' + Math.random().toString(36).slice(2, 8);
   const el = area ? h('textarea', { id: idc, rows: linhas, maxlength: max }, valor ?? '') : h('input', { id: idc, type: tipo, value: valor ?? '', maxlength: max });
+  if(ajuda) el.setAttribute('aria-describedby',idc+'-ajuda');
   el.addEventListener('input', () => { aoMudar(tipo === 'number' ? (el.value === '' ? undefined : Number(el.value)) : el.value); tocar(); });
-  return h('div', {}, h('label', { for: idc }, rotulo), el, ajuda && h('small', {}, ajuda));
+  return h('div', {}, h('label', { for: idc }, rotulo), el, ajuda && h('small', {id:idc+'-ajuda'}, ajuda));
 }
 function seletor(rotulo, valor, opcoes, aoMudar, { redesenhar = false } = {}) {
   const idc = 's' + Math.random().toString(36).slice(2, 8);
@@ -242,6 +283,7 @@ const listaTexto = v => String(v || '').split('\n').map(x => x.trim()).filter(Bo
 
 // ============================================================ início
 function telaInicio() {
+  let antigo; try{antigo=JSON.parse(localStorage.getItem(RASCUNHO_BASE)||'null');}catch{}
   const titulo = h('input', { id: 'novoTitulo', placeholder: 'Ex.: A ciclista que voltou da altitude' });
   const nGr = h('select', { id: 'novoGrupos' }, Array.from({ length: 9 }, (_, i) => i + 2).map(n => h('option', { value: n, selected: n === 5 }, `${n} grupos`)));
   const tipoModelo = h('select', { id: 'novoModelo' }, h('option', { value: 'mosaico' }, 'Modelo MOSAICO: investigação → comparação → questão'), h('option', { value: 'branco' }, 'Em branco (sem etapas)'));
@@ -258,15 +300,18 @@ function telaInicio() {
   };
   return h('div', {},
     h('h1', { style: { marginTop: '12px' } }, 'Minhas atividades'),
+    h('div',{class:'inicio-docente cartao destaque'},h('h2',{},'Como você quer preparar sua aula?'),h('p',{},'Comece pelo conteúdo, adapte um exemplo ou retome seu trabalho.'),h('div',{class:'linha-botoes'},h('button',{class:'btn primario',onclick:()=>abrirIA()},'Criar a partir de um texto'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto'),h('button',{class:'btn',disabled:!rascunhosLocais().length,onclick:()=>document.getElementById('rascunhosLocais')?.scrollIntoView({behavior:'smooth',block:'start'})},'Continuar meu trabalho'))),
+    antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
+    rascunhosLocais().length>0 && h('section',{class:'cartao',id:'rascunhosLocais'},h('h2',{},'Rascunhos neste navegador'),h('p',{class:'sutil'},'Disponíveis nesta conta e neste navegador. Salve na biblioteca para continuar em outro aparelho.'),h('ul',{class:'lista-bib'},rascunhosLocais().map(r=>h('li',{},h('div',{class:'tit'},h('strong',{},r.A.titulo),h('small',{},new Date(r.salvoEm).toLocaleString('pt-BR'))),h('button',{class:'btn pequeno',onclick:()=>{abrir(r.A,r.origem,r.rascunhoId);P.sujo=!!r.sujo;salvarRascunho();render();}},'Continuar'))))),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
-      ? 'Sua conta não está na lista de mestres: a biblioteca fechada não fica disponível. Você pode montar e exportar a planilha normalmente (modo aberto, nada é guardado).'
+      ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
       : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
     h('div', { class: 'plan-inicio' },
       h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Nova atividade'),
         h('label', { for: 'novoTitulo' }, 'Título'), titulo,
         h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
         h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
-      h('div', { class: 'cartao' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
+      h('div', { class: 'cartao', id:'modelosProntos' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
         h('p', { class: 'sutil' }, 'Abra um modelo, ajuste ao seu conteúdo e salve como seu.'),
         h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
@@ -279,14 +324,14 @@ function telaInicio() {
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
             h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
             item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
-      souAdmin() && cartaoMestres(),
+      souAdmin() && h('details',{class:'cartao'},h('summary',{},'Administrar professores autorizados'),cartaoMestres()),
       h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
         h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
         h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
         P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
-      h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
+      h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Caminho avançado: pedido para IA externa'), cartaoPrompt())));
 }
 
 /** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
@@ -326,7 +371,7 @@ function cartaoMestres() {
 }
 
 async function abrirModelo(id) {
-  try { abrir(await carregarCaso(id), null); P.A.id = P.A.id + '-copia'; }
+  try { const a=await carregarCaso(id); a.id+='-copia'; abrir(a,null); }
   catch (e) { avisoGeral('Não foi possível abrir o modelo: ' + e.message, 'erro'); }
 }
 
@@ -348,7 +393,7 @@ function cartaoPrompt() {
     h('label', { for: 'iaPref' }, 'Preferências por etapa (opcional)'), h('textarea', { id: 'iaPref', rows: 2, oninput: e => cfg.preferencias = e.target.value }),
     h('div', { class: 'linha-botoes' },
       h('button', { class: 'btn', onclick: async () => { saida.value = gerarPrompt({ ...cfg, organizacao: 'grupos', exemplo: await exemplo() }); saida.hidden = false; } }, 'Gerar prompt'),
-      h('button', { class: 'btn discreto', onclick: async () => { try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); } } }, 'Copiar'),
+      h('button', { class: 'btn discreto', onclick: async () => { if(!saida.value.trim()) return avisoGeral('Gere o pedido antes de copiar.'); try { await navigator.clipboard.writeText(saida.value); avisoGeral('Prompt copiado.', 'ok'); } catch { saida.select(); } } }, 'Copiar'),
       h('button', { class: 'btn', onclick: async () => {
         const md = gerarGuiaMd({ ...cfg, organizacao: 'grupos', exemplo: await exemplo() });
         const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
@@ -370,7 +415,7 @@ async function apagarDaBiblioteca(item) {
   if (!confirmar(`Apagar “${item.titulo}” da biblioteca? Isso não pode ser desfeito.`)) return;
   try { await b.apagarBiblioteca(item.id); await carregarBiblioteca(); render(); avisoGeral('Apagada.', 'ok'); } catch (e) { avisoGeral('Não foi possível apagar: ' + e.message, 'erro'); }
 }
-function dialogoSalvar() {
+function dialogoSalvar(aposSalvar = null) {
   let comp = !!P.origem?.compartilhada;
   const d = h('dialog', { class: 'explica' },
     h('h2', {}, 'Salvar na biblioteca'),
@@ -382,7 +427,7 @@ function dialogoSalvar() {
           if (JSON.stringify(P.A).length > 880000) throw new Error('A atividade ficou pesada demais para a biblioteca (imagens). Use imagens menores ou exporte a planilha.');
           const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: JSON.stringify(P.A), compartilhada: comp, autor: P.conta?.email || '' });
           P.origem = { bibId: id, compartilhada: comp }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
-          d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca.', 'ok');
+          d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca.', 'ok'); if(typeof aposSalvar === 'function') aposSalvar();
         } catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: confira se as regras do Firestore foram publicadas.' : 'Não foi possível salvar: ' + e.message, 'erro'); d.close(); d.remove(); }
       } }, 'Salvar'),
       h('button', { class: 'btn', onclick: () => { d.close(); d.remove(); } }, 'Cancelar')));
@@ -396,12 +441,21 @@ function baixarJSON(a) {
 
 // ============================================================ pré-visualização
 function previa(etapaId) {
-  try { localStorage.setItem('mosaico-previa', JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
+  try { localStorage.setItem('mosaico-previa', JSON.stringify(typeof etapaId==='string' ? recortarPrevia(P.A,etapaId) : P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
   const url = new URL('previa.html', location.href); url.search = '?ensaio=1' + (typeof etapaId === 'string' ? '&etapa=' + encodeURIComponent(etapaId) : '');
   window.open(url.href, '_blank');
 }
 
 /** Leva a atividade aberta direto para a Condução (sem escolher de novo lá). */
+function continuarNoCelular() {
+  if(EM_ENSAIO) { avisoGeral('O ensaio fica apenas neste navegador. Para continuar em outro aparelho, entre na versão on-line com sua conta autorizada e salve a atividade na biblioteca.'); return; }
+  if(P.sujo || !P.origem?.bibId) return dialogoSalvar(continuarNoCelular);
+  const url = new URL('conduzir.html',location.href); url.searchParams.set('atividade',P.origem.bibId); if(EM_ENSAIO)url.searchParams.set('ensaio','1');
+  const qr=h('div',{class:'qr'}); qr.innerHTML=window.MosaicoQR.svg(url.href,{nivel:'M',margem:2,rotulo:'Continuar esta atividade no celular do professor'});
+  const d=h('dialog',{class:'explica'},h('h2',{},'Continuar no celular'),h('p',{},'Leia este QR Code e entre com a mesma conta Google. O material será recuperado da sua biblioteca.'),qr,h('p',{class:'sutil'},'Este é o acesso docente. O QR dos alunos será criado ao abrir a sala.'),h('button',{class:'btn',onclick:()=>{d.close();d.remove();}},'Fechar'));
+  document.body.append(d); d.showModal();
+}
+function abrirIA(atual=null) { abrirAutoria({contaId:P.conta?.uid || 'local',atual,aplicar:a=>{if(P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
 function conduzirAgora() {
   try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a Condução.', 'erro'); }
   const url = new URL('conduzir.html', location.href); if (EM_ENSAIO) url.search = '?ensaio=1';
@@ -418,7 +472,7 @@ function editorGeral() {
       h('div', { class: 'campos-3' },
         campo('Público', a.publico, v => { a.publico = v; }),
         campo('Duração (min)', a.duracaoMin, v => { a.duracaoMin = v; }, { tipo: 'number' }),
-        seletor('Regime', a.regime, [['fiel', 'Fiel ao material'], ['simulacao', 'Simulação (dados sintéticos)']], v => { a.regime = v; }, { redesenhar: true })),
+        seletor('Como usar o material', a.regime, [['fiel', 'Usar somente informações do texto'], ['simulacao', 'Permitir situações fictícias identificadas']], v => { a.regime = v; }, { redesenhar: true })),
       campo('Pergunta central', a.perguntaCentral, v => { a.perguntaCentral = v; }, { area: true, linhas: 2 }),
       campo('Introdução (lida no telão; não revela a solução)', a.introducao, v => { a.introducao = v; }, { area: true, linhas: 4 }),
       campo('Objetivos (um por linha)', (a.objetivos || []).join('\n'), v => { a.objetivos = listaTexto(v); }, { area: true, linhas: 3 })),
@@ -426,7 +480,7 @@ function editorGeral() {
       h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: m.ativa !== false, onchange: e => mudar(() => { m.ativa = e.target.checked; }) }), h('span', {}, 'A turma compete para superar uma meta coletiva')),
       m.ativa !== false && h('div', {},
         h('div', { class: 'campos-2' },
-          seletor('Meta de acertos', m.limiar, [...new Set([0.4, 0.5, 0.6, 0.7, 0.8, m.limiar].filter(Number.isFinite))].sort((x, y) => x - y).map(v => [v, Math.round(v * 100) + '%']), v => { m.limiar = Number(v); }),
+          seletor('Quando a turma supera o desafio?', m.limiar, [...new Set([0.4, 0.5, 0.6, 0.7, 0.8, m.limiar].filter(Number.isFinite))].sort((x, y) => x - y).map(v => [v, Math.round(v * 100) + '%']), v => { m.limiar = Number(v); }),
           campo('Descrição', m.descricao, v => { m.descricao = v; })),
         h('label', {}, 'Etapas que contam para a meta'),
         comGabarito.length ? h('div', { class: 'opcoes' }, comGabarito.map(e => h('label', { class: 'opcao' },
@@ -527,7 +581,7 @@ function editorEtapa(e) {
         h('div', { class: 'mini' },
           h('button', { class: 'btn', disabled: pos === 0, 'aria-label': 'Mover para antes', onclick: () => mover(-1) }, '↑'),
           h('button', { class: 'btn', disabled: pos === seq.length - 1, 'aria-label': 'Mover para depois', onclick: () => mover(1) }, '↓'),
-          h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(a)), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
+          h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(recortarPrevia(a,e.id))), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
           h('button', { class: 'btn', title: 'Duplicar etapa', onclick: () => duplicarEtapa(e) }, '⧉'),
           h('button', { class: 'btn perigo', 'aria-label': 'Remover etapa', onclick: () => removerEtapa(e) }, '✕'))),
       campo('Título', e.titulo, v => { e.titulo = v; }, { max: 120 }),
@@ -538,7 +592,8 @@ function editorEtapa(e) {
       h('div', { class: 'campos-2' },
         seletor('Organização', e.participacao.organizacao, t.participacao.organizacao.map(c => [c, ROT_PART[c] || c]), v => { e.participacao.organizacao = v; if (v === 'individual') e.participacao.envio = 'individual'; else if (e.participacao.envio === 'individual' && t.participacao.envio.includes('representante')) e.participacao.envio = 'representante'; }, { redesenhar: true }),
         seletor('Quem envia', e.participacao.envio, t.participacao.envio.map(c => [c, ROT_PART[c] || c]), v => { e.participacao.envio = v; })),
-      campo('Instrução para os participantes', e.instrucao, v => { e.instrucao = v; }, { area: true, linhas: 2 })),
+      campo('Instrução para os participantes', e.instrucao, v => { e.instrucao = v; }, { area: true, linhas: 2 }),
+      campo('Roteiro do professor nesta etapa (opcional)', a.docente.roteiro?.[e.id] || '', v => { a.docente.roteiro = {...a.docente.roteiro,[e.id]:v}; }, {area:true,linhas:2,ajuda:'Orientação privada para você consultar durante a condução.'})),
     e.typeId === 'investigacao_fragmentos' && blocoInvestigacao(e),
     e.typeId === 'comparar_hipoteses' && blocoComparacao(e),
     e.typeId === 'questao_individual' && blocoQuestao(e),
@@ -560,6 +615,8 @@ function atualizarRevEtapa() {
 }
 
 function trocarTipo(e, novo) {
+  if(novo===e.typeId) return;
+  if(!confirmar('Trocar o formato substituirá a configuração e a resposta esperada desta etapa. Você poderá desfazer. Continuar?')) return;
   const a = P.A;
   e.typeId = novo; e.typeVersion = TIPOS[novo].typeVersion;
   e.config = configInicial(novo, e);
@@ -1023,8 +1080,9 @@ function editorRevisao() {
   const a = P.A, d = validarAtividade(a), g = avisoGramatica(a), s = sugerirEquilibrio(a, { dispensadas: P.dispensadas });
   const erros = d.filter(x => x.severidade === 'erro'), outros = d.filter(x => x.severidade !== 'erro');
   return h('div', {},
-    h('div', { class: 'cartao' + (erros.length ? '' : ' destaque') }, h('h2', {}, erros.length ? `${erros.length} erro(s) para corrigir` : 'Pronta para aplicar'),
-      erros.length ? h('ul', { class: 'diag' }, erros.map(linhaDiag)) : h('p', {}, 'Nenhum erro. Use “Ver como fica” para ensaiar com participantes simulados.')),
+    painelRevisaoDocente(a,{editar:id=>irPara('etapa:'+id),guardar:()=>{P.sujo=true;salvarRascunho();historico?.registrar(P.A);},atualizar:()=>{renderAcoes();renderNav();}}),
+    h('div', { class: 'cartao' + (erros.length ? '' : ' destaque') }, h('h2', {}, erros.length ? `${erros.length} itens a completar ou corrigir` : 'Estrutura completa'),
+      erros.length ? h('ul', { class: 'diag' }, erros.map(linhaDiag)) : h('p', {}, 'A estrutura está completa. Confira o conteúdo, as fontes e as respostas esperadas; depois experimente a aula.')),
     (outros.length > 0 || g) && h('div', { class: 'cartao' }, h('h3', {}, 'Avisos'), g && h('p', { class: 'aviso' }, g.mensagem), h('ul', { class: 'diag' }, outros.map(linhaDiag))),
     s.length > 0 && h('div', { class: 'cartao' }, h('h3', {}, 'Sugestões de equilíbrio'), h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
       h('ul', { class: 'diag' }, s.map(x => h('li', { class: 'info' }, x.mensagem, ' ', h('button', { class: 'btn pequeno discreto', onclick: () => { P.dispensadas.add(x.id); renderEditor(); } }, 'Dispensar'))))));

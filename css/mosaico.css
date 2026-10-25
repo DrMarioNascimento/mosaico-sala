@@ -569,3 +569,22 @@ img.ico { width: 1.25em; height: 1.25em; object-fit: contain; }
 .hist-eixo { text-align: center; margin: .4em 0 0; color: var(--texto-2); }
 .relacao-telao .dispersao { width: 100%; max-height: clamp(130px, 26vh, 240px); color: var(--texto-2); }
 .relacao-telao p { margin: .3em 0 0; }
+/* A aula concentra a atenção na etapa atual. */
+.roteiro-docente { margin: 12px 0; padding: 12px; border-radius: 10px; border-left: 3px solid var(--acento-2); background: var(--fundo-2); }
+.roteiro-docente summary { cursor: pointer; font-weight: 700; }
+.roteiro-docente p { margin: 10px 0 0; }
+.etapa-concluida { opacity: .86; }
+.etapa-concluida > summary { cursor: pointer; }
+.grupo-atencao summary { cursor: pointer; padding: 7px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.grupo-atencao details[open] { border-left: 3px solid var(--acento-2); padding-left: 10px; }
+.controles-tempo small { flex-basis: 100%; }
+.barra-etapa { position: fixed; z-index: 15; bottom: 0; left: 50%; transform: translateX(-50%); width: min(720px, 100%); padding: 8px 16px max(12px, env(safe-area-inset-bottom)); background: rgba(11,15,23,.97); border-top: 1px solid var(--linha); box-shadow: 0 -8px 20px #0004; display: grid; gap: 6px; }
+.barra-etapa small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barra-etapa .btn { width: 100%; }
+body.com-barra-etapa .pagina { padding-bottom: 150px; }
+.sinal-conexao { font-size: .78rem; margin: 6px 0; color: var(--texto-2); }
+.sinal-conexao[data-tipo=alerta] { color: var(--alerta); }
+.fechar-aula { border-top: 1px solid var(--linha); margin-top: 16px; padding-top: 16px; }
+.fechar-aula .btn { width: 100%; margin-top: 10px; }
+@media(max-width:520px) { .topo .status { font-size: .72rem; max-width: 62%; } .abas button { padding: 0 8px; font-size: .85rem; } .controles-tempo .btn { flex: 1; padding: 0 10px; } }
+@media(prefers-reduced-motion:reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
