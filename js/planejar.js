@@ -106,7 +106,7 @@ function modelo(titulo, nGrupos, completo) {
 }
 
 function abrir(atividade, origem) {
-  P.A = JSON.parse(JSON.stringify(atividade)); P.origem = origem || null; P.sujo = false; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];
+  P.A = JSON.parse(JSON.stringify(atividade)); P.origem = origem || null; P.sujo = !origem; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];   // sujo: nova, importada ou modelo ainda não está na biblioteca
   salvarRascunho(); marcarHistorico(); render(); window.scrollTo({ top: 0 });
 }
 function fechar() { P.A = null; P.origem = null; P.sujo = false; try { localStorage.removeItem(RASCUNHO); } catch {} render(); window.scrollTo({ top: 0 }); }

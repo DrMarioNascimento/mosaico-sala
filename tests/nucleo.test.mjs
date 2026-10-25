@@ -822,3 +822,28 @@ test('Sequência: validação e planilha ida e volta', () => {
   assert.deepEqual(b.etapas.find(e => e.id === 'sq').config, a.etapas.find(e => e.id === 'sq').config);
   assert.deepEqual(erros(validarAtividade(b)), []);
 });
+
+test('Importação aceita a resposta da IA com texto em volta e cerca ```json', async () => {
+  const { lerJsonImportado } = await import('../js/core/validacao.js');
+  const r = lerJsonImportado('Claro! Aqui está:\n\n```json\n{"titulo": "X"}\n```\n\nRevise antes de usar.');
+  assert.deepEqual(r.diagnosticos, []);
+  assert.equal(r.atividade.titulo, 'X');
+  assert.equal(lerJsonImportado('Segue: {"a": 1} fim').atividade.a, 1);
+  assert.match(lerJsonImportado('sem json aqui').diagnosticos[0].mensagem, /JSON inválido/);
+});
+
+test('Revisão avisa quando a resposta certa é sempre a mesma letra', async () => {
+  const { validarAtividade } = await import('../js/core/validacao.js');
+  const q = id => ({ id, enunciado: 'Pergunta ' + id, alternativas: [{ id: 'a', texto: 'Um' }, { id: 'b', texto: 'Dois' }] });
+  const a = {
+    schemaVersion: 'mosaico-atividade-0.1', id: 'x', titulo: 'X', publico: '', duracaoMin: 10, regime: 'simulacao', perguntaCentral: 'P', objetivos: [], introducao: '', fontes: [],
+    grupos: [{ id: 'g1', nome: 'G1', ordemAlocacao: 1 }], pecas: [], conexoes: [], pendencias: [], meta: { ativa: false, etapas: [], limiar: 0.5 },
+    etapas: [{ id: 'e1', ordem: 1, titulo: 'Quiz', typeId: 'quiz_grupos', typeVersion: '1.0.0', tempoMin: 5, instrucao: '', participacao: { organizacao: 'grupos', envio: 'representante', competicao: 'entre_grupos' },
+      config: { perguntas: [q('p1'), q('p2'), q('p3')], aoErrar: 'repassar', segundos: 60 } }],
+    docente: { respostas: { e1: { perguntas: { p1: { corretaId: 'a' }, p2: { corretaId: 'a' }, p3: { corretaId: 'a' } } } }, guia: [], pontosDeDiscussao: [] }
+  };
+  const msg = d => d.some(x => /sempre a alternativa A/.test(x.mensagem));
+  assert.ok(msg(validarAtividade(a)));
+  a.docente.respostas.e1.perguntas.p2.corretaId = 'b';
+  assert.ok(!msg(validarAtividade(a)));
+});
