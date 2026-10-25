@@ -218,6 +218,7 @@ function renderAcoes() {
     h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, numeroPasso(P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags)?8:5),P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
     h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Experimentar a aula com turma simulada', onclick:()=>previa() },numeroPasso(6), 'Ver como fica'),
     
+    h('button',{class:'btn acao-imprimir',title:'Abrir o material para impressão',onclick:()=>{document.querySelectorAll('details.acoes-mais[open]').forEach(d=>d.open=false);abrirImpressao(P.A);}},'Imprimir'),
     h('details',{class:'acoes-mais'},h('summary',{class:'btn'},'Guardar e exportar'),
       h('div',{class:'acoes-menu'},
         h('button',{class:'btn so-celular',disabled:!historico?.podeDesfazer,onclick:()=>restaurarHistorico()},'Desfazer'),
@@ -226,7 +227,6 @@ function renderAcoes() {
         temBiblioteca() && h('button',{class:'btn',onclick:continuarNoCelular},'Continuar no celular'),
         h('button',{class:'btn',onclick:()=>baixarPlanilha(P.A).catch(e=>avisoGeral(e.message,'erro'))},'Baixar planilha'),
         h('button',{class:'btn',onclick:()=>baixarJSON(P.A)},'Baixar arquivo da atividade'),
-        h('button',{class:'btn',onclick:()=>abrirImpressao(P.A)},'Imprimir'),
         h('button',{class:'btn',onclick:()=>abrirIA(P.A)},'Ajustar com IA'))),
     h('button',{class:'btn discreto',onclick:()=>voltarMinhas()},'Minhas atividades'));
   estadoSalvamento();
@@ -1120,6 +1120,7 @@ function editorRevisao() {
       erros.length ? h('ul', { class: 'diag' }, erros.map(linhaDiag)) : h('p', {}, 'A estrutura está completa. Confira o conteúdo, as fontes e as respostas esperadas; depois experimente a aula.')),
     (outros.length > 0 || g) && h('div', { class: 'cartao' }, h('h3', {}, 'Avisos'), g && h('p', { class: 'aviso' }, g.mensagem), h('ul', { class: 'diag' }, outros.map(linhaDiag))),
     painelFinalizarAtividade(erros),
+    h('div',{class:'cartao'},h('h3',{},'Usar em papel'),h('p',{},'Abra as folhas da turma e o material de quem conduz para imprimir ou salvar em PDF.'),h('button',{class:'btn',onclick:()=>abrirImpressao(P.A)},'Imprimir atividade')),
     s.length > 0 && h('div', { class: 'cartao' }, h('h3', {}, 'Sugestões de equilíbrio'), h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
       h('ul', { class: 'diag' }, s.map(x => h('li', { class: 'info' }, x.mensagem, ' ', h('button', { class: 'btn pequeno discreto', onclick: () => { P.dispensadas.add(x.id); renderEditor(); } }, 'Dispensar'))))));
 }
