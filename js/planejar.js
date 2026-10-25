@@ -780,7 +780,7 @@ function blocoMontagem(e) {
   const arquivo = h('input', { type: 'file', id: 'mtImg', accept: 'image/*' });
   arquivo.onchange = async () => {
     const f = arquivo.files[0]; if (!f) return;
-    try { avisoGeral('Reduzindo a imagem…'); c.imagem = await comprimirImagem(f); avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB${c.imagem.reduzida ? ', reduzida para ficar leve' : ''}).`, 'ok'); mudar(() => {}); }
+    try { avisoGeral('Reduzindo a imagem…'); const imagem = await comprimirImagem(f); mudar(()=>{c.imagem=imagem;}); avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB${c.imagem.reduzida ? ', reduzida para ficar leve' : ''}).`, 'ok'); }
     catch (err) { avisoGeral(err.message, 'erro'); }
   };
   setTimeout(atualizar, 0);

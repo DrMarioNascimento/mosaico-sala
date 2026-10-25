@@ -25,7 +25,7 @@ for(const id of ['cancao-exilio-completa','citologia-completa'])test(id+': anexa
   await p.locator('input[type=file]').setInputFiles({name:'imagem-do-professor.webp',mimeType:'image/webp',buffer:Buffer.from(image.dados.split(',')[1],'base64')});
   await p.getByText('Imagem anexada: imagem-do-professor.webp',{exact:true}).waitFor();
   assert.ok(await p.locator('.anexo-docente img').evaluate(im=>im.complete&&im.naturalWidth>0));
-  await p.getByRole('button',{name:'Remover imagem',exact:true}).click();await p.getByRole('button',{name:'Desfazer',exact:true}).click();
+  await p.getByRole('button',{name:'Remover imagem',exact:true}).click();await p.getByText('Guardar e exportar',{exact:true}).click();await p.getByRole('button',{name:'Desfazer',exact:true}).click();
   assert.ok(await p.getByText('Imagem anexada: imagem-do-professor.webp',{exact:true}).isVisible());
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Sem transbordamento em tela de celular');
   await p.getByText('Guardar e exportar',{exact:true}).click();await p.getByRole('button',{name:'Salvar na biblioteca',exact:true}).click();

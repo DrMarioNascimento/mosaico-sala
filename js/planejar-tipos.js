@@ -270,9 +270,8 @@ export function criarEditores(ctx) {
         if (c.midia === 'modelo3d') {
           if (f.size > 700000) throw new Error('Modelo grande demais para enviar (máx. ~700 KB). Publique o .glb (por exemplo no GitHub Pages do lab-ra) e informe o endereço.');
           const dados = await new Promise((ok, falha) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).replace(/^data:[^;]*;/, 'data:model/gltf-binary;')); fr.onerror = falha; fr.readAsDataURL(f); });
-          c.modelo = { dados };
-        } else { ctx.avisoGeral('Reduzindo a imagem…'); c.imagem = await ctx.comprimirImagem(f); ctx.avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB).`, 'ok'); }
-        mudar(() => {});
+          mudar(()=>{c.modelo = { dados };});
+        } else { ctx.avisoGeral('Reduzindo a imagem…'); const imagem=await ctx.comprimirImagem(f); mudar(()=>{c.imagem=imagem;}); ctx.avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB).`, 'ok'); }
       } catch (err) { ctx.avisoGeral(err.message, 'erro'); }
     };
     const tarefas = c.midia === 'modelo3d' ? [['perguntas', 'Perguntas sobre o modelo'], ['observar', 'Observar e descrever']] : [['marcar', 'Marcar na imagem'], ['perguntas', 'Perguntas sobre a imagem'], ['observar', 'Observar e descrever']];

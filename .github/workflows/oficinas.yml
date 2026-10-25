@@ -24,3 +24,10 @@ jobs:
         env:
           MOSAICO_CASOS: cancao-exilio-completa,citologia-completa
         run: node --test tests/e2e/aula.e2e.mjs
+      - name: Guardar evidências de impressão e anexos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oficinas-verificadas
+          path: tests/.downloads/
+          retention-days: 14
