@@ -19,7 +19,7 @@
 - Revisão docente separada de validação estrutural. Conferência por etapa, fontes das evidências e resposta esperada. A IA não pode declarar o conteúdo revisado pelo professor.
 - Mudanças de conteúdo invalidam a revisão. Trocar um formato avisa sobre substituição da configuração e do gabarito; a mudança pode ser desfeita.
 - Prévia parcial: etapas futuras incompletas não impedem experimentar uma etapa pronta. Comparação usa contribuições fictícias explicitamente identificadas, somente no ensaio, sem alterar o plano original.
-- Roteiro privado do professor por etapa, guardado em `docente.roteiro`.
+- Roteiro privado do professor por etapa, guardado em `docente.roteiro`. A planilha preserva esse roteiro e o material-base em uma aba Docente, dividindo textos longos em partes compatíveis com o Excel. Partes incompletas geram erro de importação, sem substituição silenciosa da atividade. A revisão deve ser confirmada novamente ao importar.
 
 ## Condução
 

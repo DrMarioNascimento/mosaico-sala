@@ -50,3 +50,12 @@ test('Ajuste por IA preserva identificadores de grupos e respeita participação
  const a=structuredClone(caso);a.grupos=[a.grupos[0]];
  assert.throws(()=>lerProposta(JSON.stringify(a),{organizacao:'individual',numeroGrupos:1}),/individual/);
 });
+test('Planilha preserva material-base longo e roteiros privados, sem perder espaços ou caracteres Unicode',async()=>{
+ const {atividadeParaAbas,abasParaAtividade}=await import('../js/core/planilha.js');const a=structuredClone(caso);
+ a.docente.materialBase='  Fonte 😀 com acentos e quebras de linha.\n'.repeat(2000)+' fim  ';a.docente.roteiro={e1:'Pergunte o motivo.\nAguarde a discussão.',e2:'Compare as justificativas.'};
+ const abas=atividadeParaAbas(a);assert.ok(abas.Docente.length>1);assert.ok(abas.Docente.every(p=>p.valor.length<=30000));
+ const r=abasParaAtividade(abas);assert.deepEqual(r.problemas,[]);assert.equal(r.atividade.docente.materialBase,a.docente.materialBase);assert.deepEqual(r.atividade.docente.roteiro,a.docente.roteiro);
+});
+test('Planilha avisa se uma parte do complemento docente está ausente',async()=>{
+ const {atividadeParaAbas,abasParaAtividade}=await import('../js/core/planilha.js');const a=structuredClone(caso);a.docente.materialBase='x'.repeat(61000);const abas=atividadeParaAbas(a);abas.Docente.splice(1,1);assert.ok(abasParaAtividade(abas).problemas.some(p=>p.startsWith('Complemento docente')));
+});
