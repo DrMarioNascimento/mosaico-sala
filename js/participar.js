@@ -30,6 +30,16 @@ const rascunhos = {};
 let chaveRenderizada = '', autoTimer = null;
 
 $('codigo').value = params.get('sala') || '';
+// Código que já veio da página inicial ou do QR: fica como confirmado e a pessoa só digita o nome.
+function mostrarSalaEscolhida(ok) {
+  $('blocoCodigo').hidden = ok; $('salaEscolhida').hidden = !ok;
+  if (ok) $('salaNumero').textContent = $('codigo').value;
+  (ok ? $('nome') : $('codigo')).focus();
+}
+mostrarSalaEscolhida(/^\d{6}$/.test($('codigo').value));
+$('trocarSala').onclick = () => { $('codigo').value = ''; mostrarSalaEscolhida(false); };
+$('codigo').addEventListener('input', ev => { ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 6); if (ev.target.value.length === 6) $('nome').focus(); });
+$('nome').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('entrar').click(); });
 
 if (PERFIL) {
   const barra = h('div', { class: 'aviso', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', margin: '8px 0' } },

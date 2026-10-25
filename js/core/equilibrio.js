@@ -101,9 +101,10 @@ export function sugerirEquilibrio(a, { dispensadas = new Set(), limite = 3 } = {
   return s.filter(x => !dispensadas.has(x.id)).sort((x, y) => x.prioridade - y.prioridade).slice(0, limite);
 }
 
+const NOMES_ELEMENTOS = { fracionamento: 'informação dividida entre os grupos', interdependencia: 'grupos que dependem do resultado uns dos outros', cooperacao: 'cooperação', superacao: 'superação', meta: 'meta da turma' };
 /** Aviso único e discreto quando faltam elementos (7.4). Não invalida a atividade. */
 export function avisoGramatica(a) {
   const el = elementosDaGramatica(a);
   const faltam = Object.entries(el).filter(([, v]) => !v).map(([k]) => k);
-  return faltam.length ? { faltam, mensagem: `Esta atividade não usa: ${faltam.join(', ')}. Ela continua válida para aplicação.` } : null;
+  return faltam.length ? { faltam, mensagem: `Esta atividade não usa: ${faltam.map(k => NOMES_ELEMENTOS[k] || k).join(', ')}. Ela continua válida para aplicação.` } : null;
 }

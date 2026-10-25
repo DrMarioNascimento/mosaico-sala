@@ -205,7 +205,7 @@ export function criarTelas(ctx) {
       caixa.append(h('p', { class: 'sutil' }, 'Como o grupo respondeu sozinho:'), h('div', { class: 'dist' }, alts.map(a => h('div', { class: 'dist-linha' }, h('span', {}, a.texto), h('div', { class: 'dist-barra' }, h('i', { style: { width: Math.round(100 * (pk.individuais[a.id] || 0) / tot) + '%' } })), h('small', {}, pk.individuais[a.id] || 0)))));
     }
     if (pk.fase === 'grupo') {
-      if (pk.doGrupo) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta do grupo: ', h('strong', {}, pk.pergunta.alternativas.find(a => a.id === pk.doGrupo)?.texto), '. Aguardem a revelação.')); return caixa; }
+      if (pk.doGrupo) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta do grupo: ', h('strong', {}, String(pk.pergunta.alternativas.find(a => a.id === pk.doGrupo)?.texto || '').replace(/[.。]+$/, '')), '. Aguardem a revelação.')); return caixa; }
       if (pk.consenso === 'todos') {
         const meu = pk.votos?.[meuNome];
         caixa.append(h('p', {}, 'Debatam. A resposta do grupo vale quando todos votarem igual.'), h('div', { class: 'corrida-alts' }, alts.map(a => h('button', { class: 'corrida-alt' + (meu === a.id ? ' ativo' : ''), 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__v`, 1, { q: pk.q, alternativaId: a.id }, g()).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))),

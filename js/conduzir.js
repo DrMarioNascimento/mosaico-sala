@@ -55,7 +55,7 @@ function marcarPendente(c, sim) { try { const l = pendentes().filter(x => x !== 
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); if (t) $('avisoGeral').scrollIntoView({ block: 'nearest' }); };
 
 // ---------------- entrada ----------------
-$('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio, sem internet)' : 'Entrar com Google';
+$('entrarGoogle').replaceChildren(ico('sair') || '', EM_ENSAIO ? 'Entrar (modo ensaio, sem internet)' : 'Entrar com Google');   // textContent apagaria o ícone
 $('entrarGoogle').onclick = () => {
   const p = b.entrarGoogle();     // sem await antes: o iPhone exige o pop-up direto no toque
   $('entrarGoogle').disabled = true;

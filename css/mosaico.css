@@ -149,7 +149,7 @@ body.telao { font-size: clamp(15px, min(1.55vw, 2.75vh), 72px); overflow: hidden
 body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .35; }
 .telao-palco { height: 100vh; padding: 3vh 4vw; display: grid; grid-template-rows: auto 1fr auto; gap: 2vh; }
 .telao-palco header { display: flex; justify-content: space-between; align-items: center; }
-.telao-palco h1 { font-size: 2.4em; }
+.telao-palco h1 { font-size: 2.4em; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; max-width: 100%; }
 .telao-palco .marca { font-size: 1.3em; }
 .telao-centro { display: flex; flex-direction: column; justify-content: center; gap: 2vh; min-height: 0; overflow: hidden; }
 .telao-entrada { display: grid; grid-template-columns: auto 1fr; gap: 4vw; align-items: center; }
@@ -649,3 +649,18 @@ img.ico.em-3d, .btn img.ico.em-3d, .abas button img.ico.em-3d, .plan-nav button 
 .ico:not(.em-3d), .btn .ico:not(.em-3d) { width: 1.4em; height: 1.4em; }
 img.ilu.em-3d { width: min(calc(var(--tam, 56px) * 1.35), 140px) !important; height: min(calc(var(--tam, 56px) * 1.35), 140px) !important; }
 .telao .titulo-etapa img.ilu.em-3d { width: 1.8em !important; height: 1.8em !important; }
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Entrar na sala (participante) ---------- */
+.entrada-sala { max-width: 560px; margin: 24px auto; display: grid; gap: 10px; }
+.entrada-cab { display: flex; align-items: center; gap: 14px; margin: 4px 0 6px; }
+.entrada-cab h1 { margin: 0; font-size: 2rem; }
+.entrada-sala label { font-size: 1.1rem; font-weight: 700; margin-top: 6px; }
+.entrada-sala .campo-codigo { text-align: center; font: 800 2.2rem/1 var(--fonte-titulo); letter-spacing: .32em; padding-left: calc(12px + .32em); min-height: 72px; border-color: var(--acento-2); }
+.entrada-sala .campo-codigo::placeholder { letter-spacing: .05em; font: 600 1.15rem var(--fonte); }
+.entrada-sala .campo-nome { font-size: 1.3rem; min-height: 64px; }
+.entrada-sala #entrar { min-height: 62px; font-size: 1.2rem; }
+.sala-escolhida { display: flex; align-items: center; gap: 10px; margin: 0; padding: 14px 16px; border-radius: var(--raio); border: 2px solid var(--acento-2); background: #3ddcff14; font-size: 1.15rem; }
+.sala-escolhida strong { font: 800 1.6rem var(--fonte-titulo); letter-spacing: .12em; }
+.sala-escolhida .btn { margin-left: auto; }
+.entrada-privacidade { font-size: .92rem; margin: 4px 0 0; }

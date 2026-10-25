@@ -21,16 +21,19 @@
   </div>
 </header>
 <main class="pagina">
-  <section id="entrada" class="cartao">
+  <section id="entrada" class="cartao entrada-sala">
     <a class="voltar-link" href="index.html" data-ico="voltar">Início</a>
-    <h1>Entrar na sala</h1>
-    <label for="codigo">Código da sala</label>
-    <input id="codigo" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 números">
+    <div class="entrada-cab"><span data-ilu="e_participar" data-tam="72"></span><h1>Entrar na sala</h1></div>
+    <div id="blocoCodigo">
+      <label for="codigo">Código da sala</label>
+      <input id="codigo" class="campo-codigo" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 números">
+    </div>
+    <p id="salaEscolhida" class="sala-escolhida" hidden>Sala <strong id="salaNumero"></strong> <button type="button" class="btn discreto pequeno" id="trocarSala" data-sem-ico>trocar</button></p>
     <label for="nome">Seu nome</label>
-    <input id="nome" maxlength="30" autocomplete="given-name" placeholder="Como quer ser chamado">
-    <div class="linha-botoes"><button class="btn primario bloco" id="entrar">Entrar</button></div>
+    <input id="nome" class="campo-nome" maxlength="30" autocomplete="given-name" placeholder="Como quer ser chamado" enterkeyhint="go">
+    <div class="linha-botoes"><button class="btn primario bloco" id="entrar">Entrar na sala</button></div>
     <p class="aviso" id="avisoEntrada" hidden></p>
-    <p class="sutil" style="font-size:.88rem;margin-top:10px">Privacidade: seu nome é usado só durante esta atividade e é apagado quando a sala é encerrada. Não é preciso cadastro.</p>
+    <p class="sutil entrada-privacidade">Seu nome só é usado nesta atividade e é apagado quando a sala é encerrada.</p>
   </section>
   <section id="jogo" hidden>
     <div id="status"></div>

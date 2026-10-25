@@ -158,7 +158,7 @@ const POR_ROTULO = [
   [/^(Iniciar etapa|Começar|Iniciar|Simular)\b/, 'play'], [/^Encerrar (etapa|a sala|sala)/, 'parar'], [/^Abrir (a )?sala/, 'sala'], [/^Abrir telão|^Abrir o telão|^Mostrar$/, 'telao'],
   [/^Gerar atividade com IA|^Propor ajustes com IA|^Inserir texto/, 'ia'], [/^Revisar conteúdo|^Abrir proposta/, 'revisao'], [/^Ver como fica/, 'previa'], [/^Planilha$|planilha-modelo/i, 'planilha'], [/^JSON$/, 'json'], [/^Imprimir/, 'imprimir'], [/^Salvar|^Salvo/, 'salvar'], [/^Fechar$/, 'fechar'],
   [/^Criar$/, 'mais'], [/^＋|^\+ /, null], [/^Abrir$/, 'abrir'], [/^Abrir o caso piloto|^Usar o caso piloto/, 'abrir'], [/^Gerar prompt/, 'ia'], [/^Baixar/, 'baixar'], [/^Copiar$/, 'copiar'],
-  [/^Revelar/, 'revelar'], [/^Sortear/, 'sortear'], [/^Entrar com Google|^Entrar \(modo ensaio/, 'sair'], [/^Entrar$|^Entrar com código/, 'participar'], [/^Enviar|^Confirmar/, 'enviar'],
+  [/^Revelar/, 'revelar'], [/^Sortear/, 'sortear'], [/^Entrar com Google|^Entrar \(modo ensaio/, 'sair'], [/^Entrar$|^Entrar com código|^Entrar na sala/, 'participar'], [/^Enviar|^Confirmar/, 'enviar'],
   [/^Próxima pergunta|^Passar para o grupo|^Ir para /, 'avancar'], [/^Recomeçar/, 'sortear'], [/^Área de condução/, 'conduzir'], [/^Planejar atividade/, 'planejar'], [/^Simulador/, 'simulador']
 ];
 function decorar(btn) {

@@ -18,6 +18,7 @@ function iniciar() {
 
 function ajustarTelao() { const f = $('telao').querySelector('iframe'); if (f) f.style.transform = `scale(${$('telao').clientWidth / 1280})`; }
 addEventListener('resize', ajustarTelao);
+if ('ResizeObserver' in window) new ResizeObserver(ajustarTelao).observe($('telao'));   // recalcula também quando a coluna muda de largura
 
 addEventListener('message', async e => {
   if(e.origin!==location.origin || e.source!==$('conducao').contentWindow) return;

@@ -8,7 +8,7 @@ import { painelRevisaoDocente } from './revisao-docente.js';
    - Contas da lista de mestres: biblioteca fechada no Firestore.
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
 
-import { backend, EM_ENSAIO } from './backend.js';
+import { backend, EM_ENSAIO, link } from './backend.js';
 import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
 import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
@@ -56,13 +56,15 @@ const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
 // Recolhe as ações depois da escolha e mantém a navegação fora da barra fixa.
 $('acoes').addEventListener('click',ev=>{if(ev.target.closest('button')){const menu=ev.target.closest('details.acoes-mais');if(menu)menu.open=false;}});
+// O menu abre alinhado à direita do botão; se o botão quebrou para a esquerda da tela, alinha à esquerda para não sair pela borda.
+document.addEventListener('toggle',ev=>{const d=ev.target;if(!d.matches?.('details.acoes-mais')||!d.open)return;const m=d.querySelector('.acoes-menu');if(!m)return;m.style.left='';m.style.right='';if(m.getBoundingClientRect().left<8){m.style.left='0';m.style.right='auto';}},true);
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.querySelectorAll('details.acoes-mais[open]').forEach(d=>{d.open=false;d.querySelector('summary')?.focus();});});
 const topoDocente=document.querySelector('header.topo');
 if(topoDocente && typeof ResizeObserver!=='undefined')new ResizeObserver(()=>document.documentElement.style.setProperty('--topo-docente',(topoDocente.getBoundingClientRect().height+12)+'px')).observe(topoDocente);
 let autoriaInicialAberta = false;
 window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao');});
 // ============================================================ entrada
 $('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio)' : 'Entrar com Google';
-$('entrarGoogle').prepend(numeroPasso(1));
 $('entrarGoogle').onclick = () => {
   const p = b.entrarGoogle(); $('entrarGoogle').disabled = true;
   p.then(iniciar).catch(e => { $('entrarGoogle').disabled = false; aviso($('avisoLogin'), e.code === 'auth/popup-closed-by-user' ? 'Login cancelado.' : 'Não foi possível entrar. Confira a internet.', 'erro'); });
@@ -311,45 +313,55 @@ function telaInicio() {
       else avisoGeral(`“${r.atividade.titulo}” importada. Confira a Revisão.`, 'ok');
     } catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
   };
-  return h('div', {},
-    percursoDocente(2),
-    h('span',{class:'guia-selo'},'PASSO 2 · ESCOLHA COMO COMEÇAR'),
-    h('h1', { style: { marginTop: '12px' } }, 'Minhas atividades'),
-    h('section',{class:'inicio-docente cartao destaque'},h('h2',{},'Por onde começar?'),h('p',{},'Escolha uma forma de preparar a aula. Se já tem um texto, comece pelo primeiro cartão.'),h('div',{class:'escolhas-autoria'},
-      h('article',{class:'escolha-autoria principal'},h('span',{class:'numero-opcao','aria-hidden':'true'},'2'),ilustra('e_material',76),h('span',{class:'guia-selo'},'COMECE AQUI'),h('h3',{},'Tenho um texto ou arquivo'),h('p',{},'Cole ou importe seu material. Depois informe a turma e peça à IA uma proposta.'),h('button',{class:'btn primario',onclick:()=>abrirIA()},ico('ia'),'Inserir texto e gerar com IA'),h('small',{},'2 Material → 3 Planejar → 4 Gerar → 5 Revisar')),
-      h('article',{class:'escolha-autoria'},h('span',{class:'alternativa-fluxo'},'Alternativa'),ilustra('e_planejar',64),h('h3',{},'Quero adaptar um modelo'),h('p',{},'Abra um exemplo e ajuste ao conteúdo da sua aula.'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto')),
-      h('article',{class:'escolha-autoria'},h('span',{class:'alternativa-fluxo'},'Retomar'),ilustra('e_revisar',64),h('h3',{},'Já comecei uma atividade'),h('p',{},'Retome um rascunho deste navegador ou uma atividade da biblioteca.'),h('button',{class:'btn',disabled:!rascunhosLocais().length && !P.bib?.length,onclick:()=>{const alvo=document.getElementById('rascunhosLocais')||document.getElementById('bibliotecaDocente');alvo?.scrollIntoView({behavior:'smooth',block:'start'});}},'Continuar meu trabalho')))),
+  // Quem chega aqui já entrou: nada de tutorial. Primeiro as três ações, depois as atividades, o resto recolhido.
+  const ir = destino => document.getElementById(destino)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const acao = (ilu, titulo, texto, onclick, principal) => h('button', { class: 'acao-professor' + (principal ? ' principal' : ''), 'data-sem-ico': '', onclick }, ilustra(ilu, 72), h('strong', {}, titulo), h('span', {}, texto));
+  const aplicar = id => link('conduzir.html', { atividade: id });
+  const rasc = rascunhosLocais(), bib = temBiblioteca() ? P.bib : [];
+  return h('div', { class: 'painel-professor' },
+    h('h1', {}, 'O que vamos fazer hoje?'),
+    h('div', { class: 'acoes-professor' },
+      acao('e_material', 'Criar com IA', 'Cole um texto ou envie um arquivo. A IA monta a proposta para você revisar.', () => abrirIA(), true),
+      acao('e_conduzir', 'Aplicar em sala', 'Abra a sala com uma atividade pronta e acompanhe a turma.', () => { location.href = link('conduzir.html'); }),
+      acao('e_planejar', 'Usar um modelo', 'Comece de um exemplo e ajuste ao conteúdo da sua aula.', () => ir('modelosProntos'))),
     antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
-    rascunhosLocais().length>0 && h('section',{class:'cartao',id:'rascunhosLocais'},h('h2',{},'Rascunhos neste navegador'),h('p',{class:'sutil'},'Disponíveis nesta conta e neste navegador. Salve na biblioteca para continuar em outro aparelho.'),h('ul',{class:'lista-bib'},rascunhosLocais().map(r=>h('li',{},h('div',{class:'tit'},h('strong',{},r.A.titulo),h('small',{},new Date(r.salvoEm).toLocaleString('pt-BR'))),h('button',{class:'btn pequeno',onclick:()=>{abrir(r.A,r.origem,r.rascunhoId);P.sujo=!!r.sujo;salvarRascunho();render();}},'Continuar'))))),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
       ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
       : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
-    h('div', { class: 'plan-inicio' },
-      h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Criar manualmente'),
-        h('label', { for: 'novoTitulo' }, 'Título'), titulo,
-        h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
-        h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
-      h('div', { class: 'cartao', id:'modelosProntos' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
-        h('p', { class: 'sutil' }, 'Abra um modelo, ajuste ao seu conteúdo e salve como seu.'),
-        h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
-          h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
-          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))),
-      temBiblioteca() && h('div', { class: 'cartao', id:'bibliotecaDocente' }, h('h2', {}, ico('biblioteca'), 'Biblioteca'),
-        P.bib.length ? h('ul', { class: 'lista-bib' }, P.bib.map(item => h('li', {},
+    h('section', { class: 'cartao', id: 'minhasAtividades' }, h('h2', {}, ico('biblioteca'), 'Minhas atividades'),
+      rasc.length || bib.length ? h('ul', { class: 'lista-bib' },
+        rasc.map(r => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, r.A.titulo), h('small', {}, 'Rascunho neste navegador · ' + new Date(r.salvoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))),
+          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => { abrir(r.A, r.origem, r.rascunhoId); P.sujo = !!r.sujo; salvarRascunho(); render(); } }, 'Continuar')))),
+        bib.map(item => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
           item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
           h('div', { class: 'mini' },
+            h('a', { class: 'btn pequeno primario', href: aplicar(item.id) }, 'Aplicar'),
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
             h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
-            item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
-      souAdmin() && h('details',{class:'cartao'},h('summary',{},'Administrar professores autorizados'),cartaoMestres()),
-      h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
-        h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
-        h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
-        P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
-        h('div', { class: 'linha-botoes' },
-          h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
-      h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Caminho avançado: pedido para IA externa'), cartaoPrompt())));
+            item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar'))))))
+        : h('p', { class: 'sutil' }, 'Nenhuma atividade ainda. Comece por “Criar com IA” ou por um modelo.')),
+    h('section', { class: 'cartao', id: 'modelosProntos' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
+      h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
+        h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))),
+    h('details', { class: 'cartao mais-opcoes' }, h('summary', {}, 'Mais opções: criar do zero, importar, telão, simulador'),
+      h('div', { class: 'plan-inicio' },
+        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Criar do zero'),
+          h('label', { for: 'novoTitulo' }, 'Título'), titulo,
+          h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
+          h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
+        h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
+          h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
+          h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
+          P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
+          h('div', { class: 'linha-botoes' },
+            h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
+        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulador'),
+          h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados no projetor. O simulador testa a aula com uma turma fictícia.'),
+          h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: link('simulador.html'), 'data-ico': 'simulador' }, 'Simulador'))),
+        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()),
+        souAdmin() && h('details',{class:'cartao'},h('summary',{},'Administrar professores autorizados'),cartaoMestres()))));
 }
 
 /** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
@@ -1097,7 +1109,8 @@ function onde(local) {
   m = local.match(/^grupos/); if (m) return 'Grupos';
   m = local.match(/^meta/); if (m) return 'Meta';
   m = local.match(/^fontes/); if (m) return 'Fontes';
-  return local;
+  // nunca mostrar o nome técnico do campo
+  return { pendencias: 'Pendências', introducao: 'Introdução', perguntaCentral: 'Pergunta central', titulo: 'Título' }[local] || 'Geral';
 }
 function secaoDoLocal(local) {
   const a = P.A;
