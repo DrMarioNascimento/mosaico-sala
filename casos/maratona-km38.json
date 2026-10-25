@@ -1,0 +1,589 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "maratona-km38",
+  "titulo": "O que derrubou a corredora no km 38?",
+  "publico": "Fisiologia do Exercício · Educação Física · Ensino Médio e graduação",
+  "duracaoMin": 45,
+  "regime": "simulacao",
+  "perguntaCentral": "O que derrubou Lívia no quilômetro 38, e quem deveria ter evitado?",
+  "introducao": "Domingo, 10h47, Maratona da Serra. Logo depois do posto do km 37, Lívia Prado, 34 anos, começa a andar em zigue-zague e senta no meio-fio do km 38. Na tenda médica, repete a mesma pergunta: “Já acabou?”. Cada grupo conversou com pessoas diferentes que estavam perto dela. Nenhum grupo ouviu todo mundo.",
+  "objetivos": [
+    "Relacionar variação de peso corporal com o balanço de água durante o exercício.",
+    "Distinguir desidratação, excesso de água e falta de açúcar pelos sinais e pelos dados.",
+    "Usar evidências para descartar explicações que não se sustentam.",
+    "Discutir quem responde por uma orientação geral que falha num caso particular."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g_pista",
+      "nome": "Beira da pista",
+      "ordemAlocacao": 1,
+      "funcao": "O marido, uma rival e o cartaz"
+    },
+    {
+      "id": "g_posto",
+      "nome": "Posto do km 37",
+      "ordemAlocacao": 2,
+      "funcao": "O voluntário que a viu passar"
+    },
+    {
+      "id": "g_equipe",
+      "nome": "Equipe",
+      "ordemAlocacao": 3,
+      "funcao": "O técnico e os registros"
+    },
+    {
+      "id": "g_tenda",
+      "nome": "Tenda médica",
+      "ordemAlocacao": 4,
+      "funcao": "A médica e a própria Lívia"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_pistas",
+      "ordem": 1,
+      "titulo": "O que cada um viu",
+      "typeId": "investigacao_fragmentos",
+      "typeVersion": "1.0.0",
+      "tempoMin": 12,
+      "instrucao": "Leiam as falas que o grupo recebeu. Escolham a explicação que ELAS sustentam e marquem todas as falas que usaram: só o que vocês marcarem chega aos outros grupos.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "pergunta": "Com o que vocês ouviram, o que derrubou a Lívia?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_suor",
+            "texto": "Desidratou: perdeu água e sal no suor e não repôs o suficiente."
+          },
+          {
+            "id": "h_agua",
+            "texto": "Bebeu água demais: o corpo ficou com mais água do que conseguia eliminar."
+          },
+          {
+            "id": "h_acucar",
+            "texto": "Ficou sem combustível: o açúcar do sangue caiu."
+          },
+          {
+            "id": "h_garrafa",
+            "texto": "Bebeu alguma coisa que puseram na garrafa dela."
+          }
+        ],
+        "minEvidencias": 2,
+        "justificativa": "opcional"
+      }
+    },
+    {
+      "id": "e_juntar",
+      "ordem": 2,
+      "titulo": "Juntando os relatos",
+      "typeId": "comparar_hipoteses",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Agora vocês veem o que os outros grupos ouviram. Procurem a explicação que nenhuma fala derruba.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "pergunta": "Juntando todos os relatos, qual explicação sobra de pé?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_suor",
+            "texto": "Desidratou: perdeu água e sal no suor e não repôs o suficiente."
+          },
+          {
+            "id": "h_agua",
+            "texto": "Bebeu água demais: o corpo ficou com mais água do que conseguia eliminar."
+          },
+          {
+            "id": "h_acucar",
+            "texto": "Ficou sem combustível: o açúcar do sangue caiu."
+          },
+          {
+            "id": "h_garrafa",
+            "texto": "Bebeu alguma coisa que puseram na garrafa dela."
+          }
+        ],
+        "aceitaParcial": false,
+        "justificativa": "obrigatoria"
+      }
+    },
+    {
+      "id": "e_tenda",
+      "ordem": 3,
+      "titulo": "O tablet da tenda",
+      "typeId": "cadeado_grupo",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "O tablet da Dra. Helena só libera o protocolo de atendimento depois que alguém digita quanto o peso da paciente mudou desde a largada. Cada acerto revela uma linha da ficha. O líder digita a variação de peso.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "regra": "fragmentos",
+        "distribuicao": "diferente",
+        "espera": 20,
+        "fragmentos": [
+          "Peso na largada: 58,2 kg",
+          "Peso na tenda: 60,0 kg",
+          "Sódio no sangue: 126 (normal: 135 a 145)",
+          "Glicemia: 92 (normal)"
+        ],
+        "perguntas": [
+          {
+            "id": "q_peso",
+            "enunciado": "Uma corredora termina a prova mais pesada do que largou. O que isso diz sobre o que ela bebeu?",
+            "alternativas": [
+              {
+                "id": "a",
+                "texto": "Perdeu mais água do que bebeu."
+              },
+              {
+                "id": "b",
+                "texto": "Bebeu mais do que perdeu em suor e urina."
+              },
+              {
+                "id": "c",
+                "texto": "Nada: peso varia por causa da roupa molhada de garoa."
+              },
+              {
+                "id": "d",
+                "texto": "Comeu gel demais."
+              }
+            ]
+          },
+          {
+            "id": "q_bruna",
+            "enunciado": "Bruna terminou bem bebendo da própria garrafa de eletrólitos, aos goles. Por que a garrafa, sozinha, não explica a diferença entre as duas?",
+            "alternativas": [
+              {
+                "id": "a",
+                "texto": "Porque bebida com eletrólitos faz mal em dia frio."
+              },
+              {
+                "id": "b",
+                "texto": "Porque a Bruna treinou mais e por isso precisa de menos água."
+              },
+              {
+                "id": "c",
+                "texto": "Porque o que pesou foi a quantidade: o sal de uma bebida esportiva não compensa litros de água a mais."
+              }
+            ]
+          },
+          {
+            "id": "q_banheiro",
+            "enunciado": "Lívia parou duas vezes para urinar na segunda metade da prova. Isso pesa contra qual explicação?",
+            "alternativas": [
+              {
+                "id": "a",
+                "texto": "Contra a desidratação: o corpo dela tinha água sobrando para eliminar."
+              },
+              {
+                "id": "b",
+                "texto": "Contra o excesso de água: quem bebe demais não urina."
+              },
+              {
+                "id": "c",
+                "texto": "Contra a falta de açúcar."
+              }
+            ]
+          },
+          {
+            "id": "q_aneis",
+            "enunciado": "Mãos inchadas, aliança presa, dor de cabeça e confusão, com glicemia e temperatura normais. O que combina melhor?",
+            "alternativas": [
+              {
+                "id": "a",
+                "texto": "Insolação."
+              },
+              {
+                "id": "b",
+                "texto": "Açúcar baixo."
+              },
+              {
+                "id": "c",
+                "texto": "Uma reação alérgica ao gel."
+              },
+              {
+                "id": "d",
+                "texto": "Água demais diluindo o sangue e inchando os tecidos, inclusive o cérebro."
+              }
+            ]
+          }
+        ],
+        "mensagem": "Protocolo liberado: ganho de 1,8 kg e sódio baixo. A Dra. Helena suspende a água por via oral e mantém Lívia em observação. Duas horas depois, ela pergunta pelo tempo da prova, e se lembra da resposta."
+      }
+    },
+    {
+      "id": "e_quem",
+      "ordem": 4,
+      "titulo": "De quem é a conta?",
+      "typeId": "cartoes_arrastar",
+      "typeVersion": "1.0.0",
+      "tempoMin": 6,
+      "instrucao": "Não há resposta certa aqui. Ponham cada pessoa na linha e preparem um argumento para a posição mais polêmica.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "desligada"
+      },
+      "config": {
+        "formato": "termometro",
+        "enunciado": "Quanto cada um responde pelo que aconteceu com a Lívia?",
+        "polos": {
+          "esquerda": "Nenhuma responsabilidade",
+          "direita": "Toda a responsabilidade"
+        },
+        "cartoes": [
+          {
+            "id": "r_otavio",
+            "texto": "Otávio, que escreveu “beba em todos os postos”"
+          },
+          {
+            "id": "r_org",
+            "texto": "A organização, que manteve o cartaz de dia quente"
+          },
+          {
+            "id": "r_livia",
+            "texto": "Lívia, que seguiu a planilha mesmo enjoada"
+          },
+          {
+            "id": "r_caio",
+            "texto": "Caio, que entregava dois copos por vez"
+          },
+          {
+            "id": "r_bruna",
+            "texto": "Bruna, que avisou do jeito que avisou"
+          }
+        ],
+        "distribuicao": "todos",
+        "tentativas": "uma",
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_voce",
+      "ordem": 5,
+      "titulo": "E no seu treino?",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 3,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "enunciado": "Um ciclista vai pedalar quatro horas numa manhã fria. Qual orientação de hidratação é a mais segura?",
+        "alternativas": [
+          {
+            "id": "a",
+            "texto": "Pesar-se antes e depois dos treinos e beber de acordo com a sede, sem terminar mais pesado."
+          },
+          {
+            "id": "b",
+            "texto": "Beber um litro por hora, aconteça o que acontecer."
+          },
+          {
+            "id": "c",
+            "texto": "Não beber nada: no frio não se perde água."
+          },
+          {
+            "id": "d",
+            "texto": "Beber só quando a urina parar."
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [
+    {
+      "id": "p_pi_peso",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_pista"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Jorge, o marido, esperava no km 38 com uma placa escrita à mão: — Às sete, na largada, tinha uma balança da pesquisa da universidade. Ela subiu, deu 58,2, e ela riu: “Vou chegar com 56”."
+    },
+    {
+      "id": "p_pi_anel",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_pista"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Jorge gira a aliança no próprio dedo, sem perceber. — Na tenda ela pediu pra tirar o anel. Não saiu. De manhã escorregava sozinho, ela vive perdendo."
+    },
+    {
+      "id": "p_pi_bruna",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_pista"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Bruna voltou à tenda de medalha no pescoço e boné vermelho, braços cruzados: — Passei por ela no km 37. Eu disse que ela ia afundar, de tanta água. Ofereci a minha garrafa, a de eletrólitos, lacrada. Ela olhou pra mim como se fosse veneno e nem encostou."
+    },
+    {
+      "id": "p_pi_frio",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_pista"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Na grade do km 38, o cartaz da organização ainda está pendurado: “DIA QUENTE! BEBA EM TODOS OS POSTOS”. Embaixo dele, um fotógrafo esfrega as mãos e reclama: — Dezessete graus e garoa. Quem foi que previu calor?"
+    },
+    {
+      "id": "p_pi_acucar",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_pista"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Jorge repete o que ouviu dentro da tenda, devagar, como quem decora: — A médica furou o dedo dela e disse “noventa e dois, açúcar normal”. Normal. Então o que é que não está normal?"
+    },
+    {
+      "id": "p_po_copos",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Caio, voluntário do posto do km 37, fala rápido: — Ela pegou dois copos, um em cada mão, igual nos outros postos, o pessoal falou no rádio. Dizia “planilha é planilha” e virava os dois."
+    },
+    {
+      "id": "p_po_gel",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "— O gel eu ofereci, juro — diz Caio. — Ela fez cara de enjoo: “Meu estômago tá cheio de água, não desce mais nada”. E foi."
+    },
+    {
+      "id": "p_po_banheiro",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Caio aponta para a fila de banheiros químicos atrás do posto: — Ela entrou ali antes dos copos. Saiu reclamando que tinha perdido um minuto."
+    },
+    {
+      "id": "p_po_balanca",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "— A tenda passou o peso dela pelo rádio da organização — conta Caio, batendo no aparelho preso no colete. — Sessenta cravado. Eu achava que balança de tenda era enfeite."
+    },
+    {
+      "id": "p_po_garrafa",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "— Uma de boné vermelho emparelhou com ela bem na mesa — lembra Caio — e esticou uma garrafinha. A Lívia balançou a cabeça, nem olhou, e pegou os copos da organização."
+    },
+    {
+      "id": "p_po_frio",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_posto"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Caio ainda está de casaco e luvas de lã. — Calor? Eu passei a manhã soprando a mão. Teve gente devolvendo copo cheio."
+    },
+    {
+      "id": "p_eq_plano",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_equipe"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Otávio, o técnico, mostra a planilha no celular: — Beba em todos os postos, antes de ter sede. Vinte anos usando isso. A Lívia é a atleta mais disciplinada que eu tenho: se está escrito, ela faz. E o cartaz da organização dizia a mesma coisa, não dizia?"
+    },
+    {
+      "id": "p_eq_peso",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_equipe"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Otávio rola a ficha de inscrição no celular até a linha da pesquisa da universidade: — Cinquenta e oito e dois. Ela se pesou na minha frente, de tênis e tudo."
+    },
+    {
+      "id": "p_eq_gel",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_equipe"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Otávio tira do bolso o gel que voltou com a Lívia: fechado. — O do km 35. Ela nunca pula o gel. Nunca."
+    },
+    {
+      "id": "p_eq_rastreador",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_equipe"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "No aplicativo de rastreamento, Otávio para a linha do tempo no km 37. — Aqui, um minuto parada. Banheiro, de novo; já tinha parado no 31. Isso não estava no plano."
+    },
+    {
+      "id": "p_te_balanca",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_tenda"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Dra. Helena, da tenda médica, lê a ficha sem levantar os olhos: — Peso na entrada da tenda: 60,0 kg. Ainda não temos o peso da largada; a pesquisa ficou de mandar."
+    },
+    {
+      "id": "p_te_maos",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_tenda"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "— Mãos e pés inchados — anota Helena. — Ela tentou tirar a aliança e não conseguiu."
+    },
+    {
+      "id": "p_te_sinais",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_tenda"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "— Temperatura 37,1. Glicemia 92 — dita Helena para a enfermeira, e só então olha para a paciente. — Agora me diga uma coisa, Lívia: quanto você bebeu?"
+    },
+    {
+      "id": "p_te_fala",
+      "etapaId": "e_pistas",
+      "destinatarios": [
+        "g_tenda"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Lívia, enrolada no cobertor térmico, pergunta pela terceira vez: — Já acabou? Eu fiz tudo o que estava escrito… Minha cabeça está explodindo."
+    }
+  ],
+  "conexoes": [
+    {
+      "id": "c_relatos",
+      "de": {
+        "etapaId": "e_pistas",
+        "portId": "hipotese_grupo"
+      },
+      "para": {
+        "etapaId": "e_juntar",
+        "portId": "hipoteses_recebidas"
+      },
+      "agregacao": "colecao_uma_por_grupo_planejado"
+    }
+  ],
+  "pendencias": [],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se acertar pelo menos 70% da comparação, do tablet da tenda e da questão individual.",
+    "etapas": [
+      "e_juntar",
+      "e_tenda",
+      "e_voce"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_juntar": {
+        "corretaId": "h_agua",
+        "explicacao": "Ela terminou 1,8 kg mais pesada do que largou, num dia frio, urinando, com mãos inchadas: tinha água sobrando, não faltando. A glicemia normal descarta a falta de açúcar, e ela recusou a garrafa da Bruna. O nome disso é hiponatremia associada ao exercício: o sódio do sangue fica diluído."
+      },
+      "e_tenda": {
+        "codigo": "1,8; +1,8; 1,8 kg; +1,8 kg; 1800; 1800 g; 1,8kg",
+        "explicacao": "60,0 − 58,2 = 1,8 kg a mais. Ganhar peso numa maratona quer dizer que entrou mais água do que saiu.",
+        "perguntas": {
+          "q_peso": {
+            "corretaId": "b"
+          },
+          "q_bruna": {
+            "corretaId": "c"
+          },
+          "q_banheiro": {
+            "corretaId": "a"
+          },
+          "q_aneis": {
+            "corretaId": "d"
+          }
+        }
+      },
+      "e_voce": {
+        "corretaId": "a",
+        "explicacao": "Beber pela sede e conferir o peso evita os dois extremos: desidratar e beber água demais."
+      }
+    },
+    "guia": [
+      "Abertura (3 min): leia a introdução no telão sem comentar. Diga só que cada grupo ouviu pessoas diferentes.",
+      "O que cada um viu (12 min): espere grupos escolhendo explicações diferentes. Lembre que só as falas marcadas chegam aos outros.",
+      "Juntando os relatos (8 min): se nenhum grupo citou um peso, pergunte em voz alta: alguém tem um número de balança?",
+      "O tablet da tenda (8 min): os pedaços revelados são linhas da ficha médica. A conta é simples; o difícil é saber que é ela que importa.",
+      "De quem é a conta? (6 min): não há gabarito. Peça ao grupo que pôs o Caio mais à direita para defender a posição.",
+      "Questão individual (3 min): conta para a meta.",
+      "Fechamento (5 min): conte o nome da condição (hiponatremia associada ao exercício) e volte à pergunta: uma orientação que protege muita gente pode machucar alguém. Quem tem o dever de dizer quando ela não serve?"
+    ],
+    "pontosDeDiscussao": [
+      "Por que “beba antes de ter sede” funciona num dia quente e pode machucar num dia frio?",
+      "A Bruna tinha razão. Por que ninguém a ouviu?",
+      "Se a Lívia fosse menos disciplinada, teria se saído melhor?"
+    ]
+  }
+}

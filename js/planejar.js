@@ -426,7 +426,7 @@ function editorGeral() {
       h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: m.ativa !== false, onchange: e => mudar(() => { m.ativa = e.target.checked; }) }), h('span', {}, 'A turma compete para superar uma meta coletiva')),
       m.ativa !== false && h('div', {},
         h('div', { class: 'campos-2' },
-          seletor('Meta de acertos', m.limiar, [0.4, 0.5, 0.6, 0.8].map(v => [v, Math.round(v * 100) + '%']), v => { m.limiar = Number(v); }),
+          seletor('Meta de acertos', m.limiar, [...new Set([0.4, 0.5, 0.6, 0.7, 0.8, m.limiar].filter(Number.isFinite))].sort((x, y) => x - y).map(v => [v, Math.round(v * 100) + '%']), v => { m.limiar = Number(v); }),
           campo('Descrição', m.descricao, v => { m.descricao = v; })),
         h('label', {}, 'Etapas que contam para a meta'),
         comGabarito.length ? h('div', { class: 'opcoes' }, comGabarito.map(e => h('label', { class: 'opcao' },
