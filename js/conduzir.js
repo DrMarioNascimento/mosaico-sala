@@ -95,7 +95,26 @@ async function irDiretoParaEtapa(etapaId) {
   await formarGrupos();
   await espera(600);
   mostrarAba('conducao');
+  if (PREVIA) await completarDependenciasDaPrevia(etapa(etapaId));
   await iniciarEtapa(etapa(etapaId));
+}
+
+/** Prévia: uma comparação só abre com as hipóteses da investigação. A condução registra, em nome de cada grupo,
+    um envio de exemplo (a primeira hipótese e as peças do grupo) para a etapa abrir já com conteúdo. Só no ensaio. */
+async function completarDependenciasDaPrevia(e) {
+  const espera = ms => new Promise(r => setTimeout(r, ms));
+  let pr = prontidaoEtapa(A(), e.id, resultados(), E.contingencias);
+  if (pr.pronta) return;
+  for (const f of pr.conferencia?.faltantes || []) {
+    const origem = etapa(f.etapaId); if (!origem) continue;
+    const hip = (origem.config?.hipotesesCandidatas || [])[0];
+    const evidencias = A().pecas.filter(p => p.etapaId === origem.id && p.destinatarios.includes(f.grupoId)).map(p => p.id);
+    await b.enviar(E.codigo, origem.id + '__' + f.grupoId, { etapaId: origem.id, escopo: 'grupo', grupoId: f.grupoId, autor: E.conta.uid,
+      dados: { hipoteseId: hip?.id, evidencias, justificativa: 'Exemplo da prévia' }, contingencia: true }).catch(() => {});
+  }
+  for (let i = 0; i < 20 && !(pr = prontidaoEtapa(A(), e.id, resultados(), E.contingencias)).pronta; i++) await espera(250);
+  if (!pr.pronta) for (const f of pr.conferencia?.faltantes || [])   // não chegou a tempo: libera como ausência registrada
+    E.contingencias.push(registrarContingencia({ etapaId: f.etapaId, grupoPlanejadoId: f.grupoId, tipo: 'aceitar_parcial_registrado', observacao: 'Prévia' }));
 }
 
 async function iniciar(conta) {

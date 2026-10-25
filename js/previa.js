@@ -10,6 +10,7 @@ const Q = new URLSearchParams(location.search);
 const ETAPA = Q.get('etapa');   // “Ver esta etapa”: a condução já começa nela
 // Compacta: embutida no Planejamento (prévia ao vivo). Só o telão e um celular; a condução roda escondida.
 const COMPACTA = Q.has('compacta');
+const SALA_VIVA = 'mosaico-previa-viva-sala';
 if (COMPACTA) {
   document.body.classList.add('compacta');
   $('turma').previousElementSibling.textContent = 'Celular de um aluno';
@@ -20,7 +21,9 @@ if (COMPACTA) {
 
 function limparEnsaio() {
   // começa limpo: apaga salas de ensaio antigas deste navegador (a compacta só apaga a própria sala anterior)
-  const prefixo = 'mosaico-ensaio:rooms/' + (COMPACTA ? (codigo ? codigo : '\u0000') : '');
+  // A compacta é recarregada a cada troca de etapa: o código da sala anterior fica na sessão desta aba.
+  let anterior = codigo; if (COMPACTA && !anterior) try { anterior = sessionStorage.getItem(SALA_VIVA); } catch {}
+  const prefixo = 'mosaico-ensaio:rooms/' + (COMPACTA ? (anterior || '\u0000') : '');
   for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith(prefixo)) localStorage.removeItem(k); }
   Object.keys(sessionStorage).filter(k => k.startsWith('mosaico-participante') || k.startsWith('mosaico-ensaio')).forEach(k => sessionStorage.removeItem(k));
 }
@@ -38,6 +41,7 @@ addEventListener('resize', ajustarTelao);
 addEventListener('message', async e => {
   if (e.origin !== location.origin || e.data?.tipo !== 'mosaico-previa-sala' || codigo) return;
   codigo = e.data.codigo;
+  if (COMPACTA) try { sessionStorage.setItem(SALA_VIVA, codigo); } catch {}
   const t = document.createElement('iframe'); t.src = link('telao.html', { sala: codigo }); t.title = 'Telão';
   $('telao').replaceChildren(t); ajustarTelao();
   $('turma').replaceChildren();
