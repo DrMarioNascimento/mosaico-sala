@@ -7,6 +7,8 @@ import { POWER_UPS } from './core/corrida.js';
 import { montarGrade } from './core/cruzadas.js';
 import { problemasRamos } from './core/pensar.js';
 import { lerTermos, VELOCIDADES } from './core/sequencia.js';
+import { INSTRUMENTOS } from './core/escalas.js';
+import { JOGOS } from './core/jogos.js';
 
 /** Banco inicial de Fisiologia para a Sequência (Genius): o professor pode apagar, editar e acrescentar. */
 export const BANCO_FISIOLOGIA = `Fígado | Armazena glicogênio, produz bile e a maior parte das proteínas plasmáticas, como a albumina.
@@ -315,8 +317,49 @@ export function criarEditores(ctx) {
         seletor('Tentativas', c.tentativas || 'uma', [['uma', 'Uma só'], ['repetir', 'Repetir até acertar']], v => { c.tentativas = v; })));
   }
 
+  // ======================================================== Escala padronizada
+  function escala(e) {
+    const c = e.config, ins = INSTRUMENTOS[c.formato] || INSTRUMENTOS['mini-ipip6'];
+    return h('div', {},
+      h('div', { class: 'cartao' }, h('h3', {}, 'Instrumento'),
+        seletor('Escala', c.formato, Object.values(INSTRUMENTOS).map(x => [x.id, x.nome]), v => { c.formato = v; }, { redesenhar: true }),
+        h('p', {}, `${ins.itens.length} itens · ${ins.duracao}. Fatores: ${ins.fatores.map(f => f.nome).join(', ')}.`),
+        h('p', { class: 'sutil' }, ins.referencia),
+        h('p', { class: 'aviso' }, ins.traducao),
+        caixaOpcoes(marcar('Ao encerrar, mostrar no telão a média da turma por fator (só com 5 ou mais respostas)', c.mostrarTurma !== false, v => { c.mostrarTurma = v; }))),
+      h('div', { class: 'cartao' }, h('h3', {}, 'O que cada um vê'),
+        h('ul', {},
+          h('li', {}, 'Aluno: responde no celular e, ao enviar, vê o próprio perfil com a explicação de cada fator. Só ele vê.'),
+          h('li', {}, 'Condução: só quantos já responderam. Nunca o perfil de alguém.'),
+          h('li', {}, 'Telão: a média e a distribuição da turma, sem nomes.'),
+          h('li', {}, 'Servidor: recebe só a média de cada fator (não as respostas item a item), e tudo é apagado ao encerrar a sala.'))));
+  }
+
+  // ======================================================== Jogo econômico
+  function jogoEconomico(e) {
+    const c = e.config, J = JOGOS[c.formato] || JOGOS.ditador;
+    const escalas = ctx.A().etapas.filter(x => x.typeId === 'escala_padronizada' && x.ordem < e.ordem);
+    return h('div', {},
+      h('div', { class: 'cartao' }, h('h3', {}, 'Jogo'),
+        seletor('Jogo', c.formato, Object.entries(JOGOS).map(([k, v]) => [k, v.nome]), v => { c.formato = v; if (v === 'confianca') c.multiplicador ??= 3; if (v === 'bens_publicos') c.fator ??= 2; }, { redesenhar: true }),
+        h('p', {}, J.resumo),
+        h('div', { class: 'campos-3' },
+          campo('Pontos de cada um', c.dotacao ?? 10, v => { c.dotacao = Math.max(2, Math.min(100, Math.round(v || 10))); }, { tipo: 'number' }),
+          c.formato === 'confianca' && campo('Multiplicador do que é enviado', c.multiplicador ?? 3, v => { c.multiplicador = Math.max(1, Math.min(5, Number(v) || 3)); }, { tipo: 'number' }),
+          c.formato === 'bens_publicos' && campo('Fator do fundo do grupo', c.fator ?? 2, v => { c.fator = Math.max(1.1, Math.min(5, Number(v) || 2)); }, { tipo: 'number' }))),
+      h('div', { class: 'cartao' }, h('h3', {}, 'Relacionar com a personalidade'),
+        escalas.length
+          ? seletor('Mostrar no telão a relação entre a decisão e a Honestidade-Humildade de', c.relacionarCom || '', [['', 'Não relacionar'], ...escalas.map(x => [x.id, x.titulo])], v => { if (v) c.relacionarCom = v; else delete c.relacionarCom; })
+          : h('p', { class: 'sutil' }, 'Ponha uma etapa de escala padronizada antes deste jogo para mostrar, no telão, se quem tem mais Honestidade-Humildade dá, oferece ou coopera mais (gráfico anônimo, com 5 ou mais pessoas).')),
+      h('div', { class: 'cartao' }, h('h3', {}, 'Como funciona na sala'),
+        h('ul', {},
+          h('li', {}, 'Cada aluno decide uma vez, sem saber com quem joga.'),
+          h('li', {}, c.formato === 'bens_publicos' ? 'O fundo é dividido dentro do grupo de cada aluno.' : 'Os pares são sorteados ao revelar: cada um joga com um colega e recebe de outro.'),
+          h('li', {}, 'Ao revelar, cada celular mostra o próprio ganho; o telão, a distribuição da turma.'))));
+  }
+
   return {
-    pares, corrida, cruzadas, sequencia, quiz_pensar: pensar, analise_imagem: analise,
+    pares, corrida, cruzadas, sequencia, quiz_pensar: pensar, analise_imagem: analise, escala_padronizada: escala, jogo_economico: jogoEconomico,
     configInicial(typeId) {
       const q = () => [{ id: 'p1', enunciado: '', alternativas: ['a', 'b', 'c', 'd'].map(l => ({ id: l, texto: '' })) }];
       if (typeId === 'pares') return { formato: 'ligar', enunciado: '', pares: [1, 2, 3, 4].map(i => ({ id: 'p' + i, a: '', b: '' })), distribuicao: 'todos', tentativas: 'repetir', espera: 15, segundos: 30, revelarAoEncerrar: true };
@@ -325,6 +368,8 @@ export function criarEditores(ctx) {
       if (typeId === 'sequencia') return { termos: lerTermos(BANCO_FISIOLOGIA).slice(0, 8), botoes: 4, velocidade: 'classica', partidas: 0, placar: 'soma', meta: 6 };
       if (typeId === 'quiz_pensar') return { formato: 'equipe', perguntas: q(), consenso: 'lider', mostrarIndividuais: true };
       if (typeId === 'analise_imagem') return { midia: 'foto', enunciado: '', tarefa: 'perguntas', perguntas: q() };
+      if (typeId === 'escala_padronizada') return { formato: 'mini-ipip6', mostrarTurma: true };
+      if (typeId === 'jogo_economico') return { formato: 'ditador', dotacao: 10 };
       return null;
     }
   };

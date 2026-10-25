@@ -128,8 +128,14 @@ function sincronizarPacotes() {
 
 // ---------- renderização ----------
 definirAoSoltar(() => { chaveRenderizada = ''; render(); });
+let etapaVista = undefined;
 function render() {
   if (arrastando()) return;          // não redesenha no meio de um arraste (redesenha ao soltar)
+  // Mudou a etapa (ou acabou): explicações da etapa anterior não ficam presas por cima da tela nova.
+  if (sala && sala.etapaAtual !== etapaVista) {
+    if (etapaVista !== undefined) for (const d of document.querySelectorAll('dialog.explica')) if (!String(d.dataset.chave || '').startsWith('grupo-')) { d.close(); d.remove(); }
+    etapaVista = sala.etapaAtual;
+  }
   if (!sala || sala.status !== 'open') {
     limpar($('status')); limpar($('tarefa'), h('div', { class: 'cartao' }, h('h2', {}, 'Sala encerrada'), h('p', {}, 'Obrigado por participar!')));
     try { GUARDA.removeItem(SESSAO); } catch {}

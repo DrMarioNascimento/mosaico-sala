@@ -10,6 +10,8 @@ import { montarGrade, prepararCruzadas, estadoCruzadas, gradeVisivel } from './c
 import { estadoEquipe, distribuicaoIndividual, estadoRamificado } from './core/pensar.js';
 import { respostaCerta } from './core/desafios.js';
 import { estadoSequencia, termosQueDerrubaram } from './core/sequencia.js';
+import { INSTRUMENTOS, escoresValidos, resumoTurma, correlacao, MINIMO_TURMA } from './core/escalas.js';
+import { JOGOS, decisaoValida, resolverJogo } from './core/jogos.js';
 
 const limpo = x => JSON.parse(JSON.stringify(x ?? null));          // o Firestore não aceita undefined
 const DIR = { sobe: '↑', desce: '↓', igual: '=' };
@@ -27,6 +29,8 @@ export function criarTipos(ctx) {
     if (e.typeId === 'corrida') return 'corrida';
     if (e.typeId === 'cruzadas') return 'cruzadas';
     if (e.typeId === 'sequencia') return 'sequencia';
+    if (e.typeId === 'escala_padronizada') return 'escala';
+    if (e.typeId === 'jogo_economico') return 'jogo';
     if (e.typeId === 'quiz_pensar') return c.formato === 'equipe' ? 'equipe' : c.formato === 'ramificado' ? 'ramos' : 'corrida';
     if (e.typeId === 'analise_imagem') return c.tarefa === 'perguntas' ? 'corrida' : c.tarefa === 'observar' ? 'observar' : null;
     return null;
@@ -176,6 +180,44 @@ export function criarTipos(ctx) {
     for (const g of E.jogo[e.id]?.grupos || []) await gravar(g, { tipo: 'observar', etapaId: e.id, titulo: e.titulo, instrucao: e.instrucao || '', enunciado: e.config.enunciado || '', minha: est[g]?.texto || '', proxima: proxN(e, g, 'o') });
   }
 
+  // ---------------- escala padronizada e jogo econômico ----------------
+  // Quem conduz só conta respostas: o perfil de cada um vai só para o próprio celular, e o telão vê médias.
+  const participantes = () => gruposComGente().flatMap(membrosDe);
+  /** Última resposta válida de cada aluno nesta etapa (o envio mais recente vale). */
+  function ultimas(e, validar) {
+    const out = {};
+    for (const x of [...env(e)].sort((a, b) => a.t - b.t)) { const v = validar(x.dados); if (v) out[x.autor] = v; }
+    return out;
+  }
+  const escoresDe = e => ultimas(e, d => escoresValidos(e.config.formato, d?.escores));
+  const decisoesDe = e => ultimas(e, d => decisaoValida(e.config, d));
+  async function publicarEscala(e) {
+    const esc = escoresDe(e);
+    await publicarJogo({ tipo: 'escala', etapaId: e.id, instrumento: e.config.formato, respondidos: Object.keys(esc).length, total: participantes().length });
+    for (const [u, x] of Object.entries(esc)) await gravar(u, { tipo: 'escala', etapaId: e.id, escores: x });
+  }
+  /** Relação anônima entre a Honestidade-Humildade (escala anterior) e a decisão no jogo; só com 5 ou mais pessoas. */
+  function relacaoComEscala(e, valores) {
+    const alvo = e.config.relacionarCom && ctx.etapa(e.config.relacionarCom); if (!alvo) return null;
+    const esc = escoresDe(alvo), pontos = Object.keys(valores).filter(u => Number.isFinite(esc[u]?.H)).map(u => ({ h: esc[u].H, v: valores[u] }));
+    if (pontos.length < MINIMO_TURMA) return { n: pontos.length, suprimido: true };
+    pontos.sort(() => Math.random() - 0.5);   // a ordem não deve dizer nada sobre quem é quem
+    return { n: pontos.length, r: correlacao(pontos.map(p => p.h), pontos.map(p => p.v)), pontos, escala: alvo.titulo };
+  }
+  function revelarJogo(e) {
+    const j = E.jogo[e.id]; if (!j || j.revelado) return;
+    const dec = decisoesDe(e), grupoDe = Object.fromEntries(gruposComGente().flatMap(g => membrosDe(g).map(u => [u, g])));
+    const r = resolverJogo(e.config, dec, grupoDe);
+    Object.assign(j, { revelado: true, porUid: r.porUid, resumo: r.resumo, relacao: relacaoComEscala(e, r.valores), decisoes: dec });
+    ctx.salvar();
+  }
+  async function publicarJogoEconomico(e) {
+    const j = E.jogo[e.id], c = e.config, dec = j.revelado ? j.decisoes : decisoesDe(e);
+    await publicarJogo(limpo({ tipo: 'jogo', etapaId: e.id, formato: c.formato, dotacao: c.dotacao ?? 10, multiplicador: c.multiplicador ?? 3, fator: c.fator ?? 2,
+      respondidos: Object.keys(dec).length, total: participantes().length, revelado: !!j.revelado, ...(j.revelado ? { resumo: j.resumo, relacao: j.relacao } : {}) }));
+    for (const [u, d] of Object.entries(dec)) await gravar(u, limpo({ tipo: 'jogo', etapaId: e.id, minha: d, resultado: j.revelado ? j.porUid[u] || null : null }));
+  }
+
   // ---------------- interface comum ----------------
   const api = {
     tem: e => !!tipoDe(e),
@@ -206,6 +248,8 @@ export function criarTipos(ctx) {
       if (t === 'equipe') E.jogo[e.id] = { tipo: 'equipe', grupos: Object.fromEntries(grupos.map(g => [g, [...membrosDe(g)]])), fases: {}, q: 0 };
       if (t === 'ramos') E.jogo[e.id] = { tipo: 'ramos', grupos };
       if (t === 'observar') E.jogo[e.id] = { tipo: 'observar', grupos };
+      if (t === 'escala') E.jogo[e.id] = { tipo: 'escala' };
+      if (t === 'jogo') E.jogo[e.id] = { tipo: 'jogo', revelado: false };
       ctx.salvar();
     },
     jogoInicial: e => null,
@@ -218,6 +262,8 @@ export function criarTipos(ctx) {
       if (t === 'equipe') return publicarEquipe(e);
       if (t === 'ramos') return publicarRamos(e);
       if (t === 'observar') return publicarObservar(e);
+      if (t === 'escala') return publicarEscala(e);
+      if (t === 'jogo') return publicarJogoEconomico(e);
     },
     progresso(e) {
       const t = tipoDe(e), j = E.jogo[e.id]; if (!j) return null;
@@ -229,6 +275,8 @@ export function criarTipos(ctx) {
       if (t === 'sequencia') { const est = estadoS(e); return { novo: t, enviados: est.ranking.length, esperados: Object.keys(est.jogadores).length }; }
       if (t === 'ramos') { const est = estadoR(e); return { novo: t, porGrupo: Object.fromEntries(Object.entries(est).map(([g, S]) => [g, { passos: S.caminho.length, final: S.final, desfecho: S.desfecho }])) }; }
       if (t === 'observar') { const est = estadoO(e); return { novo: t, porGrupo: Object.fromEntries((j.grupos || []).map(g => [g, { enviou: !!est[g] }])) }; }
+      if (t === 'escala') return { novo: t, enviados: Object.keys(escoresDe(e)).length, esperados: participantes().length };
+      if (t === 'jogo') return { novo: t, enviados: Object.keys(j.revelado ? j.decisoes : decisoesDe(e)).length, esperados: participantes().length };
       return null;
     },
     painel(e, caixa) {
@@ -265,6 +313,15 @@ export function criarTipos(ctx) {
           dr.length > 0 && h('p', { class: 'sutil' }, 'Termos que mais derrubaram: ' + dr.map(x => `${x.termo} (${x.vezes})`).join(' · ')));
       }
       if (t === 'equipe') return painelEquipe(e, caixa);
+      if (t === 'escala') caixa.append(h('p', {}, `${Object.keys(escoresDe(e)).length} de ${participantes().length} responderam.`),
+        h('p', { class: 'sutil' }, 'Por privacidade, você não vê o perfil de ninguém: cada aluno vê o próprio, e o telão mostra a média da turma ao encerrar (com 5 ou mais respostas).'));
+      if (t === 'jogo') {
+        const n = Object.keys(j.revelado ? j.decisoes : decisoesDe(e)).length;
+        caixa.append(h('p', {}, `${JOGOS[e.config.formato]?.nome}: ${n} de ${participantes().length} decidiram.`));
+        if (!j.revelado) caixa.append(h('button', { class: 'btn bloco', disabled: n < 2, onclick: () => { revelarJogo(e); ctx.emSerie(() => publicarJogoEconomico(e)); ctx.renderConducao(); } }, n < 2 ? 'Revelar resultados (precisa de 2 decisões)' : 'Revelar resultados'),
+          h('p', { class: 'sutil' }, 'Ao revelar, os pares são sorteados, cada celular mostra o próprio ganho e o telão mostra a distribuição. Quem decidir depois não entra no cálculo.'));
+        else caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, `Resultados revelados · média: ${j.resumo.media} ${JOGOS[e.config.formato].rotulo} · ganho médio: ${j.resumo.ganhoMedio}`));
+      }
       caixa.append(h('button', { class: 'btn primario bloco', onclick: ctx.encerrarEtapa }, 'Encerrar etapa'));
       return caixa;
     },
@@ -276,10 +333,12 @@ export function criarTipos(ctx) {
       if (t === 'equipe') { const est = estadoQ(e); return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(est.placar).map(([g, p]) => `${ctx.nomeGrupo(g)} ${p.pontos}`).join(' · ')); }
       if (t === 'ramos') { const est = estadoR(e); return h('p', { class: 'sutil' }, Object.entries(est).map(([g, S]) => `${ctx.nomeGrupo(g)}: ${S.final ? 'final ' + S.desfecho : 'não terminou'}`).join(' · ')); }
       if (t === 'sequencia') { const est = estadoS(e); return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ') + (est.ranking[0] ? ` · maior sequência: ${est.ranking[0].recorde} (${ctx.nomeDe(est.ranking[0].id)})` : '')); }
+      if (t === 'escala') return h('p', { class: 'sutil' }, `${Object.keys(escoresDe(e)).length} resposta(s).`);
+      if (t === 'jogo') return h('p', { class: 'sutil' }, j.revelado ? `${j.resumo.n} decisões · média ${j.resumo.media} ${JOGOS[e.config.formato].rotulo}` : `${Object.keys(decisoesDe(e)).length} decisões`);
       if (t === 'observar') { const est = estadoO(e); return h('details', {}, h('summary', {}, 'O que cada grupo escreveu'), h('ul', {}, Object.entries(est).map(([g, x]) => h('li', {}, h('strong', {}, ctx.nomeGrupo(g) + ': '), x.texto)))); }
       return h('span');
     },
-    async encerrar(e) { if (tipoDe(e) === 'equipe') { const j = E.jogo[e.id]; if (j.fases[j.q] && j.fases[j.q].r === undefined) { j.fases[j.q].r = Date.now(); ctx.salvar(); } } },
+    async encerrar(e) { if (tipoDe(e) === 'jogo') { revelarJogo(e); await publicarJogoEconomico(e); } if (tipoDe(e) === 'equipe') { const j = E.jogo[e.id]; if (j.fases[j.q] && j.fases[j.q].r === undefined) { j.fases[j.q].r = Date.now(); ctx.salvar(); } } },
     jogoFinal(e) {
       const t = tipoDe(e), j = E.jogo[e.id]; if (!j) return null;
       const pares = (e.config.pares || []).map(p => ({ a: p.a, b: p.b }));
@@ -306,6 +365,9 @@ export function criarTipos(ctx) {
         return limpo({ tipo: 'ramos', etapaId: e.id, final: true, caminhos: Object.fromEntries(Object.entries(est).map(([g, S]) => [g, { desfecho: S.desfecho, final: S.final, textoFinal: S.final ? porId[S.atual]?.texto : '', escolhas: S.caminho.map(p => porId[p.cenario]?.opcoes.find(o => o.id === p.opcao)?.texto || '') }])) });
       }
       if (t === 'observar') { const est = estadoO(e); return { tipo: 'observar', etapaId: e.id, final: true, respostas: Object.entries(est).map(([g, x]) => ({ grupo: g, texto: x.texto })) }; }
+      if (t === 'escala') return limpo({ tipo: 'escala', etapaId: e.id, final: true, instrumento: e.config.formato, mostrar: e.config.mostrarTurma !== false,
+        resumo: e.config.mostrarTurma !== false ? resumoTurma(e.config.formato, Object.values(escoresDe(e))) : null });
+      if (t === 'jogo') return limpo({ tipo: 'jogo', etapaId: e.id, final: true, formato: e.config.formato, dotacao: e.config.dotacao ?? 10, revelado: true, resumo: j.resumo, relacao: j.relacao });
       return null;
     },
     resultados(e) {
@@ -328,6 +390,8 @@ export function criarTipos(ctx) {
       if (e.typeId === 'quiz_pensar' && c.formato === 'ramificado') return 'Final bom: ' + (c.cenarios || []).filter(x => x.final && x.desfecho === 'bom').map(x => x.texto).join(' / ');
       if (e.typeId === 'analise_imagem' && c.tarefa === 'marcar') return (c.marcadores || []).map(m => m.rotulo).join(', ') + ' (posições no gabarito)';
       if (e.typeId === 'analise_imagem' && c.tarefa === 'observar') return 'Descrição livre de cada grupo';
+      if (e.typeId === 'escala_padronizada') return 'Sem resposta certa: cada aluno vê o próprio perfil; o telão, a média da turma.';
+      if (e.typeId === 'jogo_economico') return `Sem resposta certa: ${JOGOS[c.formato]?.nome || 'jogo'} para discutir as escolhas da turma.`;
       if (c.perguntas) return c.perguntas.map((q, i) => `${i + 1}. ${respostaCerta(q, r).texto}`).join(' · ');
       return '';
     },
@@ -391,6 +455,8 @@ export function criarTipos(ctx) {
           await enviarComo(e, `${e.id}__${id}__s${S.partidas + 1}`, id, S.grupo, { partida: S.partidas + 1, pontos: p, termos: [], erro: ts.length ? { esperado: um(ts).id, tocado: null } : null });
         }
       }
+      if (t === 'escala') for (const u of participantes().filter(sim)) if (!escoresDe(e)[u]) await enviarComo(e, `${e.id}__${u}__r1`, u, ctx.grupoDoUid(u), { escores: Object.fromEntries(INSTRUMENTOS[e.config.formato].fatores.map(f => [f.id, Math.round((1.5 + Math.random() * 3) * 100) / 100])) });
+      if (t === 'jogo' && !j.revelado) { const D = e.config.dotacao ?? 10, n = () => Math.floor(Math.random() * (D + 1)); for (const u of participantes().filter(sim)) if (!decisoesDe(e)[u]) await enviarComo(e, `${e.id}__${u}__d1`, u, ctx.grupoDoUid(u), { dar: n(), oferta: n(), minimo: n(), enviar: n(), devolver: 10 * Math.floor(Math.random() * 11), contribuir: n() }); }
       if (t === 'observar') for (const g of j.grupos) { const u = ctx.lider(g); if (sim(u)) await enviarComo(e, `${e.id}__${g}__o${proxN(e, g, 'o')}`, u, g, { texto: 'Observação simulada: vemos as estruturas indicadas na imagem.' }); }
     },
     tique() {

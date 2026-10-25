@@ -3,6 +3,8 @@
 
 import { h, corDoGrupo, iconeGrupo } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
+import { INSTRUMENTOS } from './core/escalas.js';
+import { JOGOS } from './core/jogos.js';
 
 export function criarTelao(ctx) {
   const S = () => ctx.sala(), gs = () => S().publico.grupos, nome = g => gs().find(x => x.id === g)?.nome || g;
@@ -12,6 +14,8 @@ export function criarTelao(ctx) {
     if (i.typeId === 'corrida') return 'corrida';
     if (i.typeId === 'cruzadas') return 'cruzadas';
     if (i.typeId === 'sequencia') return 'sequencia';
+    if (i.typeId === 'escala_padronizada') return 'escala';
+    if (i.typeId === 'jogo_economico') return 'jogo';
     if (i.typeId === 'quiz_pensar') return i.formato === 'equipe' ? 'equipe' : i.formato === 'ramificado' ? 'ramos' : 'corrida';
     if (i.typeId === 'analise_imagem') return i.formato === 'perguntas' ? 'corrida' : i.formato === 'observar' ? 'observar' : null;
     return null;
@@ -56,6 +60,56 @@ export function criarTelao(ctx) {
   }
   const enfeiteSeq = n => h('div', { class: 'seq-enfeite', 'aria-hidden': 'true' }, CORES_SEQ.slice(0, n || 4).map((c, k) => h('i', { style: { '--cor': c, '--k': k } })));
 
+  // ---------- escala padronizada e jogo econômico: só a turma, nunca uma pessoa ----------
+  const virgula = x => String(x).replace('.', ',');
+  const contagem = (n, de, verbo) => h('p', { class: 'telao-contagem' }, h('strong', {}, n), ` de ${de} ${verbo}`);
+  function mediasEscala(j) {
+    const ins = INSTRUMENTOS[j.instrumento]; if (!ins) return null;
+    if (!j.resumo) return frase('A média da turma não será mostrada nesta atividade.');
+    if (j.resumo.suprimido) return frase(`A média da turma aparece a partir de ${j.resumo.minimo} respostas (houve ${j.resumo.n}).`);
+    return h('div', { class: 'escala-telao' },
+      h('p', { class: 'sutil' }, `Média da turma, de 1 a 5 (${j.resumo.n} respostas). A faixa clara mostra onde fica a maioria (média ± 1 desvio-padrão).`),
+      ins.fatores.map(f => { const x = j.resumo.fatores[f.id]; if (!x) return null;
+        const pos = v => `${Math.max(0, Math.min(100, (v - 1) * 25))}%`;
+        return h('div', { class: 'escala-telao-linha' }, h('span', { class: 'rot' }, f.nome),
+          h('div', { class: 'escala-telao-trilho' },
+            h('i', { class: 'faixa', style: { left: pos(x.media - x.dp), width: `calc(${pos(x.media + x.dp)} - ${pos(x.media - x.dp)})` } }),
+            h('b', { class: 'ponto', style: { left: pos(x.media) } })),
+          h('strong', {}, virgula(x.media))); }),
+      h('p', { class: 'sutil' }, ins.traducao));
+  }
+  function histograma(j) {
+    const R = j.resumo; if (!R) return null;
+    const max = Math.max(1, ...R.distribuicao), J = JOGOS[j.formato];
+    return h('div', { class: 'hist' },
+      h('div', { class: 'hist-barras' }, R.distribuicao.map((n, v) => h('div', { class: 'hist-col' }, h('small', {}, n || ''), h('i', { style: { height: `${Math.round(100 * n / max)}%` } }), h('span', {}, v)))),
+      h('p', { class: 'hist-eixo' }, `${J.rotulo} (de ${R.dotacao}) · média ${virgula(R.media)}`));
+  }
+  function destaquesJogo(j) {
+    const R = j.resumo; if (!R) return null;
+    const itens = [];
+    if (j.formato === 'ditador') itens.push(`${R.deuZero} de ${R.n} não deram nada`, `${R.deuMetade} deram metade ou mais`);
+    if (j.formato === 'ultimato') itens.push(`${R.recusadas} oferta(s) recusada(s) de ${R.n}`, `mínimo aceito, em média: ${virgula(R.mediaMinimo)}`);
+    if (j.formato === 'confianca') itens.push(`devolveram, em média, ${virgula(R.mediaDevolver)}% do que receberam`, `cada ponto enviado vira ${R.multiplicador}`);
+    if (j.formato === 'bens_publicos') itens.push(`puseram no fundo, em média, ${virgula(R.media)} de ${R.dotacao} (${Math.round(100 * R.media / R.dotacao)}%)`, `se todos pusessem tudo, cada um teria ${R.dotacao * R.fator}`);
+    itens.push(`ganho médio: ${virgula(R.ganhoMedio)} pontos`);
+    return h('div', { class: 'quiz-placar telao-placar' }, itens.map(t => h('span', { class: 'chip' }, t)));
+  }
+  function relacao(j) {
+    const r = j.relacao; if (!r) return null;
+    if (r.suprimido) return h('p', { class: 'sutil', style: { textAlign: 'center' } }, `A relação com a personalidade aparece a partir de 5 pessoas que fizeram a escala e o jogo (houve ${r.n}).`);
+    const D = j.resumo?.dotacao || 10, W = 360, H = 220, x = v => 30 + (v - 1) / 4 * (W - 40), y = v => H - 25 - v / D * (H - 40);
+    const svg = `<svg viewBox="0 0 ${W} ${H}" class="dispersao" role="img" aria-label="Cada ponto é uma pessoa (anônima): Honestidade-Humildade e decisão no jogo">
+      <line x1="30" y1="${H - 25}" x2="${W - 10}" y2="${H - 25}" stroke="currentColor" opacity=".4"/><line x1="30" y1="15" x2="30" y2="${H - 25}" stroke="currentColor" opacity=".4"/>
+      ${r.pontos.map(p => `<circle cx="${x(p.h).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="6" fill="#ff8a3d" opacity=".75"/>`).join('')}
+      <text x="${W / 2}" y="${H - 4}" text-anchor="middle" font-size="12" fill="currentColor">Honestidade-Humildade (1 a 5)</text>
+      <text x="12" y="${H / 2}" text-anchor="middle" font-size="12" fill="currentColor" transform="rotate(-90 12 ${H / 2})">${JOGOS[j.formato].rotulo}</text></svg>`;
+    const caixa = h('div', { class: 'relacao-telao' }); caixa.innerHTML = svg;
+    const forca = r.r === null ? 'sem variação suficiente para calcular' : Math.abs(r.r) < 0.1 ? 'praticamente nenhuma relação' : Math.abs(r.r) < 0.3 ? 'relação fraca' : Math.abs(r.r) < 0.5 ? 'relação moderada' : 'relação forte';
+    caixa.append(h('p', {}, h('strong', {}, `r = ${r.r === null ? '—' : virgula(r.r)}`), ` (${r.n} pessoas): ${forca}${r.r > 0.1 ? ', quem tem mais Honestidade-Humildade tende a ' + ({ ditador: 'dar', ultimato: 'oferecer', confianca: 'enviar', bens_publicos: 'contribuir' })[j.formato] + ' mais' : r.r < -0.1 ? ', no sentido contrário ao esperado' : ''}. Uma turma é pequena: é uma pista para discutir, não uma conclusão.`));
+    return caixa;
+  }
+
   return {
     tem: i => !!tipo(i),
     aoVivo() {
@@ -95,6 +149,13 @@ export function criarTelao(ctx) {
         if (j.jogadores) corpo.push(h('p', { class: 'sutil', style: { textAlign: 'center' } }, `${j.jogaram} de ${j.jogadores} já jogaram · ${j.partidas} partida(s)`));
       }
       if (t === 'ramos') corpo.push(frase('🧭 Cada escolha muda o caminho'), barras(pr.porGrupo || {}, x => x.final ? 1 : 0, () => 1, x => x.final ? `chegou a um final · ${x.passos} escolhas` : `${x.passos} escolha(s)`));
+      if (t === 'escala') corpo.push(frase('🪞 Cada um responde sozinho: não há resposta certa'), contagem(j.respondidos ?? 0, j.total ?? 0, 'responderam'),
+        h('p', { class: 'sutil', style: { textAlign: 'center' } }, 'O perfil de cada um aparece só no próprio celular. Aqui, ao final, só a média da turma.'));
+      if (t === 'jogo') {
+        const J = JOGOS[j.formato];
+        if (!j.revelado) corpo.push(frase(J ? `${J.nome}: ${J.resumo}` : ''), contagem(j.respondidos ?? 0, j.total ?? 0, 'decidiram'));
+        else corpo.push(frase(`${J.nome}: o que a turma decidiu`), h('div', { class: 'jogo-telao' }, histograma(j), relacao(j)), destaquesJogo(j));
+      }
       if (t === 'observar') corpo.push(frase('🔍 Observem e descrevam'), barras(pr.porGrupo || {}, x => x.enviou ? 1 : 0, () => 1, x => x.enviou ? 'escreveu' : 'observando'));
       return h('div', { style: { display: 'grid', gap: '.8em' } }, corpo);
     },
@@ -133,6 +194,8 @@ export function criarTelao(ctx) {
       if (t === 'ramos' && j.caminhos) corpo.push(h('div', { class: 'caminhos' }, Object.entries(j.caminhos).map(([g, c]) => h('div', { class: 'caminho ' + (c.desfecho || '') , style: { '--cor': corDoGrupo(gs(), g) } },
         h('div', { class: 'titulo-grupo' }, iconeGrupo(gs(), g, 36), nome(g), h('span', { class: 'desfecho' }, c.final ? { bom: 'final bom', neutro: 'final neutro', ruim: 'final ruim' }[c.desfecho] : 'não terminou')),
         h('small', {}, c.escolhas.join(' → ')), c.final && h('p', {}, c.textoFinal)))));
+      if (t === 'escala' && j.final) corpo.push(mediasEscala(j));
+      if (t === 'jogo' && j.final) corpo.push(h('div', { class: 'jogo-telao' }, histograma(j), relacao(j)), destaquesJogo(j));
       if (t === 'observar' && j.respostas) corpo.push(h('div', { class: 'observacoes' }, m && h('div', { class: 'telao-midia-caixa pequena' }, m), h('div', { style: { display: 'grid', gap: '.5em' } }, j.respostas.map(r => h('div', { class: 'explicacao', style: { borderLeft: `6px solid ${corDoGrupo(gs(), r.grupo)}` } }, h('strong', {}, nome(r.grupo) + ': '), r.texto)))));
       else if (m && t !== 'observar') corpo.unshift(h('div', { class: 'telao-midia-caixa pequena' }, m));
       return h('div', { style: { display: 'grid', gap: '.8em' } }, corpo);

@@ -25,7 +25,7 @@ const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
-const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem' };
+const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
   editorPerguntas: (e, o) => editorPerguntas(e, o), avisoGeral: (t, k) => avisoGeral(t, k), comprimirImagem: f => comprimirImagem(f), A: () => P.A });
@@ -34,14 +34,16 @@ const CATEGORIAS = [
   ['Investigar e discutir', ['investigacao_fragmentos', 'comparar_hipoteses', 'analise_imagem']],
   ['Desafios cooperativos', ['montagem_pecas', 'cadeado_grupo', 'cartoes_arrastar', 'pares', 'cruzadas']],
   ['Quizzes e jogos', ['quiz_grupos', 'corrida', 'quiz_pensar', 'sequencia']],
-  ['Verificação individual', ['questao_individual']]
+  ['Verificação individual', ['questao_individual']],
+  ['Escalas e jogos padronizados', ['escala_padronizada', 'jogo_economico']]
 ];
 /** “Ideal para” de cada tipo, na tela de nova etapa (ideia do protótipo do v0). */
 const IDEAL_PARA = {
   investigacao_fragmentos: 'Abrir o tema com um problema', comparar_hipoteses: 'Depois de uma investigação', analise_imagem: 'Lâminas, gráficos, mapas e anatomia',
   montagem_pecas: 'Textos, contas e imagens', cadeado_grupo: 'Revisão com desafio', cartoes_arrastar: 'Processos, categorias e debates', pares: 'Relacionar conceitos',
   cruzadas: 'Vocabulário e conceitos-chave', quiz_grupos: 'Fechar a aula com energia', corrida: 'Revisão rápida e competitiva', quiz_pensar: 'Argumentar, decidir e refletir',
-  sequencia: 'Memorizar sequências e termos', questao_individual: 'Verificar o que cada um aprendeu'
+  sequencia: 'Memorizar sequências e termos', questao_individual: 'Verificar o que cada um aprendeu',
+  escala_padronizada: 'Refletir sobre traços de personalidade', jogo_economico: 'Discutir cooperação, justiça e confiança'
 };
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
@@ -497,7 +499,7 @@ function adicionarEtapa(typeId) {
   mudar(a => {
     const id = novoId('e', idsDe(a.etapas)), ordem = Math.max(0, ...a.etapas.map(e => e.ordem)) + 1;
     const anterior = etapasOrdenadas(a).at(-1);
-    novo = { id, ordem, titulo: NOMES_TIPO[typeId], typeId, typeVersion: TIPOS[typeId].typeVersion, tempoMin: typeId === 'questao_individual' ? 4 : ['cartoes_arrastar', 'pares', 'corrida', 'sequencia'].includes(typeId) ? 8 : typeId === 'analise_imagem' ? 10 : 15, instrucao: '', participacao: participacaoPadrao(typeId), config: configInicial(typeId, anterior) };
+    novo = { id, ordem, titulo: NOMES_TIPO[typeId], typeId, typeVersion: TIPOS[typeId].typeVersion, tempoMin: typeId === 'questao_individual' ? 4 : ['cartoes_arrastar', 'pares', 'corrida', 'sequencia'].includes(typeId) ? 8 : typeId === 'analise_imagem' ? 10 : typeId === 'escala_padronizada' ? 6 : typeId === 'jogo_economico' ? 5 : 15, instrucao: '', participacao: participacaoPadrao(typeId), config: configInicial(typeId, anterior) };
     a.etapas.push(novo);
     P.secao = 'etapa:' + id;
     if (typeId === 'comparar_hipoteses') {

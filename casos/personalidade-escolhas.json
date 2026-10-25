@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "personalidade-escolhas",
+  "titulo": "Personalidade e escolhas éticas",
+  "publico": "Ensino superior — Ética e Deontologia, Psicologia, Educação Física",
+  "duracaoMin": 40,
+  "regime": "simulacao",
+  "perguntaCentral": "Traços de personalidade ajudam a explicar como dividimos, cooperamos e confiamos? Até onde vai essa explicação?",
+  "introducao": "Primeiro, cada um descreve a própria personalidade numa escala curta. Depois, a turma joga dois jogos clássicos da economia comportamental, sem saber com quem joga. No fim, olhamos juntos para o que a turma fez, sem expor ninguém.",
+  "objetivos": [
+    "Reconhecer os seis fatores do modelo de personalidade (Big Five + Honestidade-Humildade).",
+    "Discutir a relação entre traços, justiça e cooperação a partir de dados da própria turma.",
+    "Diferenciar uma tendência estatística de um julgamento sobre uma pessoa."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g1",
+      "nome": "Grupo Círculo",
+      "ordemAlocacao": 1,
+      "funcao": "Grupo do fundo comum"
+    },
+    {
+      "id": "g2",
+      "nome": "Grupo Triângulo",
+      "ordemAlocacao": 2,
+      "funcao": "Grupo do fundo comum"
+    },
+    {
+      "id": "g3",
+      "nome": "Grupo Quadrado",
+      "ordemAlocacao": 3,
+      "funcao": "Grupo do fundo comum"
+    },
+    {
+      "id": "g4",
+      "nome": "Grupo Losango",
+      "ordemAlocacao": 4,
+      "funcao": "Grupo do fundo comum"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_escala",
+      "ordem": 1,
+      "titulo": "Como eu me descrevo",
+      "typeId": "escala_padronizada",
+      "typeVersion": "1.0.0",
+      "tempoMin": 6,
+      "instrucao": "Responda pensando em como você é hoje. Não há resposta certa, e ninguém verá o seu perfil.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "desligada"
+      },
+      "config": {
+        "formato": "mini-ipip6",
+        "mostrarTurma": true
+      }
+    },
+    {
+      "id": "e_ditador",
+      "ordem": 2,
+      "titulo": "Dividir sem ser visto",
+      "typeId": "jogo_economico",
+      "typeVersion": "1.0.0",
+      "tempoMin": 4,
+      "instrucao": "Ninguém saberá quanto você deu, nem para quem.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "desligada"
+      },
+      "config": {
+        "formato": "ditador",
+        "dotacao": 10,
+        "relacionarCom": "e_escala"
+      }
+    },
+    {
+      "id": "e_fundo",
+      "ordem": 3,
+      "titulo": "O fundo do grupo",
+      "typeId": "jogo_economico",
+      "typeVersion": "1.0.0",
+      "tempoMin": 5,
+      "instrucao": "Pense no que é melhor para você e no que é melhor para o grupo.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "desligada"
+      },
+      "config": {
+        "formato": "bens_publicos",
+        "dotacao": 10,
+        "fator": 2,
+        "relacionarCom": "e_escala"
+      }
+    },
+    {
+      "id": "e_sintese",
+      "ordem": 4,
+      "titulo": "O que os dados permitem dizer",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 4,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "enunciado": "Na turma, quem teve mais Honestidade-Humildade deu, em média, um pouco mais no jogo do ditador. Qual conclusão é a mais adequada?",
+        "alternativas": [
+          {
+            "id": "a",
+            "texto": "É uma tendência do grupo: ajuda a discutir, mas não permite julgar ninguém em particular."
+          },
+          {
+            "id": "b",
+            "texto": "Quem deu pouco é desonesto."
+          },
+          {
+            "id": "c",
+            "texto": "A personalidade determina a conduta: não há escolha."
+          },
+          {
+            "id": "d",
+            "texto": "Como é só uma turma, os dados não servem para nada."
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [],
+  "conexoes": [],
+  "pendencias": [
+    "A escala é uma tradução livre, não validada: use para discussão, não para avaliar alunos."
+  ],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se pelo menos 70% acertarem a questão final.",
+    "etapas": [
+      "e_sintese"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_sintese": {
+        "corretaId": "a",
+        "explicacao": "Uma correlação na turma descreve uma tendência; não autoriza conclusões sobre uma pessoa, nem significa determinismo. Uma turma pequena é uma pista para discutir, não uma prova."
+      }
+    },
+    "guia": [
+      "Escala (6 min): reforce que não há resposta certa e que o perfil só aparece no celular de cada um.",
+      "Ao encerrar a escala, o telão mostra a média da turma por fator. Pergunte: o que surpreende?",
+      "Ditador (4 min): peça para decidirem em silêncio. Revele os resultados e discuta a distribuição: quantos deram zero? Quantos dividiram ao meio?",
+      "Mostre a relação com a Honestidade-Humildade no telão: é uma tendência, não um rótulo.",
+      "Bens públicos (5 min): discuta o \"carona\" (quem não põe nada ganha mais) e o que faria o grupo cooperar mais: comunicação, regras, reputação.",
+      "Questão final (4 min) e fechamento: ligue os jogos a situações profissionais (divisão de recursos, trabalho em equipe, confiança no paciente e no colega)."
+    ],
+    "pontosDeDiscussao": [
+      "Por que tantas pessoas dão algo no ditador, se ninguém está vendo?",
+      "O que muda quando a decisão é pública?",
+      "Que regras profissionais funcionam como o \"fundo comum\"?"
+    ]
+  }
+}

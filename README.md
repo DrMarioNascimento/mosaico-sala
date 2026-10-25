@@ -87,6 +87,8 @@ sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a int
 | `cadeado_grupo` | 1.0.0 | Desafio de cadeado por grupo |
 | `quiz_grupos` | 1.0.0 | Quiz entre grupos |
 | `cartoes_arrastar` | 1.0.0 | Cartões de arrastar em quadro compartilhado: ordenar (a cadeia inteira ou por trechos, entre grupos), classificar ou termômetro (entre dois polos) |
+| `escala_padronizada` | 1.0.0 | Escala de autorrelato de domínio público (Mini-IPIP6: Big Five + Honestidade-Humildade, o fator do HEXACO). O aluno vê o próprio perfil; o telão, só a média da turma (com 5 ou mais respostas) |
+| `jogo_economico` | 1.0.0 | Jogos padronizados da economia comportamental: ditador, ultimato, confiança e bens públicos. Pares sorteados, ganho de cada um no próprio celular, distribuição da turma no telão e, opcionalmente, a relação com a Honestidade-Humildade |
 | `pares` | 1.0.0 | Pares de conteúdo: ligar (arrastar até o par) ou jogo da memória (por grupo, ou no telão com a vez de cada grupo) |
 | `corrida` | 1.0.0 | No próprio ritmo, pontos somam para o grupo: quiz, corrente de causa e efeito ou escolher a direção (↑ ↓ =), com power-ups opcionais |
 | `cruzadas` | 1.0.0 | Palavras cruzadas montadas sozinhas; dicas divididas entre os celulares; grade por grupo ou da turma |
