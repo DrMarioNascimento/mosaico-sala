@@ -33,3 +33,4 @@ jobs:
           name: oficinas-verificadas-${{ matrix.suite }}
           path: tests/.downloads/
           retention-days: 14
+          include-hidden-files: true

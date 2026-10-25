@@ -54,6 +54,10 @@ const IDEAL_PARA = {
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
+// Recolhe as ações depois da escolha e mantém a navegação fora da barra fixa.
+$('acoes').addEventListener('click',ev=>{if(ev.target.closest('button')){const menu=ev.target.closest('details.acoes-mais');if(menu)menu.open=false;}});
+const topoDocente=document.querySelector('header.topo');
+if(topoDocente && typeof ResizeObserver!=='undefined')new ResizeObserver(()=>document.documentElement.style.setProperty('--topo-docente',(topoDocente.getBoundingClientRect().height+12)+'px')).observe(topoDocente);
 let autoriaInicialAberta = false;
 window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao');});
 // ============================================================ entrada

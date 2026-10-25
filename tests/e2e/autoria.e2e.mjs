@@ -35,14 +35,17 @@ for(const id of ['cancao-exilio-completa','citologia-completa'])test(id+': anexa
   await p.getByText('Guardar e exportar',{exact:true}).click();
   const [json]=await Promise.all([p.waitForEvent('download'),p.getByRole('button',{name:'Baixar arquivo da atividade',exact:true}).click()]);
   const saved=JSON.parse(await readFile(await json.path(),'utf8'));assert.equal(saved.etapas.length,22);assert.equal(saved.etapas.find(e=>e.id==='e5').config.imagem.nome,'imagem-do-professor.webp');
+  await p.getByText('Guardar e exportar',{exact:true}).click();
   const [xlsx]=await Promise.all([p.waitForEvent('download'),p.getByRole('button',{name:'Baixar planilha',exact:true}).click()]);
   const sheet=await xlsx.path();assert.ok((await readFile(sheet)).length>20000);
+  await p.getByText('Guardar e exportar',{exact:true}).click();
   const [paper]=await Promise.all([ctx.waitForEvent('page'),p.getByRole('button',{name:'Imprimir',exact:true}).click()]);
   await paper.waitForLoadState();assert.match(await paper.locator('body').innerText(),/MATERIAL DE QUEM CONDUZ/);
   for(const e of a.etapas)assert.ok((await paper.locator('body').innerText()).includes(e.titulo),'Impressão contém '+e.titulo);
   assert.equal(await paper.locator('img').evaluateAll(imgs=>imgs.filter(im=>!im.complete||!im.naturalWidth).length),0,'Imagens carregadas no material impresso');
   await paper.emulateMedia({media:'print'});await paper.pdf({path:join(root,'tests/.downloads',id+'.pdf'),format:'A4',printBackground:true});
   await paper.close();
+  await p.getByRole('button',{name:'Minhas atividades',exact:true}).first().scrollIntoViewIfNeeded();
   await p.getByRole('button',{name:'Minhas atividades',exact:true}).first().click();
   await p.locator('#arqImport').setInputFiles(sheet);await p.getByRole('button',{name:'5 Observar e descrever a imagem',exact:true}).click();
   assert.ok(await p.getByText('Imagem anexada: imagem-do-professor.webp',{exact:true}).isVisible());
