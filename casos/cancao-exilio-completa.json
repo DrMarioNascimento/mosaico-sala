@@ -488,33 +488,33 @@
         "pares": [
           {
             "id": "p0",
-            "a": "Exílio",
-            "b": "Afastamento da terra natal"
+            "a": "Redondilha maior",
+            "b": "Verso de sete sílabas"
           },
           {
             "id": "p1",
-            "a": "Eu lírico",
-            "b": "Voz que fala no poema"
+            "a": "Elipse",
+            "b": "Palavra subentendida"
           },
           {
             "id": "p2",
-            "a": "Lá",
-            "b": "Terra natal recordada"
+            "a": "Várzea",
+            "b": "Terra plana junto ao rio"
           },
           {
             "id": "p3",
-            "a": "Aqui",
-            "b": "Lugar de afastamento"
+            "a": "Primores",
+            "b": "Belezas, excelências"
           },
           {
             "id": "p4",
-            "a": "Repetição",
-            "b": "Retomada expressiva de palavras"
+            "a": "Cismar",
+            "b": "Pensar longamente"
           },
           {
             "id": "p5",
-            "a": "Saudade",
-            "b": "Sentimento da ausência"
+            "a": "Refrão",
+            "b": "Versos que retornam"
           }
         ],
         "distribuicao": "todos",
@@ -542,73 +542,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual leitura explica melhor a oposição entre aqui e lá?",
+            "enunciado": "“Minha terra tem palmeiras” tem sete sílabas poéticas. Esse tipo de verso se chama:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "A voz poética compara o lugar onde está com a terra de que sente saudade."
+                "texto": "Redondilha menor."
               },
               {
                 "id": "a2",
-                "texto": "O poema é um mapa com coordenadas exatas."
+                "texto": "Redondilha maior."
               },
               {
                 "id": "a3",
-                "texto": "As palavras indicam apenas horários."
+                "texto": "Decassílabo."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "A expressão “mais vida” deve ser lida principalmente como:",
+            "enunciado": "Em “Nosso céu tem mais estrelas”, mais estrelas do que qual céu?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Um resultado de contagem científica de espécies."
+                "texto": "O céu do lugar onde a voz poética está, que fica subentendido."
               },
               {
                 "id": "a2",
-                "texto": "Uma valorização afetiva da paisagem recordada."
+                "texto": "O céu de outras cidades brasileiras, citado antes."
               },
               {
                 "id": "a3",
-                "texto": "Uma instrução para medir a idade das árvores."
+                "texto": "Nenhum: “mais” só intensifica, sem comparar."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Qual elemento volta diversas vezes e dá unidade ao poema?",
+            "enunciado": "No poema, “primores” significa:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Uma receita de viagem."
+                "texto": "Os primeiros amores da juventude."
               },
               {
                 "id": "a2",
-                "texto": "Uma lista de datas."
+                "texto": "Plantações típicas da terra natal."
               },
               {
                 "id": "a3",
-                "texto": "Palmeiras e canto do sabiá."
+                "texto": "Belezas, coisas de excelência."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Onde e quando o poema foi escrito?",
+            "enunciado": "Qual som de rima se repete ao longo de todo o poema?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Coimbra, julho de 1843."
+                "texto": "A terminação de “palmeiras” e “estrelas”."
               },
               {
                 "id": "a2",
-                "texto": "Brasília, em 1960."
+                "texto": "A terminação em “-á”, de Sabiá, lá e cá."
               },
               {
                 "id": "a3",
-                "texto": "São Paulo, em 1922."
+                "texto": "A terminação de “noite” e “sozinho”."
               }
             ]
           }
@@ -636,73 +636,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual leitura explica melhor a oposição entre aqui e lá?",
+            "enunciado": "Onde está a voz poética enquanto fala?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "A voz poética compara o lugar onde está com a terra de que sente saudade."
+                "texto": "Na terra natal, descrevendo o que vê."
               },
               {
                 "id": "a2",
-                "texto": "O poema é um mapa com coordenadas exatas."
+                "texto": "Em viagem de volta para casa."
               },
               {
                 "id": "a3",
-                "texto": "As palavras indicam apenas horários."
+                "texto": "Longe da terra natal."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "A expressão “mais vida” deve ser lida principalmente como:",
+            "enunciado": "No poema, o advérbio “cá” se refere a:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Um resultado de contagem científica de espécies."
+                "texto": "O lugar onde a voz poética está agora."
               },
               {
                 "id": "a2",
-                "texto": "Uma valorização afetiva da paisagem recordada."
+                "texto": "A terra natal."
               },
               {
                 "id": "a3",
-                "texto": "Uma instrução para medir a idade das árvores."
+                "texto": "O céu estrelado."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Qual elemento volta diversas vezes e dá unidade ao poema?",
+            "enunciado": "O verso “Em cismar, sozinho, à noite” sugere principalmente:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Uma receita de viagem."
+                "texto": "Medo do escuro."
               },
               {
                 "id": "a2",
-                "texto": "Uma lista de datas."
+                "texto": "Solidão e pensamento demorado."
               },
               {
                 "id": "a3",
-                "texto": "Palmeiras e canto do sabiá."
+                "texto": "Uma festa noturna."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Onde e quando o poema foi escrito?",
+            "enunciado": "A última estrofe expressa:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Coimbra, julho de 1843."
+                "texto": "A decisão de nunca mais voltar."
               },
               {
                 "id": "a2",
-                "texto": "Brasília, em 1960."
+                "texto": "A descrição da morte do sabiá."
               },
               {
                 "id": "a3",
-                "texto": "São Paulo, em 1922."
+                "texto": "O desejo de voltar à terra natal antes de morrer."
               }
             ]
           }
@@ -731,73 +731,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual leitura explica melhor a oposição entre aqui e lá?",
+            "enunciado": "Os possessivos “minha”, “nosso” e “nossas” reforçam:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "A voz poética compara o lugar onde está com a terra de que sente saudade."
+                "texto": "Pertencimento e identidade com a terra natal."
               },
               {
                 "id": "a2",
-                "texto": "O poema é um mapa com coordenadas exatas."
+                "texto": "Posse legal de terras."
               },
               {
                 "id": "a3",
-                "texto": "As palavras indicam apenas horários."
+                "texto": "Que outra pessoa passa a falar no poema."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "A expressão “mais vida” deve ser lida principalmente como:",
+            "enunciado": "O poema é associado à primeira geração romântica brasileira porque:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Um resultado de contagem científica de espécies."
+                "texto": "Usa vocabulário técnico e científico."
               },
               {
                 "id": "a2",
-                "texto": "Uma valorização afetiva da paisagem recordada."
+                "texto": "Exalta a natureza e a pátria com sentimento nacionalista."
               },
               {
                 "id": "a3",
-                "texto": "Uma instrução para medir a idade das árvores."
+                "texto": "Critica a paisagem brasileira."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Qual elemento volta diversas vezes e dá unidade ao poema?",
+            "enunciado": "Em “As aves, que aqui gorjeiam, / Não gorjeiam como lá”, a diferença está:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Uma receita de viagem."
+                "texto": "No número de aves de cada lugar."
               },
               {
                 "id": "a2",
-                "texto": "Uma lista de datas."
+                "texto": "Em espécies diferentes, identificadas pelo poeta."
               },
               {
                 "id": "a3",
-                "texto": "Palmeiras e canto do sabiá."
+                "texto": "No modo como a voz poética percebe e valoriza o canto."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Onde e quando o poema foi escrito?",
+            "enunciado": "A volta de “Minha terra tem palmeiras, / Onde canta o Sabiá” ao fim das estrofes produz:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Coimbra, julho de 1843."
+                "texto": "Uma mudança de assunto a cada estrofe."
               },
               {
                 "id": "a2",
-                "texto": "Brasília, em 1960."
+                "texto": "Ritmo e insistência na lembrança."
               },
               {
                 "id": "a3",
-                "texto": "São Paulo, em 1922."
+                "texto": "Uma contradição com o início do poema."
               }
             ]
           }
@@ -874,37 +874,37 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual leitura explica melhor a oposição entre aqui e lá?",
+            "enunciado": "Por que o poema não menciona nenhum defeito da terra natal?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "A voz poética compara o lugar onde está com a terra de que sente saudade."
+                "texto": "Porque ela realmente não tinha defeitos."
               },
               {
                 "id": "a2",
-                "texto": "O poema é um mapa com coordenadas exatas."
+                "texto": "Porque a saudade idealiza o lugar distante."
               },
               {
                 "id": "a3",
-                "texto": "As palavras indicam apenas horários."
+                "texto": "Porque o poeta nunca tinha morado lá."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "A expressão “mais vida” deve ser lida principalmente como:",
+            "enunciado": "Qual é o contraste que organiza o poema inteiro?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Um resultado de contagem científica de espécies."
+                "texto": "Dia e noite."
               },
               {
                 "id": "a2",
-                "texto": "Uma valorização afetiva da paisagem recordada."
+                "texto": "Campo e cidade."
               },
               {
                 "id": "a3",
-                "texto": "Uma instrução para medir a idade das árvores."
+                "texto": "Aqui e lá."
               }
             ]
           }
@@ -931,73 +931,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual leitura explica melhor a oposição entre aqui e lá?",
+            "enunciado": "Quem escreveu a “Canção do Exílio”?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "A voz poética compara o lugar onde está com a terra de que sente saudade."
+                "texto": "Gonçalves Dias."
               },
               {
                 "id": "a2",
-                "texto": "O poema é um mapa com coordenadas exatas."
+                "texto": "Castro Alves."
               },
               {
                 "id": "a3",
-                "texto": "As palavras indicam apenas horários."
+                "texto": "Olavo Bilac."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "A expressão “mais vida” deve ser lida principalmente como:",
+            "enunciado": "No poema, “várzeas” são:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Um resultado de contagem científica de espécies."
+                "texto": "Montanhas cobertas de mata."
               },
               {
                 "id": "a2",
-                "texto": "Uma valorização afetiva da paisagem recordada."
+                "texto": "Terras planas e férteis junto aos rios."
               },
               {
                 "id": "a3",
-                "texto": "Uma instrução para medir a idade das árvores."
+                "texto": "Praias de areia branca."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Qual elemento volta diversas vezes e dá unidade ao poema?",
+            "enunciado": "Em “Nossa vida mais amores”, o que acontece com o verbo?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Uma receita de viagem."
+                "texto": "Está no futuro."
               },
               {
                 "id": "a2",
-                "texto": "Uma lista de datas."
+                "texto": "Foi omitido por erro de impressão."
               },
               {
                 "id": "a3",
-                "texto": "Palmeiras e canto do sabiá."
+                "texto": "Fica subentendido: “nossa vida tem mais amores”."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Onde e quando o poema foi escrito?",
+            "enunciado": "Que informação confirma que o poema foi escrito longe do Brasil?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Coimbra, julho de 1843."
+                "texto": "A indicação final: Coimbra, julho de 1843."
               },
               {
                 "id": "a2",
-                "texto": "Brasília, em 1960."
+                "texto": "A menção ao sabiá."
               },
               {
                 "id": "a3",
-                "texto": "São Paulo, em 1922."
+                "texto": "A palavra “estrelas”."
               }
             ]
           }
@@ -1339,40 +1339,40 @@
       "e13": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "A oposição espacial organiza a experiência de afastamento."
+            "corretaId": "a2",
+            "explicacao": "Sete sílabas poéticas formam a redondilha maior; a menor tem cinco."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O eu lírico idealiza a paisagem; não apresenta uma medição."
+            "corretaId": "a1",
+            "explicacao": "O segundo termo da comparação (o céu de cá) fica implícito; o poema todo opõe lá e cá."
           },
           "q3": {
             "corretaId": "a3",
-            "explicacao": "A recorrência constrói ritmo e insiste na lembrança."
+            "explicacao": "“Primores” são perfeições, encantos; não tem relação com “primeiro”."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "A indicação final da fonte primária registra Coimbra e julho de 1843."
+            "corretaId": "a2",
+            "explicacao": "Sabiá, lá e cá voltam em todas as estrofes e amarram o poema pela mesma rima."
           }
         }
       },
       "e14": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "A oposição espacial organiza a experiência de afastamento."
+            "corretaId": "a3",
+            "explicacao": "O “cá” é o lugar do exílio; a terra natal é sempre “lá”, lembrada."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O eu lírico idealiza a paisagem; não apresenta uma medição."
+            "corretaId": "a1",
+            "explicacao": "“Cá” e “aqui” marcam o lugar do exílio; “lá”, a terra de origem."
           },
           "q3": {
-            "corretaId": "a3",
-            "explicacao": "A recorrência constrói ritmo e insiste na lembrança."
+            "corretaId": "a2",
+            "explicacao": "“Cismar” é pensar longamente; a noite e o “sozinho” reforçam a introspecção."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "A indicação final da fonte primária registra Coimbra e julho de 1843."
+            "corretaId": "a3",
+            "explicacao": "“Não permita Deus que eu morra, / Sem que eu volte para lá” explicita o desejo de retorno."
           }
         }
       },
@@ -1380,19 +1380,19 @@
         "perguntas": {
           "q1": {
             "corretaId": "a1",
-            "explicacao": "A oposição espacial organiza a experiência de afastamento."
+            "explicacao": "O possessivo marca vínculo afetivo e coletivo com a terra, não propriedade."
           },
           "q2": {
             "corretaId": "a2",
-            "explicacao": "O eu lírico idealiza a paisagem; não apresenta uma medição."
+            "explicacao": "Natureza idealizada e nacionalismo são marcas da primeira geração romântica."
           },
           "q3": {
             "corretaId": "a3",
-            "explicacao": "A recorrência constrói ritmo e insiste na lembrança."
+            "explicacao": "A diferença é afetiva: o canto de lá é melhor porque é o da terra amada."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "A indicação final da fonte primária registra Coimbra e julho de 1843."
+            "corretaId": "a2",
+            "explicacao": "O refrão funciona como uma ideia fixa: a saudade volta sempre."
           }
         }
       },
@@ -1400,12 +1400,12 @@
       "e17": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "A oposição espacial organiza a experiência de afastamento."
+            "corretaId": "a2",
+            "explicacao": "O afastamento faz a memória selecionar só o que é belo: é idealização."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O eu lírico idealiza a paisagem; não apresenta uma medição."
+            "corretaId": "a3",
+            "explicacao": "A noite aparece, mas o eixo de todas as estrofes é a oposição entre o lugar do exílio e a terra natal."
           }
         }
       },
@@ -1413,19 +1413,19 @@
         "perguntas": {
           "q1": {
             "corretaId": "a1",
-            "explicacao": "A oposição espacial organiza a experiência de afastamento."
+            "explicacao": "Gonçalves Dias, poeta da primeira geração romântica."
           },
           "q2": {
             "corretaId": "a2",
-            "explicacao": "O eu lírico idealiza a paisagem; não apresenta uma medição."
+            "explicacao": "Várzeas são planícies à beira de rios, alagáveis e férteis."
           },
           "q3": {
             "corretaId": "a3",
-            "explicacao": "A recorrência constrói ritmo e insiste na lembrança."
+            "explicacao": "É uma elipse: o “tem” dos versos anteriores fica implícito."
           },
           "q4": {
             "corretaId": "a1",
-            "explicacao": "A indicação final da fonte primária registra Coimbra e julho de 1843."
+            "explicacao": "A data e o local registrados ao fim situam a escrita em Portugal."
           }
         }
       },

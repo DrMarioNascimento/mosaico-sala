@@ -493,33 +493,33 @@
         "pares": [
           {
             "id": "p0",
-            "a": "Ribossomo",
-            "b": "Síntese de proteínas"
+            "a": "Lisossomo",
+            "b": "Digestão intracelular"
           },
           {
             "id": "p1",
-            "a": "Mitocôndria",
-            "b": "Respiração celular e síntese de ATP"
+            "a": "Retículo liso",
+            "b": "Síntese de lipídios"
           },
           {
             "id": "p2",
-            "a": "Golgi",
-            "b": "Modificação e direcionamento de moléculas"
+            "a": "Peroxissomo",
+            "b": "Degradação de peróxido de hidrogênio"
           },
           {
             "id": "p3",
-            "a": "Membrana plasmática",
-            "b": "Trocas seletivas"
+            "a": "Centríolo",
+            "b": "Organização de cílios e flagelos"
           },
           {
             "id": "p4",
-            "a": "Cloroplasto",
-            "b": "Fotossíntese"
+            "a": "Vacúolo central",
+            "b": "Armazenamento de água e turgidez"
           },
           {
             "id": "p5",
-            "a": "Nucléolo",
-            "b": "rRNA e montagem de subunidades ribossômicas"
+            "a": "Carioteca",
+            "b": "Separa o núcleo do citoplasma"
           }
         ],
         "distribuicao": "todos",
@@ -547,73 +547,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual estrutura participa diretamente da síntese de proteínas?",
+            "enunciado": "Uma célula do pâncreas que secreta muitas enzimas digestivas tende a ter, em abundância:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Ribossomo."
+                "texto": "Retículo endoplasmático liso e poucos ribossomos."
               },
               {
                 "id": "a2",
-                "texto": "Parede de celulose."
+                "texto": "Retículo endoplasmático rugoso e complexo de Golgi bem desenvolvidos."
               },
               {
                 "id": "a3",
-                "texto": "Vacúolo contrátil."
+                "texto": "Muitos lisossomos e retículo rugoso reduzido."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "Qual descrição do nucléolo é mais precisa?",
+            "enunciado": "Em células eucarióticas, o que separa o material genético do citoplasma?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "É um depósito exclusivo de lipídios."
+                "texto": "A membrana plasmática."
               },
               {
                 "id": "a2",
-                "texto": "Participa da produção/processamento de rRNA e montagem de subunidades ribossômicas."
+                "texto": "A parede celular."
               },
               {
                 "id": "a3",
-                "texto": "É a membrana externa da célula."
+                "texto": "O envoltório nuclear (carioteca)."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Uma célula vegetal de raiz precisa necessariamente ter cloroplastos?",
+            "enunciado": "Hemácias maduras de mamíferos não têm núcleo. Uma consequência é que elas:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Sim, toda célula vegetal faz fotossíntese."
+                "texto": "Não conseguem produzir novas proteínas de forma significativa."
               },
               {
                 "id": "a2",
-                "texto": "Sim, sem cloroplastos não há respiração."
+                "texto": "Dividem-se mais depressa, por não precisarem copiar o DNA."
               },
               {
                 "id": "a3",
-                "texto": "Não; a presença de cloroplastos depende da especialização celular."
+                "texto": "Deixam de ser consideradas células."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Qual evidência é compatível com a origem endossimbiótica das mitocôndrias?",
+            "enunciado": "Os lisossomos participam principalmente de:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "DNA próprio e divisão a partir de mitocôndrias preexistentes."
+                "texto": "Degradação de peróxido de hidrogênio."
               },
               {
                 "id": "a2",
-                "texto": "Ausência absoluta de membranas."
+                "texto": "Digestão intracelular, com enzimas hidrolíticas."
               },
               {
                 "id": "a3",
-                "texto": "Produção direta pelo nucléolo."
+                "texto": "Síntese de lipídios da membrana."
               }
             ]
           }
@@ -641,73 +641,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual estrutura participa diretamente da síntese de proteínas?",
+            "enunciado": "Bactérias têm ribossomos e membrana plasmática, mas não têm:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Ribossomo."
+                "texto": "Material genético."
               },
               {
                 "id": "a2",
-                "texto": "Parede de celulose."
+                "texto": "Citoplasma."
               },
               {
                 "id": "a3",
-                "texto": "Vacúolo contrátil."
+                "texto": "Núcleo delimitado por membrana."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "Qual descrição do nucléolo é mais precisa?",
+            "enunciado": "O retículo endoplasmático liso relaciona-se principalmente com:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "É um depósito exclusivo de lipídios."
+                "texto": "Síntese de lipídios e desintoxicação."
               },
               {
                 "id": "a2",
-                "texto": "Participa da produção/processamento de rRNA e montagem de subunidades ribossômicas."
+                "texto": "Síntese de proteínas de exportação."
               },
               {
                 "id": "a3",
-                "texto": "É a membrana externa da célula."
+                "texto": "Montagem das subunidades dos ribossomos."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Uma célula vegetal de raiz precisa necessariamente ter cloroplastos?",
+            "enunciado": "Além da mitocôndria, que organela da célula vegetal tem duas membranas e DNA próprio?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Sim, toda célula vegetal faz fotossíntese."
+                "texto": "O complexo de Golgi."
               },
               {
                 "id": "a2",
-                "texto": "Sim, sem cloroplastos não há respiração."
+                "texto": "O cloroplasto."
               },
               {
                 "id": "a3",
-                "texto": "Não; a presença de cloroplastos depende da especialização celular."
+                "texto": "O vacúolo central."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Qual evidência é compatível com a origem endossimbiótica das mitocôndrias?",
+            "enunciado": "A parede celular das plantas é formada principalmente por:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "DNA próprio e divisão a partir de mitocôndrias preexistentes."
+                "texto": "Peptidoglicano."
               },
               {
                 "id": "a2",
-                "texto": "Ausência absoluta de membranas."
+                "texto": "Quitina."
               },
               {
                 "id": "a3",
-                "texto": "Produção direta pelo nucléolo."
+                "texto": "Celulose."
               }
             ]
           }
@@ -736,73 +736,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual estrutura participa diretamente da síntese de proteínas?",
+            "enunciado": "Na respiração aeróbica, onde é produzida a maior parte do ATP?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Ribossomo."
+                "texto": "Na mitocôndria."
               },
               {
                 "id": "a2",
-                "texto": "Parede de celulose."
+                "texto": "No citosol, durante a glicólise."
               },
               {
                 "id": "a3",
-                "texto": "Vacúolo contrátil."
+                "texto": "No retículo endoplasmático rugoso."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "Qual descrição do nucléolo é mais precisa?",
+            "enunciado": "Mover uma substância contra o seu gradiente de concentração, gastando energia, é:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "É um depósito exclusivo de lipídios."
+                "texto": "Difusão facilitada."
               },
               {
                 "id": "a2",
-                "texto": "Participa da produção/processamento de rRNA e montagem de subunidades ribossômicas."
+                "texto": "Transporte ativo."
               },
               {
                 "id": "a3",
-                "texto": "É a membrana externa da célula."
+                "texto": "Osmose."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Uma célula vegetal de raiz precisa necessariamente ter cloroplastos?",
+            "enunciado": "Células musculares, que gastam muita energia, tendem a ter:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Sim, toda célula vegetal faz fotossíntese."
+                "texto": "Muitos lisossomos."
               },
               {
                 "id": "a2",
-                "texto": "Sim, sem cloroplastos não há respiração."
+                "texto": "Retículo rugoso muito desenvolvido."
               },
               {
                 "id": "a3",
-                "texto": "Não; a presença de cloroplastos depende da especialização celular."
+                "texto": "Muitas mitocôndrias."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Qual evidência é compatível com a origem endossimbiótica das mitocôndrias?",
+            "enunciado": "Uma proteína que vai permanecer no citosol é sintetizada principalmente em:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "DNA próprio e divisão a partir de mitocôndrias preexistentes."
+                "texto": "Ribossomos livres no citoplasma."
               },
               {
                 "id": "a2",
-                "texto": "Ausência absoluta de membranas."
+                "texto": "Ribossomos aderidos ao RER."
               },
               {
                 "id": "a3",
-                "texto": "Produção direta pelo nucléolo."
+                "texto": "Complexo de Golgi."
               }
             ]
           }
@@ -879,37 +879,37 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual estrutura participa diretamente da síntese de proteínas?",
+            "enunciado": "Se o complexo de Golgi de uma célula secretora parar de funcionar, o mais provável é:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Ribossomo."
+                "texto": "A célula deixar de sintetizar qualquer proteína."
               },
               {
                 "id": "a2",
-                "texto": "Parede de celulose."
+                "texto": "Proteínas se acumularem sem a modificação e o endereçamento corretos."
               },
               {
                 "id": "a3",
-                "texto": "Vacúolo contrátil."
+                "texto": "O núcleo perder o DNA."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "Qual descrição do nucléolo é mais precisa?",
+            "enunciado": "Por que a membrana plasmática é chamada de seletivamente permeável?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "É um depósito exclusivo de lipídios."
+                "texto": "Porque só deixa passar gases."
               },
               {
                 "id": "a2",
-                "texto": "Participa da produção/processamento de rRNA e montagem de subunidades ribossômicas."
+                "texto": "Porque impede a entrada de água."
               },
               {
                 "id": "a3",
-                "texto": "É a membrana externa da célula."
+                "texto": "Porque controla o que entra e sai, deixando passar umas substâncias e outras não."
               }
             ]
           }
@@ -936,73 +936,73 @@
         "perguntas": [
           {
             "id": "q1",
-            "enunciado": "Qual estrutura participa diretamente da síntese de proteínas?",
+            "enunciado": "Vírus têm ribossomos próprios?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Ribossomo."
+                "texto": "Sim, todos os vírus têm ribossomos."
               },
               {
                 "id": "a2",
-                "texto": "Parede de celulose."
+                "texto": "Não; usam os ribossomos da célula hospedeira."
               },
               {
                 "id": "a3",
-                "texto": "Vacúolo contrátil."
+                "texto": "Só os vírus de RNA têm."
               }
             ]
           },
           {
             "id": "q2",
-            "enunciado": "Qual descrição do nucléolo é mais precisa?",
+            "enunciado": "Em células animais, os centríolos participam de:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "É um depósito exclusivo de lipídios."
+                "texto": "Organização de cílios, flagelos e do fuso na divisão celular."
               },
               {
                 "id": "a2",
-                "texto": "Participa da produção/processamento de rRNA e montagem de subunidades ribossômicas."
+                "texto": "Armazenamento de amido."
               },
               {
                 "id": "a3",
-                "texto": "É a membrana externa da célula."
+                "texto": "Produção de ATP."
               }
             ]
           },
           {
             "id": "q3",
-            "enunciado": "Uma célula vegetal de raiz precisa necessariamente ter cloroplastos?",
+            "enunciado": "Qual afirmação sobre os peroxissomos é mais precisa?",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "Sim, toda célula vegetal faz fotossíntese."
+                "texto": "Derivam simplesmente do complexo de Golgi."
               },
               {
                 "id": "a2",
-                "texto": "Sim, sem cloroplastos não há respiração."
+                "texto": "Fazem a digestão de partículas englobadas."
               },
               {
                 "id": "a3",
-                "texto": "Não; a presença de cloroplastos depende da especialização celular."
+                "texto": "Degradam peróxido de hidrogênio e oxidam ácidos graxos."
               }
             ]
           },
           {
             "id": "q4",
-            "enunciado": "Qual evidência é compatível com a origem endossimbiótica das mitocôndrias?",
+            "enunciado": "O vacúolo central da célula vegetal:",
             "alternativas": [
               {
                 "id": "a1",
-                "texto": "DNA próprio e divisão a partir de mitocôndrias preexistentes."
+                "texto": "Contém o DNA da célula."
               },
               {
                 "id": "a2",
-                "texto": "Ausência absoluta de membranas."
+                "texto": "Armazena água e substâncias e contribui para a turgidez."
               },
               {
                 "id": "a3",
-                "texto": "Produção direta pelo nucléolo."
+                "texto": "Produz a maior parte do ATP."
               }
             ]
           }
@@ -1344,40 +1344,40 @@
       "e13": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "Ribossomos fazem a tradução do RNA mensageiro."
+            "corretaId": "a2",
+            "explicacao": "Enzimas são proteínas de exportação: dependem de ribossomos do RER e do Golgi."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O nucléolo se relaciona à biogênese de ribossomos."
+            "corretaId": "a3",
+            "explicacao": "A carioteca, com duas membranas e poros, delimita o núcleo."
           },
           "q3": {
-            "corretaId": "a3",
-            "explicacao": "Células vegetais não fotossintéticas podem não ter cloroplastos."
+            "corretaId": "a1",
+            "explicacao": "Sem núcleo não há novo RNA mensageiro; a hemácia vive com as proteínas que já tem e não se divide."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "DNA próprio e divisão apoiam a explicação endossimbiótica."
+            "corretaId": "a2",
+            "explicacao": "Lisossomos digerem material englobado e partes da própria célula; o peróxido é tarefa dos peroxissomos."
           }
         }
       },
       "e14": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "Ribossomos fazem a tradução do RNA mensageiro."
+            "corretaId": "a3",
+            "explicacao": "Procariontes têm o DNA disperso no citoplasma, sem carioteca."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O nucléolo se relaciona à biogênese de ribossomos."
+            "corretaId": "a1",
+            "explicacao": "Sem ribossomos aderidos, o REL produz lipídios e ajuda a desintoxicar; proteínas de exportação são do RER."
           },
           "q3": {
-            "corretaId": "a3",
-            "explicacao": "Células vegetais não fotossintéticas podem não ter cloroplastos."
+            "corretaId": "a2",
+            "explicacao": "Cloroplastos, como as mitocôndrias, têm DNA próprio e dupla membrana, evidências da origem endossimbiótica."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "DNA próprio e divisão apoiam a explicação endossimbiótica."
+            "corretaId": "a3",
+            "explicacao": "Peptidoglicano é da parede bacteriana; quitina, da parede dos fungos."
           }
         }
       },
@@ -1385,19 +1385,19 @@
         "perguntas": {
           "q1": {
             "corretaId": "a1",
-            "explicacao": "Ribossomos fazem a tradução do RNA mensageiro."
+            "explicacao": "A glicólise no citosol rende pouco ATP; a maior parte vem da cadeia respiratória na mitocôndria."
           },
           "q2": {
             "corretaId": "a2",
-            "explicacao": "O nucléolo se relaciona à biogênese de ribossomos."
+            "explicacao": "Difusão e osmose seguem o gradiente e não gastam ATP; o transporte ativo vai contra ele."
           },
           "q3": {
             "corretaId": "a3",
-            "explicacao": "Células vegetais não fotossintéticas podem não ter cloroplastos."
+            "explicacao": "Alta demanda de ATP corresponde a muitas mitocôndrias."
           },
           "q4": {
             "corretaId": "a1",
-            "explicacao": "DNA próprio e divisão apoiam a explicação endossimbiótica."
+            "explicacao": "Ribossomos livres produzem proteínas que ficam no citosol; os do RER, as que vão para membranas ou para fora."
           }
         }
       },
@@ -1405,32 +1405,32 @@
       "e17": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "Ribossomos fazem a tradução do RNA mensageiro."
+            "corretaId": "a2",
+            "explicacao": "A síntese continua nos ribossomos; falham o processamento e o envio em vesículas."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O nucléolo se relaciona à biogênese de ribossomos."
+            "corretaId": "a3",
+            "explicacao": "Água passa (inclusive por aquaporinas); a seletividade está em controlar a passagem de cada substância."
           }
         }
       },
       "e18": {
         "perguntas": {
           "q1": {
-            "corretaId": "a1",
-            "explicacao": "Ribossomos fazem a tradução do RNA mensageiro."
+            "corretaId": "a2",
+            "explicacao": "Vírus não têm metabolismo próprio: sintetizam proteínas com a maquinaria da célula infectada."
           },
           "q2": {
-            "corretaId": "a2",
-            "explicacao": "O nucléolo se relaciona à biogênese de ribossomos."
+            "corretaId": "a1",
+            "explicacao": "Centríolos originam corpúsculos basais de cílios e flagelos e se associam ao fuso."
           },
           "q3": {
             "corretaId": "a3",
-            "explicacao": "Células vegetais não fotossintéticas podem não ter cloroplastos."
+            "explicacao": "Peroxissomos têm catalase; a digestão de partículas é dos lisossomos."
           },
           "q4": {
-            "corretaId": "a1",
-            "explicacao": "DNA próprio e divisão apoiam a explicação endossimbiótica."
+            "corretaId": "a2",
+            "explicacao": "Cheio de água, o vacúolo pressiona a parede e mantém a célula túrgida."
           }
         }
       },

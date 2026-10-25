@@ -67,3 +67,22 @@ test('Toda etapa marcada para a meta entra na conta da meta', () => {
     assert.deepEqual(fora, [], `${f}: marcadas para a meta e fora da conta`);
   }
 });
+
+// Cada etapa com perguntas próprias: a mesma pergunta em várias etapas vira decoreba (antes, 4 perguntas se repetiam em 6 etapas).
+test('Nenhum modelo repete a mesma pergunta nem o mesmo conjunto de pares em etapas diferentes', () => {
+  for (const f of arquivos) {
+    const a = JSON.parse(readFileSync(new URL(f, pasta), 'utf8'));
+    const vistas = new Map(), conjuntos = new Map();
+    for (const e of a.etapas) {
+      for (const q of e.config?.perguntas || []) {
+        assert.ok(!vistas.has(q.enunciado), `${f}: "${q.enunciado}" em ${vistas.get(q.enunciado)} e ${e.id}`);
+        vistas.set(q.enunciado, e.id);
+      }
+      if (e.config?.pares?.length) {
+        const chave = e.config.pares.map(p => p.a + '=' + p.b).sort().join('|');
+        assert.ok(!conjuntos.has(chave), `${f}: pares de ${e.id} iguais aos de ${conjuntos.get(chave)}`);
+        conjuntos.set(chave, e.id);
+      }
+    }
+  }
+});
