@@ -33,10 +33,17 @@ let inscricoes = [], relogio = null;
 function salvar() {
   try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias, jogo: E.jogo })); } catch {}
 }
-/** Atividade enviada pelo botão “Dar esta aula” do Planejamento (lida uma vez só). */
-function tirarDoPlanejamento() {
-  const chave = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
-  try { const a = JSON.parse(localStorage.getItem(chave) || 'null'); localStorage.removeItem(chave); return a; } catch { return null; }
+/** Atividade enviada pelo botão “Dar esta aula” do Planejamento. Fica guardada até poder entrar (sem sala aberta). */
+const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
+function doPlanejamento() { if (PREVIA) return null; try { return JSON.parse(localStorage.getItem(PARA_CONDUZIR) || 'null'); } catch { return null; } }
+/** Carrega a atividade vinda do Planejamento, se houver e não houver sala aberta. Devolve se carregou. */
+function receberDoPlanejamento() {
+  const a = doPlanejamento(); if (!a || E.codigo) return false;
+  try { localStorage.removeItem(PARA_CONDUZIR); } catch {}
+  if (!aceitar(a, 'do Planejamento')) return false;   // com erros: aparecem na aba Atividade
+  mostrarAba('sala'); renderTudo();
+  avisoGeral(`“${a.titulo}” veio do Planejamento. Abra a sala quando a turma estiver pronta.`, 'ok');
+  return true;
 }
 function lerGuardado() { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch { return null; } }
 function pendentes() { try { return JSON.parse(localStorage.getItem(PENDENTES) || '[]'); } catch { return []; } }
@@ -82,15 +89,10 @@ async function iniciar(conta) {
       else { E.codigo = null; salvar(); }
     } catch { E.codigo = null; }
   }
-  const levada = PREVIA ? null : tirarDoPlanejamento();
-  if (levada && E.codigo) avisoGeral('Há uma sala aberta. Encerre-a antes de trocar pela atividade que veio do Planejamento.', 'alerta');
-  else if (levada && aceitar(levada, 'do Planejamento')) {
-    mostrarAba('sala'); renderTudo();
-    avisoGeral(`“${levada.titulo}” veio do Planejamento. Abra a sala quando a turma estiver pronta.`, 'ok');
-    return faxina();
-  }
+  if (receberDoPlanejamento()) return faxina();
   mostrarAba(E.codigo ? 'conducao' : 'atividade');
   renderTudo();
+  if (E.codigo && doPlanejamento()) avisoGeral('Há uma sala aberta. A atividade que veio do Planejamento entra assim que você encerrar esta sala.', 'alerta');
   faxina();
 }
 
@@ -414,6 +416,7 @@ async function encerrarSala() {
   }
   E.codigo = null; E.sala = null; E.envios = []; E.membros = []; E.contingencias = []; E.jogo = {};
   salvar(); renderTudo();
+  receberDoPlanejamento();   // “Dar esta aula” enquanto havia sala aberta: agora entra
 }
 
 /** Salas que ficaram abertas (aba fechada, internet caiu) são apagadas quando a mesma pessoa volta. */
