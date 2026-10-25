@@ -12,22 +12,24 @@ jobs:
   oficinas:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [autoria, aula]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-save --no-package-lock playwright@1.63.0 && npx playwright install --with-deps chromium
-      - name: Autoria, arquivos e impressão
-        run: node --test tests/e2e/autoria.e2e.mjs
-      - name: Conduzir as duas oficinas completas até o resultado
+      - run: npm install --no-save --no-package-lock playwright@1.63.0 && npx playwright install chromium
+      - name: Verificar a suíte ${{ matrix.suite }}
         env:
           MOSAICO_CASOS: cancao-exilio-completa,citologia-completa
-        run: node --test tests/e2e/aula.e2e.mjs
+        run: node --test tests/e2e/${{ matrix.suite }}.e2e.mjs
       - name: Guardar evidências de impressão e anexos
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oficinas-verificadas
+          name: oficinas-verificadas-${{ matrix.suite }}
           path: tests/.downloads/
           retention-days: 14

@@ -73,3 +73,12 @@ Validação: 113 testes do núcleo e sintaxe JavaScript; conferência da abertur
 ## Sequência completa de preparação
 
 A numeração é contínua: 1 entrar; 2 inserir material ou escolher um modelo; 3 planejar; 4 gerar com IA ou adaptar; 5 revisar conteúdo; 6 experimentar; 7 salvar; 8 aplicar em sala. As opções de modelo e retomada são alternativas do mesmo ponto de entrada, não etapas posteriores à criação por texto. A sequência completa aparece no início e pode ser expandida no assistente e no editor. Botões de geração, revisão, prévia e salvamento levam o número correspondente. A revisão termina com ações visíveis 6, 7 e 8; a liberação da sala respeita erros estruturais, revisão do conteúdo e autorização da conta. O ensaio orienta o retorno ao passo 7, e o salvamento indica o passo 8.
+
+
+## Anexos e oficinas completas
+
+A análise de imagem e o quebra-cabeça mostram uma confirmação persistente com prévia, nome, dimensões e remoção do anexo. Trocar uma imagem registra uma edição e permite desfazer. O original PDF/Word do assistente é identificado como material importado; a interface informa que a atividade guarda o texto extraído. A planilha preserva os nomes das imagens e o roteiro docente.
+
+O tipo Montagem em peças passa a se chamar Quebra-cabeça: texto ou imagem. Botões de escolha tornam o modo imagem visível; o tipo efetivo aparece junto ao título livre da etapa. A montagem usa os aparelhos como peças físicas; Cartões de arrastar é a opção de quadro digital. O ensaio abre a primeira etapa e forma os grupos automaticamente.
+
+Canção do Exílio e Citologia são bancos de 22 oficinas para vários encontros, com 13 tipos pertinentes aos conteúdos, imagens incorporadas e três finais na tomada de decisão. Escalas de personalidade e jogos econômicos não foram inseridos artificialmente nesses assuntos. O material de citologia distingue o PDF fornecido dos complementos conceituais nas fontes. A revisão docente permanece pendente; os exemplos não se declaram aprovados pelo professor.
