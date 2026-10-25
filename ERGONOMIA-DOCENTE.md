@@ -6,7 +6,7 @@
 - Material colado ou extraído localmente de TXT, Markdown, PDF com texto selecionável e Word DOCX. Até 12 MB por arquivo, 60 páginas no PDF e 60 mil caracteres no material. A extração precisa ser conferida pelo professor; não há OCR automático.
 - Objetivo pedagógico, público, duração, organização e quantidade fixa de grupos. Formatos sugeridos pelo objetivo, com escolha manual opcional.
 - Proposta antes de abrir o editor. O caminho com IA externa inclui o material no pedido e aceita a resposta diretamente na mesma janela.
-- A integração Firebase AI Logic está implementada, porém **desativada em `js/ai-config.js`** até concluir o provisionamento do serviço e o App Check. Não há chave privada Gemini no cliente. Nenhuma alteração de plano ou faturamento foi implementada.
+- Firebase AI Logic configurado e habilitado em `js/ai-config.js`, com Gemini Developer API e App Check obrigatório. Não há chave privada Gemini no cliente. O titular ativou o plano Blaze e autorizou os termos dos serviços. A primeira geração retornou erro de cota; o AI Studio informa pré-pagamento obrigatório para esta conta. A geração completa permanece sem validação até a liberação de cota.
 - O professor pode pedir ajustes de linguagem, leitura, alternativas, duração e sustentação no material. A aplicação da proposta é explícita e pode ser desfeita no editor.
 
 ## Edição e revisão
@@ -41,13 +41,15 @@
 
 As regras são uma alteração dirigida que precisa de revisão, não uma garantia de segurança integral. Testes no emulador não equivalem a testes de toda a infraestrutura em produção.
 
-## Ativação da geração integrada, sem mudança de plano
+## Estado da IA integrada em 25/10/2026
 
-No projeto **mosaico-sala**, concluir o fluxo oficial do Firebase AI Logic com Gemini Developer API e registrar o aplicativo web no App Check com reCAPTCHA Enterprise. Manter o projeto no Spark; se aparecer requisito de faturamento ou aceite de termos, o titular deve revisar antes de continuar.
+Gemini Developer API ativada pelo console autenticado, com autorização expressa do titular para os termos Gemini e Google Cloud. App web registrado no App Check com reCAPTCHA Enterprise (Fraud Defense), chave pública limitada a mosaico-sala.web.app e mosaico-sala.firebaseapp.com, validade do token de uma hora e sem desafio visual. App Check básico obrigatório para AI Logic. Monitoramento opcional de IA desativado.
 
-Após confirmar a proteção e a disponibilidade, preencher a chave pública de site em `js/ai-config.js`, habilitar a integração e verificar uma geração real com texto fictício de teste. Modelo configurado: `gemini-3.8-flash`, listado pela documentação oficial como disponível sem exigência de Blaze em 25/10/2026. Não ativar a integração sem App Check. Limites e disponibilidade do provedor continuam aplicáveis.
+Modelo configurado: gemini-3.8-flash, conferido na documentação oficial. A integração exige login Google na interface; o texto só é enviado quando o professor solicita a geração. A configuração pública não contém chave privada da API Gemini. A atividade gerada continua sujeita à revisão humana.
 
-O provisionamento automático foi interrompido pela revisão de aprovação ao tentar obter credenciais por uma fonte de metadados não prevista. A alternativa pendente é configuração pelo console autenticado e explicitamente autorizado; não foram contornadas as restrições.
+Teste real no endereço publicado: login Google concluído, material fictício informado, chamada de geração feita e falha de cota tratada com preservação do texto. O AI Studio da conta Pagamento do Firebase informa pré-pagamento obrigatório. Não foi realizado pagamento nem definida recarga. O titular precisa concluir essa etapa financeira; depois será necessário repetir a geração até a revisão e a abertura no editor. Não registrar o teste como geração bem-sucedida.
+
+As regras restritivas do Firestore foram publicadas manualmente pelo console; a conta de serviço do fluxo automático ainda não tem permissão de publicação de regras (403). O site foi publicado pelo fluxo automático. A tentativa anterior de provisionamento via fonte de credenciais de metadados foi abandonada; a configuração foi feita pela interface autorizada.
 
 ## Verificação
 

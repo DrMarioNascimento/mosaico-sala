@@ -96,9 +96,13 @@ sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a int
 | `quiz_pensar` | 1.0.0 | Quiz que faz pensar: em equipe (TBL), tomada de decisão com ramos, ou metacognição (resposta + certeza) |
 | `analise_imagem` | 1.0.0 | Foto, gráfico ou modelo 3D (.glb): marcar na imagem, perguntas sobre ela ou observar e descrever (vai para o telão) |
 
+## IA para autoria docente
+
+Geração integrada com Firebase AI Logic e Gemini, protegida por App Check. O professor fornece material, recebe uma proposta e revisa antes de abrir no editor. Em 25/10/2026, APIs e proteção foram configuradas; a primeira chamada retornou erro de cota e a conta Gemini informa pré-pagamento obrigatório. A validação de uma geração completa aguarda essa liberação pelo titular. O caminho com IA externa continua disponível. Consulte [ERGONOMIA-DOCENTE.md](ERGONOMIA-DOCENTE.md).
+
 ## Publicação
 
-- Firebase Hosting, projeto `mosaico-sala` (plano gratuito). Endereço: https://mosaico-sala.web.app
+- Firebase Hosting, projeto `mosaico-sala` (plano Blaze, ativado pelo titular). Endereço: https://mosaico-sala.web.app
 - Publicação automática a cada push (`.github/workflows/firebase-hosting.yml`), com o segredo `FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA`.
 - As regras (`firestore.rules`) são coladas em Firestore → Regras no console.
 
