@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MOSAICO · Condução</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="css/mosaico.css">
+</head>
+<body>
+<header class="topo">
+  <div class="barra">
+    <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">MOSAICO</span>
+    <span class="status" id="statusTopo">Condução</span>
+  </div>
+  <nav class="abas" id="abas" role="tablist" hidden>
+    <button role="tab" data-aba="atividade" aria-selected="true">Atividade</button>
+    <button role="tab" data-aba="sala">Sala</button>
+    <button role="tab" data-aba="grupos">Grupos</button>
+    <button role="tab" data-aba="conducao">Condução</button>
+  </nav>
+</header>
+<main class="pagina">
+  <section id="login" class="cartao">
+    <h1>Condução</h1>
+    <p>Entre com sua conta Google para preparar e conduzir atividades.</p>
+    <div class="linha-botoes"><button class="btn primario bloco" id="entrarGoogle">Entrar com Google</button></div>
+    <p class="aviso" id="avisoLogin" hidden></p>
+  </section>
+  <section id="aba-atividade" hidden></section>
+  <section id="aba-sala" hidden></section>
+  <section id="aba-grupos" hidden></section>
+  <section id="aba-conducao" hidden></section>
+  <p class="aviso" id="avisoGeral" hidden></p>
+</main>
+<script src="js/qr.js"></script>
+<script type="module" src="js/conduzir.js"></script>
+</body>
+</html>

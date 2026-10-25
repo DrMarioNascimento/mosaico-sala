@@ -457,3 +457,8 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 .seq-enfeite i { width: 2.2em; height: 1.1em; border-radius: 6px; background: color-mix(in srgb, var(--cor) 25%, #0a141d); border: 1px solid color-mix(in srgb, var(--cor) 50%, transparent); animation: seq-pisca 3.2s calc(var(--k) * .8s) infinite; }
 @keyframes seq-pisca { 0%, 12%, 100% { background: color-mix(in srgb, var(--cor) 25%, #0a141d); box-shadow: none; } 4%, 8% { background: var(--cor); box-shadow: 0 0 14px var(--cor), 0 0 34px var(--cor); } }
 @media (prefers-reduced-motion: reduce) { .seq-enfeite i { animation: none; } }
+
+/* ---------- Rodapé de autoria e licença (todas as páginas) ---------- */
+.rodape-licenca { margin: 32px auto 18px; padding: 0 16px; text-align: center; font-size: .82rem; color: var(--texto-2); line-height: 1.5; }
+.rodape-licenca a { color: var(--texto-2); text-decoration: underline; text-underline-offset: 2px; }
+.rodape-licenca a:hover { color: var(--acento-2); }

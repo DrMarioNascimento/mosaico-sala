@@ -19,7 +19,8 @@ export function gerarImpressao(a) {
     ${a.perguntaCentral ? `<p class="pergunta">${esc(a.perguntaCentral)}</p>` : ''}
     ${a.introducao ? `<p>${esc(a.introducao)}</p>` : ''}
     <p class="sutil">${esc(a.publico || '')}${a.duracaoMin ? ' · ' + esc(a.duracaoMin) + ' min' : ''}</p>
-    <p class="sutil">Grupos: ${a.grupos.map(g => esc(g.nome)).join(' · ')}</p></section>`);
+    <p class="sutil">Grupos: ${a.grupos.map(g => esc(g.nome)).join(' · ')}</p>
+    <p class="sutil" style="margin-top:2cm;font-size:9pt">Material gerado no MOSAICO · Sala (mosaico-sala.web.app). O conteúdo desta atividade pertence a quem a criou; a plataforma é © 2026 Prof. Mário César Nascimento, PhD — todos os direitos reservados (mosaico-sala.web.app/licenca).</p></section>`);
 
   for (const e of ordem(a)) {
     const cfg = e.config || {};

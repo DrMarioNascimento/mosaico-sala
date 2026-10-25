@@ -4,7 +4,7 @@
 
 **Planejamento público com conta Google; condução de salas restrita.** Qualquer conta Google pode montar e exportar atividades em [Planejamento](https://mosaico-sala.web.app/planejar.html). A biblioteca compartilhada e a criação de salas on-line exigem uma conta autorizada; participantes entram por código ou QR. O ensaio local serve para pré-visualização e não concede autorização de hospedagem de uma sala on-line.
 
-A descrição “modo aberto (planilha)” refere-se à montagem e exportação, não à liberação da condução. O novo [aviso de direitos autorais](LICENSE.md) registra a reserva de direitos já indicada neste README e preserva os direitos de terceiros.
+A descrição “modo aberto (planilha)” refere-se à montagem e exportação, não à liberação da condução. Os termos de uso estão na [licença](LICENSE.md), também publicada em https://mosaico-sala.web.app/licenca.
 
 [Ver todos os recursos públicos](https://www.drmarionascimento.com.br/#acesso-publico). O acesso respeita [LICENSE.md](LICENSE.md).
 
@@ -23,6 +23,7 @@ Especificação de referência: *MOSAICO — Autoria automática e aplicação d
 | `planejar.html` | quem planeja (login Google) | PC |
 | `previa.html` | pré-visualização aberta pelo Planejamento (ensaio local) | PC |
 | `simulador.html` | simulador de aula na sala real | PC |
+| `licenca.html` | licença de uso (mesmo texto do `LICENSE.md`), ligada no rodapé de todas as páginas | todos |
 
 Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem internet, para ensaiar a aula sozinho (com participantes simulados).
 
@@ -98,4 +99,11 @@ Requer Node 20 ou superior:
 node --test tests/nucleo.test.mjs
 ```
 
-Prof. Mário César Nascimento, PhD ©
+## Licença e uso
+
+Uso gratuito pelo endereço oficial, dentro do acesso descrito acima, em aulas, cursos, palestras, treinamentos e eventos. Repositório público não é licença aberta: código, interfaces, tipos de atividade, casos, banco de termos e demais componentes não podem ser copiados, modificados, hospedados em outro endereço nem usados para treinar IA sem autorização. As atividades criadas por cada docente pertencem a quem as criou. Ver [LICENSE.md](LICENSE.md).
+
+Ao mudar o `LICENSE.md`, atualize também o `licenca.html`, que é a versão publicada no site.
+
+**Autor e titular:** Mário César Nascimento, PhD.  
+Copyright © 2026. Todos os direitos reservados.
