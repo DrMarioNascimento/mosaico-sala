@@ -33,12 +33,12 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 2. **Sala:** abrir sala → QR Code e código → abrir o telão (no PC da sala, digitar os 6 números já abre o telão).
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
-5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.
+5. **Resultado:** discutir a meta e as explicações, exportar o relatório e encerrar a sala pelo fechamento guiado. Encerrar apaga os dados da sessão.
 
 ## Planejamento e dois modos de uso
 
 - **Fechado (biblioteca):** contas da lista de mestres guardam atividades no Firestore (`biblioteca/`). Cada conta lê e edita as suas; pode compartilhar com os outros mestres (leitura e cópia). Nenhum dado de participante fica na biblioteca.
-- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
+- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais, por conta e navegador, com indicação de salvamento; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
 - Formato da planilha: abas Atividade, Grupos, Etapas, Opcoes, Pecas e Fontes (ver `js/core/planilha.js`). A planilha contém o gabarito: não distribuir aos participantes.
 - LGPD: nomes dos participantes só durante a sessão (apagados ao encerrar); a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Casos devem ser fictícios.
 
@@ -96,9 +96,13 @@ sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a int
 | `quiz_pensar` | 1.0.0 | Quiz que faz pensar: em equipe (TBL), tomada de decisão com ramos, ou metacognição (resposta + certeza) |
 | `analise_imagem` | 1.0.0 | Foto, gráfico ou modelo 3D (.glb): marcar na imagem, perguntas sobre ela ou observar e descrever (vai para o telão) |
 
+## IA para autoria docente
+
+Geração integrada com Firebase AI Logic e Gemini, protegida por App Check. O professor fornece material, recebe uma proposta e revisa antes de abrir no editor. Em 25/10/2026, APIs e proteção foram configuradas e, após os ajustes de faturamento pelo titular, uma geração real foi validada: material → proposta com três etapas → revisão de respostas e evidências → abertura no editor. O caminho com IA externa continua disponível. Consulte [ERGONOMIA-DOCENTE.md](ERGONOMIA-DOCENTE.md).
+
 ## Publicação
 
-- Firebase Hosting, projeto `mosaico-sala` (plano gratuito). Endereço: https://mosaico-sala.web.app
+- Firebase Hosting, projeto `mosaico-sala` (plano Blaze, ativado pelo titular). Endereço: https://mosaico-sala.web.app
 - Publicação automática a cada push (`.github/workflows/firebase-hosting.yml`), com o segredo `FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA`.
 - As regras (`firestore.rules`) são coladas em Firestore → Regras no console.
 

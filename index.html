@@ -38,43 +38,19 @@
     <h1 class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="96" height="96">MOSAICO</h1>
     <p>Cada grupo tem uma parte. Ninguém tem o quadro completo. Juntem as peças e superem a meta.</p>
   </section>
-  <nav class="fluxo-ilustrado" aria-label="Do planejamento à execução">
-    <a href="planejar.html" data-ilu="e_planejar" data-tam="58">1 · Planejar</a><span class="seta" aria-hidden="true">→</span>
-    <a href="conduzir.html" data-ilu="e_conduzir" data-tam="58">2 · Conduzir</a><span class="seta" aria-hidden="true">→</span>
-    <a href="telao.html" data-ilu="e_telao" data-tam="58">3 · Telão</a><span class="seta" aria-hidden="true">→</span>
-    <a href="participar.html" data-ilu="e_participar" data-tam="58">Turma participa</a>
-  </nav>
-  <section class="entradas">
-    <div class="cartao entrada largo">
-      <span data-ilu="e_participar" data-tam="72"></span>
-      <h2>Participar</h2>
-      <p class="sutil">Entre com o código que aparece no telão. Não precisa de cadastro.</p>
-      <div class="acoes"><a class="btn primario bloco" id="lnkParticipar" href="participar.html" data-ico="participar">Entrar com código</a></div>
-    </div>
-    <div class="cartao entrada">
-      <span data-ilu="e_planejar" data-tam="72"></span>
-      <h2>Planejar</h2>
-      <p class="sutil">Monte a atividade no computador: etapas, grupos, peças e meta.</p>
-      <div class="acoes"><a class="btn bloco" id="lnkPlanejar" href="planejar.html" data-ico="planejar">Planejar atividade</a></div>
-    </div>
-    <div class="cartao entrada">
-      <span data-ilu="e_conduzir" data-tam="72"></span>
-      <h2>Conduzir</h2>
-      <p class="sutil">Abra a sala, forme os grupos e conduza cada etapa pelo celular.</p>
-      <div class="acoes"><a class="btn bloco" id="lnkConduzir" href="conduzir.html" data-ico="conduzir">Área de condução</a></div>
-    </div>
-    <div class="cartao entrada">
-      <span data-ilu="e_telao" data-tam="72"></span>
-      <h2>Telão</h2>
-      <p class="sutil">Na TV ou no projetor da sala: QR Code, andamento e resultados.</p>
-      <div class="acoes"><a class="btn bloco" id="lnkTelao" href="telao.html" data-ico="telao">Abrir telão</a></div>
-    </div>
-    <div class="cartao entrada">
-      <span data-ilu="e_simulador" data-tam="72"></span>
-      <h2>Simulador</h2>
-      <p class="sutil">Ensaie a aula no PC: o telão em cima e a turma simulada embaixo.</p>
-      <div class="acoes"><a class="btn bloco" href="simulador.html" data-ico="simulador">Abrir simulador</a></div>
-    </div>
+  <section class="boas-vindas-docente" aria-labelledby="tituloDocente">
+    <div class="docente-abertura"><span class="guia-selo">PARA O PROFESSOR</span><h2 id="tituloDocente">Da sua ideia à atividade em sala</h2><p>Comece pelo seu conteúdo. Revise a proposta e leve a atividade para a turma.</p></div>
+    <div data-percurso-docente="1"></div>
+    <ol class="jornada-docente" aria-label="Passos para preparar e aplicar uma aula">
+      <li class="jornada-card principal"><span class="numero-passo">1</span><span data-ilu="e_material" data-tam="104"></span><div><h3>Entre e comece pelo material</h3><p>Cole um texto ou envie PDF, Word ou texto. A IA ajuda a montar as atividades.</p></div><a class="btn primario bloco" id="lnkPlanejar" href="planejar.html?criar=texto" data-ico="ia">Começar: inserir texto e gerar com IA</a><a class="atalho-discreto" href="planejar.html">Prefiro usar um modelo ou continuar uma atividade</a></li>
+      <li class="jornada-card"><span class="numero-passo">5</span><span data-ilu="e_revisar" data-tam="80"></span><div><h3>Revise e experimente</h3><p>Confira perguntas, respostas e fontes. Ajuste o que precisar e use “Ver como fica”.</p></div><a class="btn bloco" href="planejar.html#revisao" data-ico="revisao">Revisar minha atividade</a><small>Depois de criar ou abrir uma atividade.</small></li>
+      <li class="jornada-card"><span class="numero-passo">8</span><span data-ilu="e_conduzir" data-tam="80"></span><div><h3>Aplique em sala</h3><p>Abra a sala, compartilhe o código ou QR e acompanhe as respostas da turma.</p></div><a class="btn bloco" id="lnkConduzir" href="conduzir.html" data-ico="conduzir">Abrir sala e conduzir</a><small>Use a atividade que você revisou.</small></li>
+    </ol>
+  </section>
+  <section class="apoios-inicio" aria-label="Entrada da turma e recursos de apoio">
+    <article class="cartao apoio-turma"><span data-ilu="e_participar" data-tam="58"></span><div><span class="guia-selo">PARA OS ALUNOS</span><h2>Recebeu um código?</h2><p>Entre na sala do professor. Não precisa de cadastro.</p></div><a class="btn primario" id="lnkParticipar" href="participar.html" data-ico="participar">Entrar com código</a></article>
+    <article class="cartao apoio-card"><span data-ilu="e_telao" data-tam="52"></span><div><h2>Telão de apoio</h2><p>Mostre o QR, o andamento e os resultados no projetor.</p><a class="btn" id="lnkTelao" href="telao.html" data-ico="telao">Abrir telão</a></div></article>
+    <article class="cartao apoio-card"><span data-ilu="e_simulador" data-tam="52"></span><div><h2>Quer conhecer antes?</h2><p>Experimente com uma turma simulada.</p><a class="btn" href="planejar.html?ensaio=1&demonstracao=1" data-ico="simulador">Experimentar uma atividade</a></div></article>
   </section>
   <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 </main>

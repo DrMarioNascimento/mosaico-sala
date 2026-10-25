@@ -1,3 +1,5 @@
+> **Atualização em 25/10/2026:** este documento é um registro histórico de propostas de 23/10. Cartões, pares, corrida, cruzadas e os demais tipos listados no README já estão implementados. Consulte o README e ERGONOMIA-DOCENTE.md para a situação atual. A geração integrada por IA ainda aguarda ativação; o caminho com IA externa está disponível.
+
 # MOSAICO Sala · Próximas atividades
 
 Plano para a próxima sessão, escrito em 23/10/2026. Cobre as ideias novas, como encaixá-las na plataforma e os encaminhamentos técnicos. Nada daqui foi construído ainda.

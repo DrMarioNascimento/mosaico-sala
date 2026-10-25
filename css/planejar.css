@@ -121,9 +121,106 @@
 .passo3 small.pend { color: var(--alerta, #f3bf0a); }
 @media (max-width: 640px) { .passo3 { grid-template-columns: 1fr; grid-template-areas: "n" "rot" "est"; justify-items: center; text-align: center; font-size: .85rem; } }
 .tipo-cartao .tipo-quem { display: block; color: var(--acento-2); font-weight: 700; font-size: .85rem; margin: 2px 0 4px; }
+/* Ergonomia docente: conteúdo, navegação e menus compactos. */
+.plan-nav { min-width: 0; }
+.plan-nav button { min-width: 0; width: 100%; max-width: 100%; }
+.plan-nav .rot { min-width: 0; }
+.plan-nav .selo { flex: none; }
+.plan-acoes { align-items: center; }
+.estado-salvamento { font-size: .8rem; color: var(--ok); flex-basis: 100%; text-align: right; }
+.estado-salvamento[data-tipo=erro] { color: var(--erro); }
+.acoes-mais { position: relative; }
+.acoes-mais > summary { list-style: none; cursor: pointer; }
+.acoes-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; padding: 12px; min-width: 230px; max-height: 65vh; overflow-y: auto; display: grid; gap: 8px; border: 1px solid var(--linha); border-radius: 14px; background: var(--cartao); box-shadow: 0 12px 28px #0008; }
+.inicio-docente .linha-botoes { margin-bottom: 0; }
+.revisao-item { border: 1px solid var(--linha); border-radius: 10px; padding: 12px; margin: 12px 0; }
+.revisao-item > summary { font-weight: 700; cursor: pointer; }
+.resposta-docente { white-space: pre-wrap; overflow-wrap: anywhere; font: .92rem/1.5 var(--fonte); background: var(--fundo-2); padding: 12px; border-radius: 10px; }
+.evidencia-revisao { padding: 12px; margin: 10px 0; border-left: 3px solid var(--acento-2); background: var(--fundo-2); }
+.evidencia-revisao blockquote { margin: 10px 0 0; font-size: .9rem; }
+.autoria-dialog { width: min(1000px, calc(100% - 24px)); max-height: 92dvh; overflow-y: auto; padding: 22px; background: var(--cartao); color: var(--texto); border: 1px solid var(--acento); border-radius: 18px; }
+.autoria-cab { display: flex; gap: 14px; align-items: center; justify-content: space-between; }
+.autoria-cab h2 { margin: 0; }
+.autoria-passos { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.autoria-passos [aria-current=step] { border-color: var(--acento); box-shadow: inset 0 -3px var(--acento); }
+.autoria-dialog textarea { min-height: 100px; }
+.autoria-dialog .opcoes { margin-top: 12px; }
+.autoria-dialog .opcao span { min-width: 0; }
+.autoria-externa { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--linha); }
+button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--acento-2); outline-offset: 3px; }
+@media(max-width:860px) { .plan-nav button { width: auto; max-width: 85vw; } }
+@media(max-width:640px) {
+  .plan-barra { padding: 8px 12px !important; gap: 6px !important; }
+  .plan-barra .marca { font-size: .95rem; }
+  .plan-barra > .status { font-size: .75rem; max-width: 48%; }
+  .plan-acoes { width: 100%; margin: 0; gap: 6px; }
+  .plan-acoes .btn { min-height: 40px; padding: 0 10px; font-size: .8rem; }
+  .estado-salvamento { text-align: left; }
+  .plan-acoes > .btn.discreto { display: none; }
+  .plan-acoes > .btn:nth-of-type(2) { display: none; }
+  .autoria-dialog { padding: 14px; }
+  .autoria-cab h2 { font-size: 1.1rem; }
+}
+.so-celular { display: none; }
+@media(max-width:640px) {
+  .plan-acoes > .btn:nth-of-type(1), .plan-acoes > .btn:nth-of-type(2) { display:none; }
+  .plan-acoes .acoes-menu .so-celular { display:inline-flex; }
+}
+.plan-editor { min-width: 0; }
+.linha-item > * { min-width: 0; }
+.opcao-edit { grid-template-columns: auto minmax(0, 1fr) auto; }
+.linha-item input, .opcao-edit textarea { min-width: 0; }
+.tipo-cartoes { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.plan-barra .status { overflow-wrap: anywhere; }
+@media(max-width:640px) {
+  .planejando .plan-pagina > .fluxo { display:none; }
+  .planejando .plan-migalhas .tit, .planejando .plan-migalhas .tit + .sep { display:none; }
+  .planejando .plan-migalhas { gap:6px; font-size:.85rem; }
+  .passo3 { grid-template-columns:auto minmax(0,1fr); grid-template-areas:"n rot" "n est"; justify-items:stretch; text-align:left; column-gap:6px; padding:8px 6px; font-size:.75rem; }
+  .passo3 .n { width:22px; height:22px; align-self:center; }
+  .passo3 small { font-size:.7rem; }
+}
+/* Início docente e orientação no assistente de autoria. */
+.escolhas-autoria { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:14px; margin-top:18px; }
+.escolha-autoria { min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:20px; background:var(--fundo-2); border:1px solid var(--linha); border-radius:18px; }
+.escolha-autoria.principal { border:2px solid var(--acento); }
+.escolha-autoria h3 { margin:0; font-size:1.12rem; }
+.escolha-autoria p { margin:0; color:var(--texto-2); }
+.escolha-autoria .btn { margin-top:auto; min-height:48px; white-space:normal; text-align:left; width:100%; }
+.escolha-autoria small { color:var(--texto-2); }
+.autoria-etapa-cab { display:flex; align-items:center; gap:14px; margin:16px 0; }
+.autoria-etapa-cab h3 { margin:4px 0; font-size:1.2rem; }
+.autoria-passos { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.autoria-passos .btn { white-space:normal; text-align:center; min-height:46px; }
+@media(max-width:900px) { .escolhas-autoria { grid-template-columns:1fr; }.escolha-autoria { display:grid; grid-template-columns:68px minmax(0,1fr); gap:8px 14px; }.escolha-autoria .ilu { grid-column:1; grid-row:1/4; --tam:64px!important; }.escolha-autoria h3,.escolha-autoria p,.escolha-autoria .guia-selo { grid-column:2; }.escolha-autoria .btn,.escolha-autoria small { grid-column:1/-1; } }
+@media(max-width:480px) { .autoria-passos { gap:4px; }.autoria-passos .btn { font-size:.75rem; padding:8px 5px; }.autoria-etapa-cab .ilu { --tam:48px!important; }.autoria-etapa-cab h3 { font-size:1.05rem; }.escolha-autoria { padding:14px; } }
+.autoria-dialog .autoria-gerar { position:sticky; bottom:0; z-index:2; width:100%; margin:16px 0 6px; box-shadow:0 -8px 18px var(--cartao),0 4px 0 #0005; }
+
+.escolha-autoria > .ilu { --tam:64px!important; }
+.autoria-etapa-cab > .ilu { --tam:56px!important; }
+@media(max-width:480px) { .autoria-etapa-cab > .ilu { --tam:48px!important; } }
+
+/* Números de orientação nos três caminhos de preparação. */
+.escolha-autoria { position:relative; }
+.numero-opcao { position:absolute; right:14px; top:14px; width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--acento); color:var(--fundo); font:900 1.1rem var(--fonte); box-shadow:inset 0 2px 2px #fff7,0 3px 0 #0004; }
+.escolha-autoria h3 { padding-right:32px; }
+@media(max-width:900px) { .escolha-autoria .guia-selo { padding-right:30px; }.numero-opcao { width:30px; height:30px; top:12px; right:12px; font-size:1rem; } }
+.finalizar-grade { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.finalizar-passo { display:flex; flex-direction:column; padding:16px; border:1px solid var(--linha); border-radius:14px; background:var(--fundo-2); min-width:0; }
+.finalizar-passo h3 { display:flex; align-items:center; gap:3px; margin:0 0 8px; font-size:1rem; }
+.finalizar-passo p { color:var(--texto-2); line-height:1.45; text-align:left; margin:0 0 14px; }
+.finalizar-passo .btn { margin-top:auto; width:100%; white-space:normal; }
+.alternativa-fluxo { position:absolute; right:14px; top:16px; font-size:.72rem; font-weight:700; color:var(--texto-2); }
+.autoria-dialog .percurso-docente { margin:10px 0; }
+.autoria-passos .numero-fluxo { margin:0; }
+@media(max-width:900px) { .finalizar-grade { grid-template-columns:1fr; }.alternativa-fluxo { font-size:.65rem; right:12px; top:12px; } }
+
+.anexo-docente{margin:12px 0;padding:14px;border:1px solid var(--linha);border-radius:14px;display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:16px;align-items:start}.anexo-docente img{display:block;max-width:100%;max-height:220px;object-fit:contain;border-radius:8px}.anexo-docente figcaption{overflow-wrap:anywhere}.anexo-docente p{margin:8px 0}@media(max-width:560px){.anexo-docente{grid-template-columns:1fr}.anexo-docente img{max-height:180px}}
+
+html{scroll-padding-top:var(--topo-docente,160px)} .plan-migalhas button,.plan-nav button,.plan-editor h2{scroll-margin-top:var(--topo-docente,160px)}
 
 /* Prévia ao vivo: telão + celular de um aluno, fixa à direita do editor */
-.plan-previa { position: fixed; z-index: 9; top: 68px; right: 12px; bottom: 12px; width: 372px; display: flex; flex-direction: column; gap: 6px; background: var(--fundo-2); border: 1px solid var(--linha); border-radius: 16px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.plan-previa { position: fixed; z-index: 11; top: 68px; right: 12px; bottom: 12px; width: 372px; display: flex; flex-direction: column; gap: 6px; background: var(--fundo-2); border: 1px solid var(--linha); border-radius: 16px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
 .plan-previa[hidden], .pv-abrir[hidden] { display: none; }
 .plan-previa .pv-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .plan-previa .pv-estado { margin: 0; font-size: .82rem; }

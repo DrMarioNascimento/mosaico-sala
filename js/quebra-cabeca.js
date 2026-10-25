@@ -59,7 +59,9 @@ export function svgPeca(peca, { cor = '#ff8a3d' } = {}) {
 }
 
 /** Reduz e comprime a imagem enviada (leve o bastante para ir na atividade e na planilha). */
-export async function comprimirImagem(arquivo, { lado = 1400, limite = 650000 } = {}) {
+export async function comprimirImagem(arquivo, { lado = 1400, limite = 150000 } = {}) {
+  if (!arquivo || !/^(image\/|$)/.test(arquivo.type) || !/\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(arquivo.name || '')) throw new Error('Escolha uma imagem PNG, JPG, WebP, GIF, BMP ou AVIF. Converta HEIC/HEIF para JPG antes de enviar.');
+  if (arquivo.size > 20 * 1024 * 1024) throw new Error('A imagem ultrapassa 20 MB. Reduza o arquivo antes de enviar.');
   const url = URL.createObjectURL(arquivo);
   try {
     const img = await carregar(url);
@@ -70,7 +72,7 @@ export async function comprimirImagem(arquivo, { lado = 1400, limite = 650000 } 
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       dados = c.toDataURL('image/webp', qualidade);
       if (!dados.startsWith('data:image/webp')) dados = c.toDataURL('image/jpeg', qualidade);
-      if (dados.length <= limite) return { dados, largura: c.width, altura: c.height, reduzida: escala < 1 || t > 0 };
+      if (dados.length <= limite) return { dados, nome: arquivo.name, largura: c.width, altura: c.height, reduzida: escala < 1 || t > 0 };
       if (qualidade > 0.6) qualidade -= 0.1; else escala *= 0.8;
     }
     throw new Error('Não foi possível deixar a imagem leve o bastante. Tente uma imagem menor.');

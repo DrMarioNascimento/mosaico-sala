@@ -3,6 +3,7 @@
    Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
 
 import { backend, link, EM_ENSAIO } from './backend.js';
+import { melhorarConducao, indicarConexao } from './conducao-docente.js';
 import { CASOS, carregarCaso } from './casos.js';
 import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
@@ -27,6 +28,7 @@ const b = await backend();
 const PREVIA = EM_ENSAIO && new URLSearchParams(location.search).has('previa');
 const SUF = EM_ENSAIO ? (PREVIA ? '-previa' : '-ensaio') : '';
 const GUARDA = 'mosaico-conducao' + SUF, PENDENTES = 'mosaico-salas-pendentes' + SUF;
+let relatorioBaixado = false; const gruposExpandidos = new Set();
 const E = { conta: null, atividade: null, diags: [], importacao: [], dispensadas: new Set(), codigo: null, sala: null, membros: [], envios: [], contingencias: [], jogo: {}, pub: {}, aba: 'atividade', promptGerado: '' };
 let inscricoes = [], relogio = null;
 
@@ -65,7 +67,7 @@ $('entrarGoogle').onclick = () => {
 };
 (async () => {
   if (PREVIA) { try { localStorage.removeItem(GUARDA); } catch {} return iniciarPrevia(); }
-  const c = await b.contaAtual(); if (c) iniciar(c);
+  const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO && doPlanejamento()) iniciar(await b.entrarGoogle());
 })();
 
 /** Pré-visualização: entra sozinho, carrega a atividade do Planejamento, abre a sala e avisa a página-mãe. */
@@ -78,11 +80,12 @@ async function iniciarPrevia() {
   await abrirSala();
   mostrarAba('sala');
   const alvo = new URLSearchParams(location.search).get('etapa');
-  if (alvo && etapa(alvo)) irDiretoParaEtapa(alvo);
+  if (E.codigo) irDiretoParaEtapa(alvo && etapa(alvo) ? alvo : etapasOrdenadas(A())[0]?.id).catch(falha);
 }
 
 /** “Ver esta etapa”: espera a turma simulada entrar, sorteia os grupos e começa a etapa pedida. */
 async function irDiretoParaEtapa(etapaId) {
+  if (!etapaId) return;
   const espera = ms => new Promise(r => setTimeout(r, ms));
   let antes = -1;
   for (let i = 0; i < 60; i++) {   // até a quantidade de participantes parar de crescer
@@ -95,6 +98,11 @@ async function irDiretoParaEtapa(etapaId) {
   await formarGrupos();
   await espera(600);
   mostrarAba('conducao');
+  if(PREVIA && A().etapas.some(e=>e.id==='ensaio-origem')) {
+    const hip=etapa(etapaId).config.hipotesesCandidatas;
+    for(const [i,g] of A().grupos.entries()) await b.enviar(E.codigo,'ensaio-origem__'+g.id,{etapaId:'ensaio-origem',escopo:'grupo',grupoId:g.id,autor:E.conta.uid,dados:{hipoteseId:hip[i%hip.length].id,evidencias:['ensaio-p'+i],justificativa:'Contribuição fictícia criada exclusivamente para esta prévia.'},contingencia:true});
+    await b.atualizarSala(E.codigo,{encerradas:['ensaio-origem']});
+  }
   if (PREVIA) await completarDependenciasDaPrevia(etapa(etapaId));
   await iniciarEtapa(etapa(etapaId));
 }
@@ -128,6 +136,14 @@ async function iniciar(conta) {
       if (s && s.owner === conta.uid && s.status === 'open') conectarSala(g.codigo);
       else { E.codigo = null; salvar(); }
     } catch { E.codigo = null; }
+  }
+  const idBiblioteca=new URLSearchParams(location.search).get('atividade');
+  if(idBiblioteca && !E.codigo) {
+    try {
+      if(!/^[a-zA-Z0-9_-]{1,128}$/.test(idBiblioteca)) throw new Error('Identificador de atividade inválido.');
+      const doc=await b.lerBiblioteca(idBiblioteca); if(!doc)throw new Error('Atividade não encontrada na sua biblioteca.');
+      if(aceitar(JSON.parse(doc.conteudo),'da sua biblioteca')){mostrarAba('sala');renderTudo();avisoGeral('Atividade recuperada. Este aparelho conduzirá a aula.','ok');return faxina();}
+    } catch(e){avisoGeral('Não foi possível recuperar a atividade. Entre com a mesma conta Google que a salvou.','erro');}
   }
   if (receberDoPlanejamento()) return faxina();
   mostrarAba(E.codigo ? 'conducao' : 'atividade');
@@ -195,6 +211,7 @@ function ajustar(fn) {
 }
 
 function falha(e) {
+  if(PREVIA&&window.parent!==window)window.parent.postMessage({tipo:'mosaico-previa-erro',mensagem:e?.message||'Confira a revisão da atividade.'},location.origin);
   console.error(e);
   const negado = e?.code === 'permission-denied' || /permission/i.test(e?.message || '');
   avisoGeral(negado ? 'O servidor recusou a operação. Confira se sua conta está na lista de quem conduz e se as regras do Firestore foram publicadas.' : 'Falha de conexão: ' + (e?.message || e), 'erro');
@@ -351,6 +368,7 @@ function importarTexto(texto, origem) {
 }
 /** Relatório da aula: acertos por etapa e por grupo, sem nomes (planilha .csv). */
 function baixarRelatorio() {
+  relatorioBaixado = true;
   const csv = relatorioCSV(relatorioAula(A(), resultados()));
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   const data = new Date().toISOString().slice(0, 10);
@@ -419,7 +437,7 @@ async function abrirSala() {
       nomes: {}, composicao: {}, representantes: {}, executores: {}, leitoresExtra: {},
       etapaAtual: null, etapaInfo: null, progresso: null, escala: null, encerradas: [], final: null, revelacao: null, jogo: null
     });
-    E.contingencias = []; E.envios = []; E.jogo = {}; E.pub = {};
+    E.contingencias = []; E.envios = []; E.jogo = {}; E.pub = {}; relatorioBaixado = false;
     marcarPendente(codigo, true);
     conectarSala(codigo); salvar(); renderTudo();
     if (PREVIA && window.parent !== window) window.parent.postMessage({ tipo: 'mosaico-previa-sala', codigo }, location.origin);
@@ -438,7 +456,7 @@ function conectarSala(codigo) {
   inscricoes.push(b.observarMembros(codigo, aoMudarMembros, falha));
   inscricoes.push(b.observarEnvios(codigo, lista => { E.envios = lista; atualizarJogo(); renderConducao(); sincronizarProgresso(); }, falha));
   clearInterval(relogio); relogio = setInterval(() => {
-    const r = document.getElementById('relogioConducao'); if (r && E.sala?.etapaInfo) r.textContent = contagemRegressiva(E.sala.etapaInfo.inicio, E.sala.etapaInfo.tempoMin);
+    const r = document.getElementById('relogioConducao'); if (r && E.sala?.etapaInfo) r.textContent = contagemRegressiva(E.sala.etapaInfo.inicio, E.sala.etapaInfo.tempoMin, E.sala.etapaInfo.pausadoEm);
     verificarTempoQuiz(); T.tique();
   }, 1000);
 }
@@ -612,6 +630,7 @@ function renderConducao() {
       if (atual) caixa.append(painelEtapaAtual(e));
       else if (proxima?.id === e.id && s.fase !== 'final') caixa.append(painelProxima(e, res));
       if (feita || atual) caixa.append(resumoEnvios(e));
+      if(feita) { const resumo=caixa.firstChild; const d=h('details',{class:'cartao etapa-concluida'},h('summary',{},resumo)); while(caixa.firstChild)d.append(caixa.firstChild); return d; }
       return caixa;
     }),
     s.fase !== 'final' && !s.etapaAtual && seq.every(e => encerradas.has(e.id)) && h('div', { class: 'cartao destaque' },
@@ -624,13 +643,14 @@ function renderConducao() {
       h('p', { class: 'sutil' }, 'Acertos por etapa e por grupo, sem nomes. Baixe antes de encerrar: ao encerrar a sala, tudo é apagado.'),
       h('p', { class: 'sutil' }, 'Quando terminar a discussão, encerre a sala na aba Sala.')),
     EM_ENSAIO && s.fase === 'etapa' && h('div', { class: 'cartao' }, h('h3', {}, 'Ensaio'), h('button', { class: 'btn', onclick: pilotoAutomatico }, 'Simulados enviam agora')));
+  melhorarConducao({alvo,atividade:A(),sala:s,atualizarSala:patch=>b.atualizarSala(E.codigo,patch),encerrarSala,baixarRelatorio,relatorioBaixado,falha});
 }
 
 function painelEtapaAtual(e) {
   const s = E.sala, p = s.progresso || {};
   const caixa = h('div', {});
   if (e.typeId === 'montagem_pecas') {
-    caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin)), ' · montagem em andamento'),
+    caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin, s.etapaInfo?.pausadoEm)), ' · montagem em andamento'),
       h('p', { class: 'sutil' }, e.participacao.organizacao === 'representantes' ? 'Os representantes de cada grupo montam juntos, com as peças nos celulares.' : 'Cada grupo monta as peças com os próprios celulares.'),
       h('p', { class: 'sutil' }, 'Não há envio: a etapa vale pelo tempo. Encerre quando achar adequado.'));
     caixa.append(h('button', { class: 'btn primario bloco', onclick: encerrarEtapa }, 'Encerrar etapa'));
@@ -640,15 +660,13 @@ function painelEtapaAtual(e) {
   if (e.typeId === 'quiz_grupos') return painelQuiz(e, caixa);
   if (ehQuadro(e)) return painelCartoes(e, caixa);
   if (T.tem(e)) return T.painel(e, caixa);
-  caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin)), ' · ', `${p.enviados ?? 0} de ${p.esperados ?? 0} ${e.participacao.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
+  caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(s.etapaInfo?.inicio, s.etapaInfo?.tempoMin, s.etapaInfo?.pausadoEm)), ' · ', `${p.enviados ?? 0} de ${p.esperados ?? 0} ${e.participacao.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   if (e.participacao.organizacao === 'grupos') {
     caixa.append(h('ul', { class: 'diag' }, A().grupos.map(g => {
       const ok = p.porGrupo?.[g.id], vazio = !(s.composicao?.[g.id] || []).length, cobre = s.executores?.[g.id];
-      return h('li', { class: ok ? 'info' : 'aviso' }, chip(g.id), ' ',
-        h('span', { class: 'estado ' + (ok ? 'ok' : vazio && !cobre ? 'vazio' : 'pend') }, ok ? 'enviou' : cobre ? `coberto por ${nomeGrupo(grupoDoUid(cobre))}` : vazio ? 'sem participantes' : 'pendente'),
-        !ok && h('div', { class: 'linha-botoes' },
-          h('button', { class: 'btn pequeno', onclick: () => dialogoCobrir(e, g.id) }, 'Pedir a outro grupo'),
-          h('button', { class: 'btn pequeno', onclick: () => dialogoRegistrar(e, g.id) }, 'Registrar pela condução')));
+      if(ok) return h('li',{class:'info'},chip(g.id),h('span',{class:'estado ok'},'enviou'));
+      const texto=cobre?'coberto por '+nomeGrupo(grupoDoUid(cobre)):vazio?'sem participantes':'aguardando envio';
+      return h('li',{class:'grupo-atencao'},h('details',{open:gruposExpandidos.has(g.id),ontoggle:ev=>{if(ev.target.open)gruposExpandidos.add(g.id);else gruposExpandidos.delete(g.id);}},h('summary',{},chip(g.id),' ',h('span',{class:'estado '+(vazio?'vazio':'pend')},texto)),h('div',{class:'linha-botoes'},h('button',{class:'btn pequeno',onclick:()=>dialogoCobrir(e,g.id)},'Pedir a outro grupo'),h('button',{class:'btn pequeno',onclick:()=>dialogoRegistrar(e,g.id)},'Registrar resposta pelo professor'))));
     })));
   }
   let armado = false;
@@ -1209,3 +1227,5 @@ async function pilotoAutomatico() {
     await b.enviar(E.codigo, e.id + '__' + g.id, { etapaId: e.id, escopo: 'grupo', grupoId: g.id, autor: rep, dados, contingencia: !!s.executores?.[g.id] }).catch(() => {});
   }
 }
+
+const sinalConexao=h('p',{class:'sinal-conexao',role:'status','aria-live':'polite'}); document.querySelector('main').prepend(sinalConexao); indicarConexao(sinalConexao);

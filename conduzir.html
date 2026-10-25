@@ -20,23 +20,24 @@
     <span class="status" id="statusTopo">Condução</span>
   </div>
   <nav class="abas" id="abas" role="tablist" hidden>
-    <button role="tab" data-aba="atividade" aria-selected="true" data-ico="atividade">Atividade</button>
-    <button role="tab" data-aba="sala" data-ico="sala">Sala</button>
-    <button role="tab" data-aba="grupos" data-ico="grupos">Grupos</button>
-    <button role="tab" data-aba="conducao" data-ico="play">Condução</button>
+    <button role="tab" data-aba="atividade" aria-selected="true" data-ico="atividade">8.1 · Atividade</button>
+    <button role="tab" data-aba="sala" data-ico="sala">8.2 · Sala</button>
+    <button role="tab" data-aba="grupos" data-ico="grupos">8.3 · Grupos</button>
+    <button role="tab" data-aba="conducao" data-ico="play">8.4 · Condução</button>
   </nav>
 </header>
 <main class="pagina">
   <nav class="fluxo" aria-label="Do planejamento à execução">
     <a class="inicio" href="index.html" data-ico="inicio" title="Início"><span class="rot">Início</span></a><span class="sep" aria-hidden="true">›</span>
-    <a href="planejar.html" data-ico="planejar"><span class="num">1</span> Planejar</a>
-    <a href="conduzir.html" data-ico="conduzir"><span class="num">2</span> Conduzir</a>
-    <a href="telao.html" data-ico="telao"><span class="num">3</span> Telão</a>
+    <a href="planejar.html" data-ico="planejar"><span class="num">2</span> Preparar</a>
+    <a href="planejar.html#revisao" data-ico="revisao"><span class="num">5</span> Revisar</a>
+    <a href="conduzir.html" data-ico="conduzir"><span class="num">8</span> Aplicar em sala</a>
+    <a href="telao.html" data-ico="telao">Telão de apoio</a>
     <a href="simulador.html" data-ico="simulador">Simulador</a>
   </nav>
   <section id="login" class="cartao">
-    <h1>Condução</h1>
-    <p>Entre com sua conta Google para preparar e conduzir atividades.</p>
+    <span class="guia-selo">PASSO 8 · APLICAR EM SALA</span><h1>Abra e conduza sua aula</h1>
+    <p>Entre com Google. Depois siga: 1 escolha a atividade · 2 abra a sala · 3 confira os grupos · 4 conduza as etapas.</p>
     <div class="linha-botoes"><button class="btn primario bloco" id="entrarGoogle">Entrar com Google</button></div>
     <p class="aviso" id="avisoLogin" hidden></p>
   </section>
@@ -44,7 +45,7 @@
   <section id="aba-sala" hidden></section>
   <section id="aba-grupos" hidden></section>
   <section id="aba-conducao" hidden></section>
-  <p class="aviso" id="avisoGeral" hidden></p>
+  <p class="aviso" id="avisoGeral" role="status" aria-live="polite" hidden></p>
   <nav class="passos-nav" id="passosNav" aria-label="Passo anterior e próximo" hidden></nav>
   <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 </main>

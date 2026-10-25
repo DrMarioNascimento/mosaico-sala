@@ -1,0 +1,28 @@
+{
+  "score": 4,
+  "summary": "Revisão direcionada às sugestões sobre autorização. O ajuste restringe a leitura da lista de professores aos administradores. A migração para Custom Claims requer provisionamento administrativo e renovação/revogação de tokens; não foi ativada. O vínculo dos pacotes e envios com a sala permanece verificado no documento pai.",
+  "findings": [
+    {
+      "check": "Authority Source",
+      "severity": "moderate",
+      "issue": "A lista config/mestres podia ser lida por qualquer login, inclusive anônimo.",
+      "recommendation": "Corrigido: leitura somente por administrador Google com e-mail verificado; o uso interno da lista pelas regras continua funcionando."
+    },
+    {
+      "check": "Authority Source",
+      "severity": "minor",
+      "issue": "Custom Claims ainda não são a fonte de autorização. Administradores de bootstrap e a lista atual continuam em uso.",
+      "recommendation": "Planejar migração com credencial administrativa explícita, concessão/revogação, renovação de tokens e teste de não bloqueio dos professores existentes."
+    },
+    {
+      "check": "Ownership and revocation",
+      "severity": "minor",
+      "issue": "As consultas ao documento pai têm custo, mas também verificam a composição atual e as permissões da sala.",
+      "recommendation": "Não substituir por owner fornecido pelo cliente. Só desnormalizar com validação inicial, propriedade imutável e estratégia de revogação."
+    }
+  ],
+  "limitations": [
+    "Os testes de regras usam emulador; não equivalem a uma auditoria completa de produção.",
+    "Realtime Database não é usado pelo código desta aplicação; o bloqueio relatado pelo usuário deve ser mantido."
+  ]
+}

@@ -98,7 +98,7 @@ export const TIPOS = {
   montagem_pecas: {
     typeId: 'montagem_pecas',
     typeVersion: '1.0.0',
-    nome: 'Montagem em peças',
+    nome: 'Quebra-cabeça: texto ou imagem',
     descricao: 'Cada celular mostra uma peça (trecho de texto, conta ou recorte de imagem) em formato de quebra-cabeça. Só pondo os celulares na ordem certa dá para entender o todo. Não há envio: vale o tempo da etapa, e a etapa seguinte cobra o que foi visto.',
     configuracao: {
       modo: "'texto' (texto ou conta) | 'imagem'",

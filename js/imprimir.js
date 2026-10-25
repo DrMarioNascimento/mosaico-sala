@@ -15,9 +15,10 @@ const ordem = a => [...a.etapas].sort((x, y) => x.ordem - y.ordem);
 
 export function gerarImpressao(a) {
   const partes = [], partesDocente = [];
-  partes.push(`<section class="folha capa"><p class="marca">MOSAICO</p><h1>${esc(a.titulo)}</h1>
+  const marca = `<p class="marca"><img src="${new URL('../assets/mosaico.webp', import.meta.url).href}" alt="" width="52" height="52"> <span>MOSAICO</span></p>`;
+  partes.push(`<section class="folha capa">${marca}<h1>${esc(a.titulo)}</h1>
     ${a.perguntaCentral ? `<p class="pergunta">${esc(a.perguntaCentral)}</p>` : ''}
-    ${a.introducao ? `<p>${esc(a.introducao)}</p>` : ''}
+    ${a.introducao ? `<p style="white-space:pre-line">${esc(a.introducao)}</p>` : ''}
     <p class="sutil">${esc(a.publico || '')}${a.duracaoMin ? ' · ' + esc(a.duracaoMin) + ' min' : ''}</p>
     <p class="sutil">Grupos: ${a.grupos.map(g => esc(g.nome)).join(' · ')}</p>
     <p class="sutil" style="margin-top:2cm;font-size:9pt">Material gerado no MOSAICO · Sala (mosaico-sala.web.app). O conteúdo desta atividade pertence a quem a criou; a plataforma é © 2026 Prof. Mário César Nascimento, PhD — todos os direitos reservados (mosaico-sala.web.app/licenca).</p></section>`);
@@ -146,12 +147,12 @@ export function gerarImpressao(a) {
   const individuais = ordem(a).filter(e => e.typeId === 'questao_individual');
   if (individuais.length) partes.push(`<section class="folha"><p class="cab">Individual · uma folha por participante</p><h2>Questões individuais</h2>
     <p>Nome: ______________________________</p>
-    ${individuais.map((e, i) => `<div class="questao"><h3>${i + 1}. ${esc(e.config.enunciado)}</h3>
+    ${individuais.map((e, i) => `<div class="questao"><h3>${i + 1}. ${esc(e.titulo)}: ${esc(e.config.enunciado)}</h3>
       <ul class="caixas">${e.config.alternativas.map(al => `<li>☐ ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</section>`);
 
   // Material de quem conduz (separado)
   const r = a.docente?.respostas || {};
-  partes.push(`<section class="folha docente"><p class="cab">MATERIAL DE QUEM CONDUZ — NÃO DISTRIBUIR</p><h2>Respostas esperadas</h2>
+  partes.push(`<section class="folha docente">${marca}<p class="cab">MATERIAL DE QUEM CONDUZ — NÃO DISTRIBUIR</p><h2>Respostas esperadas</h2>
     ${ordem(a).filter(e => r[e.id] && !r[e.id].perguntas && ['investigacao_fragmentos', 'comparar_hipoteses', 'questao_individual'].includes(e.typeId)).map(e => {
       const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r[e.id].corretaId);
       return `<div class="questao"><h3>${esc(e.titulo)}</h3><p><strong>${esc(op?.texto || r[e.id].corretaId)}</strong></p><p>${esc(r[e.id].explicacao || '')}</p></div>`;
@@ -167,10 +168,11 @@ export function gerarImpressao(a) {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(a.titulo)} · impressão</title>
 <style>
+ img{max-width:100%;max-height:12cm;object-fit:contain}
  body{font:12pt/1.45 Georgia,serif;color:#111;margin:0;background:#eee}
  .folha{background:#fff;max-width:19cm;margin:1cm auto;padding:1.5cm;box-shadow:0 1px 4px rgba(0,0,0,.2);page-break-after:always}
  h1{font:800 22pt Arial,sans-serif;margin:.2em 0}h2{font:800 16pt Arial,sans-serif;margin:.2em 0 .4em}h3{font:700 12pt Arial,sans-serif;margin:1em 0 .4em}
- .marca{font:900 11pt Arial,sans-serif;letter-spacing:.2em;color:#c25a12}.cab{font:700 9pt Arial,sans-serif;color:#666;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #ccc;padding-bottom:4px}
+ .marca{display:flex;align-items:center;gap:10px;font:900 11pt Arial,sans-serif;letter-spacing:.2em;color:#c25a12;break-inside:avoid}.marca img{width:52px;height:52px;flex:0 0 52px;object-fit:contain}.cab{font:700 9pt Arial,sans-serif;color:#666;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #ccc;padding-bottom:4px}
  .pergunta{font-size:14pt;font-style:italic}.sutil{color:#555}
  .peca{border:1.5px solid #333;border-radius:6px;padding:10px 12px;margin:10px 0}.peca .marcar{display:block;font:9pt Arial,sans-serif;color:#555;margin-top:6px}
  .caixas{list-style:none;padding:0}.caixas li{margin:6px 0}

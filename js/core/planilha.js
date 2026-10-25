@@ -59,10 +59,11 @@ export const ABAS = {
   Ramos: ['etapa', 'cenario', 'id', 'texto', 'destino', 'feedback'],
   Marcadores: ['etapa', 'id', 'rotulo', 'x_certo', 'y_certo'],
   Pecas: ['id', 'etapa', 'grupos', 'natureza', 'fonte', 'conteudo'],
-  Fontes: ['id', 'descricao', 'localizacao', 'trecho']
+  Fontes: ['id', 'descricao', 'localizacao', 'trecho'],
+  Docente: ['campo', 'parte', 'valor']
 };
 /** Aba oculta com as imagens da montagem, em texto (cada célula até 30.000 caracteres). */
-export const ABA_IMAGENS = ['etapa', 'parte', 'largura', 'altura', 'dados'];
+export const ABA_IMAGENS = ['etapa', 'parte', 'largura', 'altura', 'dados', 'nome'];
 const PEDACO = 30000;
 
 const LISTAS = ['objetivos', 'pendencias', 'guia', 'pontos_de_discussao', 'meta_etapas'];
@@ -194,9 +195,19 @@ export function atividadeParaAbas(a) {
   for (const e of a.etapas) {
     const img = (e.typeId === 'montagem_pecas' || e.typeId === 'analise_imagem') && (e.config?.imagem || (e.config?.modelo?.dados ? { dados: e.config.modelo.dados } : null));
     if (!img?.dados) continue;
-    for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO) });
+    for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO), nome: img.nome || '' });
   }
-  return { Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Perguntas: perguntas, Cartoes: cartoes, Colunas: colunas, Pares: pares, Elos: elos, Direcoes: direcoes, Palavras: palavras, Termos: termos, Cenarios: cenarios, Ramos: ramos, Marcadores: marcadores, Pecas: pecas, Fontes: fontes, Imagens: imagens };
+  const docente = [];
+  const privado = Object.fromEntries(['materialBase','roteiro','arquivoMaterial'].filter(k=>a.docente?.[k]!==undefined).map(k=>[k,a.docente[k]]));
+  if(Object.keys(privado).length) {
+    const texto=JSON.stringify(privado);
+    for(let i=0,parte=1;i<texto.length;parte++) {
+      let fim=Math.min(i+PEDACO,texto.length);
+      const ultimo=texto.charCodeAt(fim-1);if(ultimo>=0xD800&&ultimo<=0xDBFF)fim--;
+      docente.push({campo:'complemento_docente',parte,valor:texto.slice(i,fim)});i=fim;
+    }
+  }
+  return { Docente: docente, Atividade: geral, Grupos: grupos, Etapas: etapas, Opcoes: opcoes, Perguntas: perguntas, Cartoes: cartoes, Colunas: colunas, Pares: pares, Elos: elos, Direcoes: direcoes, Palavras: palavras, Termos: termos, Cenarios: cenarios, Ramos: ramos, Marcadores: marcadores, Pecas: pecas, Fontes: fontes, Imagens: imagens };
 }
 
 // ---------------------------------------------------------------- abas → atividade
@@ -226,7 +237,7 @@ export function abasParaAtividade(abas) {
     return { id: pid, enunciado: txt(q.enunciado), alternativas };
   });
   const nao = v => /^(nao|não|n|false|0)$/i.test(txt(v));
-  const imagemDe = id => { const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte)); return partes.length ? { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) } : null; };
+  const imagemDe = id => { const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte)); return partes.length ? { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura), ...(txt(partes[0].nome)?{nome:txt(partes[0].nome)}:{}) } : null; };
   const opcoesL = tab.opcoes || [];
   const respostas = {};
   const etapas = etapasL.map((l, i) => {
@@ -247,7 +258,7 @@ export function abasParaAtividade(abas) {
       if (config.modo === 'texto') config.texto = txt(l.montagem_texto);
       else {
         const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte));
-        if (partes.length) config.imagem = { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) };
+        if (partes.length) config.imagem = { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura), ...(txt(partes[0].nome)?{nome:txt(partes[0].nome)}:{}) };
         config.corte = { tipo: txt(l.montagem_corte) || 'colunas', n: num(l.montagem_pecas) ?? 4, ...(num(l.montagem_colunas) ? { colunas: num(l.montagem_colunas) } : {}) };
       }
       config.quantidade = txt(l.montagem_quantidade) || 'fixa';
@@ -425,6 +436,20 @@ export function abasParaAtividade(abas) {
     return { id: `c_${txt(l.recebe_de)}_${txt(l.id)}`.slice(0, 64), de: { etapaId: txt(l.recebe_de), portId: portaDe }, para: { etapaId: txt(l.id), portId: portaPara }, agregacao: 'colecao_uma_por_grupo_planejado' };
   });
 
+  let complementoDocente = {};
+  if(tab.docente?.length) {
+    try {
+      const partes=tab.docente.filter(l=>txt(l.campo)==='complemento_docente').sort((a,b)=>num(a.parte)-num(b.parte));
+      if(!partes.length||partes.some((p,i)=>num(p.parte)!==i+1))throw new Error('partes ausentes ou repetidas');
+      const texto=partes.map(p=>String(p.valor??'')).join('');if(texto.length>2000000)throw new Error('conteúdo muito grande');
+      const dado=JSON.parse(texto);
+      if(!dado||typeof dado!=='object'||Array.isArray(dado)||Object.keys(dado).some(k=>!['materialBase','roteiro'].includes(k)))throw new Error('formato desconhecido');
+      if(dado.materialBase!==undefined&&typeof dado.materialBase!=='string')throw new Error('material-base inválido');
+      if(dado.roteiro!==undefined&&(!dado.roteiro||typeof dado.roteiro!=='object'||Array.isArray(dado.roteiro)||Object.values(dado.roteiro).some(v=>typeof v!=='string')))throw new Error('roteiro inválido');
+      if(dado.arquivoMaterial!==undefined&&dado.arquivoMaterial!==null&&(typeof dado.arquivoMaterial.nome!=='string'||!Number.isFinite(dado.arquivoMaterial.tamanho)))throw new Error('arquivo do material inválido');
+      complementoDocente=dado;
+    }catch(e){problemas.push('Complemento docente não recuperado: '+e.message+'. Confira o arquivo original antes de continuar.');}
+  }
   const limiar = num(g.meta_limiar);
   const atividade = {
     schemaVersion: SCHEMA_VERSION,
@@ -440,7 +465,7 @@ export function abasParaAtividade(abas) {
     }),
     conexoes,
     meta: { ativa: !/^(nao|não|n|false|0)$/i.test(g.meta_ativa || 'sim'), descricao: g.meta_descricao || '', etapas: g.meta_etapas || [], limiar: limiar === undefined ? 0.5 : (limiar > 1 ? limiar / 100 : limiar) },
-    docente: { respostas, guia: g.guia || [], pontosDeDiscussao: g.pontos_de_discussao || [] },
+    docente: { respostas, guia: g.guia || [], pontosDeDiscussao: g.pontos_de_discussao || [], ...complementoDocente },
     pendencias: g.pendencias || []
   };
   return { atividade, problemas };

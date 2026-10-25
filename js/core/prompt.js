@@ -71,13 +71,13 @@ CONFIGURAÇÃO
 Público: ${publico || '(não informado)'}
 Duração: ${duracaoMin} minutos
 Organização: ${organizacao}
-Quantidade fixa de grupos: ${organizacao === 'grupos' ? numeroGrupos : 'não se aplica'}
+Quantidade fixa de grupos: ${organizacao === 'grupos' ? numeroGrupos : '1 (organização da sala; respostas individuais)'}
 Preferências por etapa: ${preferencias || 'nenhuma; proponha a sequência'}
 Regime de autoria: ${regime}
 Versão do esquema: ${SCHEMA_VERSION}
 ${sequencia}
 GRAMÁTICA MOSAICO (proposta padrão, o professor pode alterar depois)
-- Fracione as evidências: nenhum grupo deve conseguir resolver a pergunta central só com as próprias peças.
+${organizacao === 'individual' ? '- Todas as etapas têm participação e envio individuais. Mantenha um grupo único para a organização da sala. Não crie conexões que exijam respostas de grupos. As regras cooperativas abaixo só se aplicam quando o professor pede trabalho em grupos.' : '- Fracione as evidências: nenhum grupo deve conseguir resolver a pergunta central só com as próprias peças.'}
 - Faça cada grupo, isoladamente, ter motivos plausíveis para escolher hipóteses diferentes.
 - Conecte a investigação a uma comparação entre grupos (cooperação com troca identificável).
 - Termine com questões individuais de transferência que contem para uma meta coletiva.
@@ -89,7 +89,7 @@ REGRAS
 4. Diferencie citação, paráfrase, inferência e criação sintética (campo origem.natureza).
 5. No regime "fiel", não crie dados ausentes: registre a lacuna em "pendencias".
 6. Respostas esperadas ficam SOMENTE em docente.respostas. Nunca dentro das etapas.
-7. Respeite exatamente ${organizacao === 'grupos' ? numeroGrupos : 0} grupos. A presença na sala não muda os grupos.
+7. Respeite exatamente ${organizacao === 'grupos' ? numeroGrupos : 1} grupos. A presença na sala não muda os grupos.
 8. Use somente typeId e typeVersion do catálogo. Gere dados de configuração, nunca código.
 9. Toda entrada obrigatória de um tipo precisa de uma conexão vinda de etapa anterior.
 10. Hipóteses concorrentes precisam ser plausíveis e avaliáveis pelas evidências distribuídas.

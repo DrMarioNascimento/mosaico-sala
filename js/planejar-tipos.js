@@ -1,3 +1,4 @@
+import { painelImagem } from './midia-docente.js';
 /* MOSAICO · Editores do Planejamento para os tipos novos (junto com planejar.js)
    Pares · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem
    Como nos outros tipos, a resposta certa vai para docente.respostas (só quem conduz vê). */
@@ -269,9 +270,8 @@ export function criarEditores(ctx) {
         if (c.midia === 'modelo3d') {
           if (f.size > 700000) throw new Error('Modelo grande demais para enviar (máx. ~700 KB). Publique o .glb (por exemplo no GitHub Pages do lab-ra) e informe o endereço.');
           const dados = await new Promise((ok, falha) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).replace(/^data:[^;]*;/, 'data:model/gltf-binary;')); fr.onerror = falha; fr.readAsDataURL(f); });
-          c.modelo = { dados };
-        } else { ctx.avisoGeral('Reduzindo a imagem…'); c.imagem = await ctx.comprimirImagem(f); ctx.avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB).`, 'ok'); }
-        mudar(() => {});
+          mudar(()=>{c.modelo = { dados };});
+        } else { ctx.avisoGeral('Reduzindo a imagem…'); const imagem=await ctx.comprimirImagem(f); mudar(()=>{c.imagem=imagem;}); ctx.avisoGeral(`Imagem pronta (${Math.round(c.imagem.dados.length / 1024)} KB).`, 'ok'); }
       } catch (err) { ctx.avisoGeral(err.message, 'erro'); }
     };
     const tarefas = c.midia === 'modelo3d' ? [['perguntas', 'Perguntas sobre o modelo'], ['observar', 'Observar e descrever']] : [['marcar', 'Marcar na imagem'], ['perguntas', 'Perguntas sobre a imagem'], ['observar', 'Observar e descrever']];
@@ -282,7 +282,7 @@ export function criarEditores(ctx) {
           seletor('Tarefa', c.tarefa, tarefas, v => trocarTarefa(v), { redesenhar: true })),
         c.midia === 'modelo3d'
           ? h('div', {}, campo('Endereço do modelo (.glb)', c.modelo?.url || '', v => { c.modelo = { url: v.trim() }; }, { ajuda: 'Ex.: https://drmarionascimento.github.io/lab-ra/modelos/celula.glb. Ou envie um .glb pequeno:' }), campoArquivo(arquivo), c.modelo?.dados && h('p', { class: 'sutil' }, `Modelo enviado (${Math.round(c.modelo.dados.length / 1024)} KB).`))
-          : h('div', {}, h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), campoArquivo(arquivo)),
+          : h('div', {}, painelImagem(c.imagem,()=>mudar(()=>{delete c.imagem; delete r.posicoes;})), h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), campoArquivo(arquivo)),
         campo('O que fazer com a imagem', c.enunciado || '', v => { c.enunciado = v; }, { area: true, linhas: 2, max: 500 }),
         ajudaOrg(e, c.tarefa === 'observar' ? 'o grupo observa junto e o líder escreve; o texto vai para o telão.' : 'o grupo trabalha junto.', 'os representantes marcam num quadro só.')),
       c.tarefa === 'marcar' && marcadores(e),
