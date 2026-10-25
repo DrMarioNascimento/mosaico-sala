@@ -57,7 +57,7 @@ $('entrarGoogle').onclick = () => {
 async function iniciar(conta) {
   P.conta = conta; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
-  if (souAdmin()) b.lerMestres().then(l => { P.mestres = l; if (!P.A) render(); }).catch(() => { P.mestres = []; });
+  if (souAdmin()) carregarMestres();
   try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   render();
 }
@@ -287,9 +287,20 @@ function telaInicio() {
       h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
 }
 
+/** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
+ *  salvar grava a lista inteira, então editar sem a lista carregada apagaria os professores que já estão nela. */
+function carregarMestres() {
+  P.mestres = null;
+  b.lerMestres().then(l => { P.mestres = Array.isArray(l) ? l : 'erro'; }, () => { P.mestres = 'erro'; }).then(() => { if (!P.A) render(); });
+}
+
 /** Administradores: quem pode guardar na biblioteca e abrir salas on-line (config/mestres no Firestore). */
 function cartaoMestres() {
   const lista = P.mestres;
+  if (!Array.isArray(lista)) return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
+    lista === 'erro'
+      ? [h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'Não foi possível ler a lista de professores. Nada foi alterado.'), h('button', { class: 'btn', onclick: () => { carregarMestres(); render(); } }, 'Tentar de novo')]
+      : h('p', { class: 'sutil' }, 'Carregando a lista…'));
   const novo = h('input', { id: 'novoMestre', type: 'email', placeholder: 'email@exemplo.com', autocomplete: 'off' });
   const gravar = async emails => {
     try { await b.salvarMestres(emails); P.mestres = emails; render(); avisoGeral('Lista de professores atualizada.', 'ok'); }
@@ -298,14 +309,13 @@ function cartaoMestres() {
   const adicionar = () => {
     const { validos, invalidos } = lerEmails(novo.value);
     if (invalidos.length) return avisoGeral('E-mail inválido: ' + invalidos.join(', '), 'erro');
-    const juntos = [...new Set([...(lista || []), ...validos])].filter(x => !ADMINS.includes(x));
+    const juntos = [...new Set([...lista, ...validos])].filter(x => !ADMINS.includes(x));
     if (validos.length) gravar(juntos);
   };
   novo.addEventListener('keydown', ev => { if (ev.key === 'Enter') adicionar(); });
   return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
     h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Os administradores já têm acesso.'),
-    lista === null ? h('p', { class: 'sutil' }, 'Carregando…')
-      : h('ul', { class: 'lista-bib' },
+    h('ul', { class: 'lista-bib' },
         ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador')))),
         lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e)),
           h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
