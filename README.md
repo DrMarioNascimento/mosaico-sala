@@ -73,7 +73,8 @@ sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a int
 - Cada grupo só consegue ler o próprio pacote (regras do Firestore).
 - Envios só podem ser criados, nunca sobrescritos.
 - Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas abandonadas são apagadas na próxima entrada de quem conduz.
-- Lista de mestres: e-mails fixos em `firestore.rules` e/ou documento `config/mestres` com o campo `emails` (lista).
+- Lista de mestres: e-mails fixos em `firestore.rules` (função `fixos()`, os mesmos de `ADMINS` em `js/mestres.js`) + o documento `config/mestres` com o campo `emails`. Os administradores editam essa lista na tela inicial do Planejamento (cartão “Professores autorizados”).
+- Relatório da aula: ao revelar o resultado (ou na aba Sala, antes de encerrar), quem conduz baixa uma planilha .csv com envios, avaliados e acertos por etapa e por grupo, sem nomes nem identificadores de participantes.
 
 ## Tipos de atividade disponíveis
 

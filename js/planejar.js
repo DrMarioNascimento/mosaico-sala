@@ -13,6 +13,7 @@ import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
+import { ehAdmin, lerEmails, ADMINS } from './mestres.js';
 import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
 import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
@@ -23,7 +24,7 @@ import { ico, ilustra } from './icones.js';
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
-const P = { conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
+const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
@@ -56,6 +57,7 @@ $('entrarGoogle').onclick = () => {
 async function iniciar(conta) {
   P.conta = conta; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
+  if (souAdmin()) b.lerMestres().then(l => { P.mestres = l; if (!P.A) render(); }).catch(() => { P.mestres = []; });
   try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   render();
 }
@@ -65,6 +67,7 @@ async function carregarBiblioteca() {
   catch (e) { P.bib = null; P.bibErro = e?.code === 'permission-denied' || /permission/i.test(e?.message || '') ? 'fora' : 'falha'; }
 }
 const temBiblioteca = () => Array.isArray(P.bib);
+const souAdmin = () => EM_ENSAIO || ehAdmin(P.conta?.email);
 
 // ============================================================ estado
 function salvarRascunho() { try { localStorage.setItem(RASCUNHO, JSON.stringify({ A: P.A, origem: P.origem, sujo: P.sujo })); } catch {} }
@@ -274,6 +277,7 @@ function telaInicio() {
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
             h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
             item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
+      souAdmin() && cartaoMestres(),
       h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
         h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
         h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
@@ -281,6 +285,32 @@ function telaInicio() {
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
       h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
+}
+
+/** Administradores: quem pode guardar na biblioteca e abrir salas on-line (config/mestres no Firestore). */
+function cartaoMestres() {
+  const lista = P.mestres;
+  const novo = h('input', { id: 'novoMestre', type: 'email', placeholder: 'email@exemplo.com', autocomplete: 'off' });
+  const gravar = async emails => {
+    try { await b.salvarMestres(emails); P.mestres = emails; render(); avisoGeral('Lista de professores atualizada.', 'ok'); }
+    catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: publique as regras novas do Firestore (firestore.rules) e confira se sua conta é de administrador.' : 'Não foi possível salvar: ' + (e?.message || e), 'erro'); }
+  };
+  const adicionar = () => {
+    const { validos, invalidos } = lerEmails(novo.value);
+    if (invalidos.length) return avisoGeral('E-mail inválido: ' + invalidos.join(', '), 'erro');
+    const juntos = [...new Set([...(lista || []), ...validos])].filter(x => !ADMINS.includes(x));
+    if (validos.length) gravar(juntos);
+  };
+  novo.addEventListener('keydown', ev => { if (ev.key === 'Enter') adicionar(); });
+  return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
+    h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Os administradores já têm acesso.'),
+    lista === null ? h('p', { class: 'sutil' }, 'Carregando…')
+      : h('ul', { class: 'lista-bib' },
+        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador')))),
+        lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e)),
+          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
+    h('label', { for: 'novoMestre' }, 'Adicionar professor (conta Google)'), novo,
+    h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: adicionar }, ico('mais'), 'Adicionar')));
 }
 
 async function abrirModelo(id) {
