@@ -167,7 +167,8 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
   .plan-acoes .acoes-menu .so-celular { display:inline-flex; }
 }
 .plan-editor { min-width: 0; }
-.linha-item, .opcao-edit { grid-template-columns: auto minmax(0, 1fr) auto; }
+.linha-item > * { min-width: 0; }
+.opcao-edit { grid-template-columns: auto minmax(0, 1fr) auto; }
 .linha-item input, .opcao-edit textarea { min-width: 0; }
 .tipo-cartoes { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .plan-barra .status { overflow-wrap: anywhere; }
