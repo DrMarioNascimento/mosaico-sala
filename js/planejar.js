@@ -135,6 +135,7 @@ function modelo(titulo, nGrupos, completo) {
 }
 
 function abrir(atividade, origem, idRascunho = null) {
+  avisoGeral('');
   rascunhoId = idRascunho || (origem?.bibId ? rascunhosLocais().find(r=>r.origem?.bibId===origem.bibId)?.rascunhoId : null); P.A = JSON.parse(JSON.stringify(atividade)); historico = criarHistorico(P.A); P.origem = origem || null; P.sujo = !origem; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];   // sujo: nova, importada ou modelo ainda não está na biblioteca
   salvarRascunho(); marcarHistorico(); render(); window.scrollTo({ top: 0 });
 }
@@ -187,6 +188,7 @@ function passosSecao() {
 
 // ============================================================ renderização geral
 function render() {
+  document.body.classList.toggle('planejando',!!P.A);
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());

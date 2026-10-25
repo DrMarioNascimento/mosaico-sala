@@ -172,3 +172,11 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
 .linha-item input, .opcao-edit textarea { min-width: 0; }
 .tipo-cartoes { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 .plan-barra .status { overflow-wrap: anywhere; }
+@media(max-width:640px) {
+  .planejando .plan-pagina > .fluxo { display:none; }
+  .planejando .plan-migalhas .tit, .planejando .plan-migalhas .tit + .sep { display:none; }
+  .planejando .plan-migalhas { gap:6px; font-size:.85rem; }
+  .passo3 { grid-template-columns:auto minmax(0,1fr); grid-template-areas:"n rot" "n est"; justify-items:stretch; text-align:left; column-gap:6px; padding:8px 6px; font-size:.75rem; }
+  .passo3 .n { width:22px; height:22px; align-self:center; }
+  .passo3 small { font-size:.7rem; }
+}
