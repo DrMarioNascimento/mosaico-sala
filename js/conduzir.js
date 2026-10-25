@@ -751,7 +751,7 @@ async function revelarFinal() {
     const r = a.docente.respostas[e.id];
     if (e.typeId === 'cartoes_arrastar') return { titulo: e.titulo, resposta: respostaEsperadaTexto(e.config, r), explicacao: r.explicacao || '' };
     if (T.tem(e) || ehQuadro(e)) return { titulo: e.titulo, resposta: T.respostaTexto(e), explicacao: r.explicacao || '' };
-    if (r.perguntas) return { titulo: e.titulo, resposta: r.codigo ? 'código ' + r.codigo : '', explicacao: r.explicacao || '' };
+    if (r.perguntas) return { titulo: e.titulo, resposta: r.codigo ? 'código ' + String(r.codigo).split(';')[0].trim() : '', explicacao: r.explicacao || '' };
     const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
     return { titulo: e.titulo, resposta: op?.texto || '', explicacao: r.explicacao || '' };
   });
