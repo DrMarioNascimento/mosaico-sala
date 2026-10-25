@@ -45,6 +45,8 @@ export function lerProposta(texto, cfg = {}) {
 }
 export function mensagemErroIA(erro) {
   const t = String(erro?.code || '') + ' ' + String(erro?.message || erro || '');
+  // Créditos pré-pagos esgotados também chegam como 429, mas esperar não resolve: alguém precisa recarregar.
+  if (/prepayment|credits are depleted|billing/i.test(t)) return 'Os créditos de IA do projeto acabaram. O administrador precisa recarregar no AI Studio (ai.studio/projects → Faturamento). Enquanto isso, use o caminho com IA externa; seu material foi preservado.';
   if (/429|quota|resource.exhausted/i.test(t)) return 'O limite de geração foi atingido. Aguarde e tente novamente ou use o caminho com IA externa. Nenhuma atividade foi substituída.';
   if (/app.check|appcheck|403|permission|api.not|not.enabled|service.disabled/i.test(t)) return 'A geração integrada ainda precisa da configuração do Firebase pelo administrador. Seu texto foi mantido; use o caminho com IA externa enquanto isso.';
   if (/network|fetch|offline/i.test(t)) return 'Não foi possível conectar à IA. Confira a internet; seu material continua nesta tela.';

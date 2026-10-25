@@ -37,7 +37,7 @@ test('Material de autoria, revisão e roteiro privados não entram na versão p�
  const p=JSON.stringify(versaoPublica(a));assert.ok(!p.includes('texto privado'));assert.ok(!p.includes('guia privado'));assert.ok(!p.includes('revisadoEm'));
 });
 test('Diferenças da proposta identificam as partes alteradas, e falhas de quota têm orientação legível',()=>{
- const a=structuredClone(caso);a.titulo='Novo título';assert.deepEqual(resumoAlteracoes(caso,a),['titulo']);assert.match(mensagemErroIA({code:429}),/limite/);
+ const a=structuredClone(caso);a.titulo='Novo título';assert.deepEqual(resumoAlteracoes(caso,a),['titulo']);assert.match(mensagemErroIA({code:429}),/limite/);assert.match(mensagemErroIA({message:'[429 ] Your prepayment credits are depleted.'}),/créditos de IA do projeto acabaram/);
 });
 test('Uma resposta da IA nunca se declara revisada pelo professor',()=>{
  const a=structuredClone(caso);a.docente.revisadoEm='aprovação inventada';a.docente.revisoes={e1:true};const r=lerProposta(JSON.stringify(a),{organizacao:'grupos',numeroGrupos:5});assert.equal(r.atividade.docente.revisadoEm,undefined);assert.equal(r.atividade.docente.revisoes,undefined);
