@@ -57,7 +57,15 @@ casos/             Modelos prontos (listados em js/casos.js; tests/casos.test.mj
 js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
 firestore.rules    Regras do Firestore
 tests/             Testes automáticos (critérios da seção 22)
+tests/e2e/         Aula completa de cada modelo, com celulares simulados (Playwright, modo ensaio)
+sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a internet oscilando
 ```
+
+## Testes e prévia
+
+- `node --test tests/*.test.mjs`: núcleo e modelos (rápido, sem navegador).
+- `node --test tests/e2e/aula.e2e.mjs`: conduz uma aula inteira de cada modelo pronto, do sorteio dos grupos ao resultado, com 6 celulares em piloto automático. Precisa do Playwright (`npm install --no-save playwright && npx playwright install chromium`).
+- Em cada pull request, o GitHub roda os dois e publica uma prévia no Firebase (o link aparece num comentário do PR e expira em 7 dias). Na prévia, o login Google só funciona se o domínio da prévia estiver autorizado no Authentication; o modo `?ensaio=1` funciona sempre.
 
 ## Segurança e dados
 

@@ -525,3 +525,4 @@ img.ico { width: 1.25em; height: 1.25em; object-fit: contain; }
 /* Condução: roteiro da aula em uma linha por etapa */
 .roteiro { margin: 12px 0 16px; padding-left: 1.4em; display: grid; gap: 6px; }
 .roteiro small { display: block; }
+.aviso-rede { position: sticky; top: 0; z-index: 30; }
