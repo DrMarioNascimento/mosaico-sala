@@ -145,11 +145,11 @@
             "alternativas": [
               {
                 "id": "a",
-                "texto": "Bebeu mais do que perdeu em suor e urina."
+                "texto": "Perdeu mais água do que bebeu."
               },
               {
                 "id": "b",
-                "texto": "Perdeu mais água do que bebeu."
+                "texto": "Bebeu mais do que perdeu em suor e urina."
               },
               {
                 "id": "c",
@@ -167,15 +167,15 @@
             "alternativas": [
               {
                 "id": "a",
-                "texto": "Porque o que pesou foi a quantidade: o sal de uma bebida esportiva não compensa litros de água a mais."
-              },
-              {
-                "id": "b",
                 "texto": "Porque bebida com eletrólitos faz mal em dia frio."
               },
               {
-                "id": "c",
+                "id": "b",
                 "texto": "Porque a Bruna treinou mais e por isso precisa de menos água."
+              },
+              {
+                "id": "c",
+                "texto": "Porque o que pesou foi a quantidade: o sal de uma bebida esportiva não compensa litros de água a mais."
               }
             ]
           },
@@ -203,19 +203,19 @@
             "alternativas": [
               {
                 "id": "a",
-                "texto": "Água demais diluindo o sangue e inchando os tecidos, inclusive o cérebro."
-              },
-              {
-                "id": "b",
                 "texto": "Insolação."
               },
               {
-                "id": "c",
+                "id": "b",
                 "texto": "Açúcar baixo."
               },
               {
-                "id": "d",
+                "id": "c",
                 "texto": "Uma reação alérgica ao gel."
+              },
+              {
+                "id": "d",
+                "texto": "Água demais diluindo o sangue e inchando os tecidos, inclusive o cérebro."
               }
             ]
           }
@@ -553,16 +553,16 @@
         "explicacao": "60,0 − 58,2 = 1,8 kg a mais. Ganhar peso numa maratona quer dizer que entrou mais água do que saiu.",
         "perguntas": {
           "q_peso": {
-            "corretaId": "a"
+            "corretaId": "b"
           },
           "q_bruna": {
-            "corretaId": "a"
+            "corretaId": "c"
           },
           "q_banheiro": {
             "corretaId": "a"
           },
           "q_aneis": {
-            "corretaId": "a"
+            "corretaId": "d"
           }
         }
       },
