@@ -70,7 +70,9 @@ $('entrar').onclick = async () => {
 // Retomar depois de recarregar a página (ou entrar sozinho, no simulador)
 (async () => {
   let salvo = null; try { salvo = JSON.parse(GUARDA.getItem(SESSAO) || 'null'); } catch {}
-  if (salvo && !(Date.now() - (salvo.em || 0) < VALIDADE)) { salvo = null; try { GUARDA.removeItem(SESSAO); } catch {} }
+  // Sessão vencida, ou o link (QR) pede outra sala: entra na sala do link, não na guardada.
+  const pedida = params.get('sala');
+  if (salvo && (!(Date.now() - (salvo.em || 0) < VALIDADE) || (pedida && pedida !== salvo.codigo))) { salvo = null; try { GUARDA.removeItem(SESSAO); } catch {} }
   if (salvo) {
     uid = await b.identificar();
     if (await b.lerMembro(salvo.codigo, uid)) { meuNome = salvo.nome; conectar(salvo.codigo); return; }
