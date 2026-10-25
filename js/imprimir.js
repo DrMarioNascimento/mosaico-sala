@@ -17,7 +17,7 @@ export function gerarImpressao(a) {
   const partes = [], partesDocente = [];
   partes.push(`<section class="folha capa"><p class="marca">MOSAICO</p><h1>${esc(a.titulo)}</h1>
     ${a.perguntaCentral ? `<p class="pergunta">${esc(a.perguntaCentral)}</p>` : ''}
-    ${a.introducao ? `<p>${esc(a.introducao)}</p>` : ''}
+    ${a.introducao ? `<p style="white-space:pre-line">${esc(a.introducao)}</p>` : ''}
     <p class="sutil">${esc(a.publico || '')}${a.duracaoMin ? ' · ' + esc(a.duracaoMin) + ' min' : ''}</p>
     <p class="sutil">Grupos: ${a.grupos.map(g => esc(g.nome)).join(' · ')}</p>
     <p class="sutil" style="margin-top:2cm;font-size:9pt">Material gerado no MOSAICO · Sala (mosaico-sala.web.app). O conteúdo desta atividade pertence a quem a criou; a plataforma é © 2026 Prof. Mário César Nascimento, PhD — todos os direitos reservados (mosaico-sala.web.app/licenca).</p></section>`);
@@ -167,7 +167,7 @@ export function gerarImpressao(a) {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(a.titulo)} · impressão</title>
 <style>
- img{max-width:100%;max-height:18cm;object-fit:contain}
+ img{max-width:100%;max-height:12cm;object-fit:contain}
  body{font:12pt/1.45 Georgia,serif;color:#111;margin:0;background:#eee}
  .folha{background:#fff;max-width:19cm;margin:1cm auto;padding:1.5cm;box-shadow:0 1px 4px rgba(0,0,0,.2);page-break-after:always}
  h1{font:800 22pt Arial,sans-serif;margin:.2em 0}h2{font:800 16pt Arial,sans-serif;margin:.2em 0 .4em}h3{font:700 12pt Arial,sans-serif;margin:1em 0 .4em}
