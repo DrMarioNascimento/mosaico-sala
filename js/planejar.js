@@ -1,6 +1,7 @@
 import { cadeadoIcone } from './lock-icons.js';
 import { criarHistorico, recortarPrevia } from './core/ergonomia.js';
 import { abrirAutoria } from './autoria-docente.js';
+import { percursoDocente, numeroPasso } from './percurso-docente.js';
 import { painelRevisaoDocente } from './revisao-docente.js';
 /* MOSAICO · Planejamento: montar, revisar, guardar e pré-visualizar atividades.
    - Contas da lista de mestres: biblioteca fechada no Firestore.
@@ -56,6 +57,7 @@ let autoriaInicialAberta = false;
 window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao');});
 // ============================================================ entrada
 $('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio)' : 'Entrar com Google';
+$('entrarGoogle').prepend(numeroPasso(1));
 $('entrarGoogle').onclick = () => {
   const p = b.entrarGoogle(); $('entrarGoogle').disabled = true;
   p.then(iniciar).catch(e => { $('entrarGoogle').disabled = false; aviso($('avisoLogin'), e.code === 'auth/popup-closed-by-user' ? 'Login cancelado.' : 'Não foi possível entrar. Confira a internet.', 'erro'); });
@@ -187,7 +189,7 @@ function passosSecao() {
     ant ? h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => irPara(ant[0]) }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Anterior: ' + rot(ant)), h('span', { class: 'rot-curto' }, 'Anterior'))
       : h('button', { class: 'btn discreto', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Minhas atividades'), h('span', { class: 'rot-curto' }, 'Voltar')),
     prox ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', onclick: () => irPara(prox[0]) }, h('span', { class: 'rot-longo' }, 'Próxima: ' + rot(prox)), h('span', { class: 'rot-curto' }, 'Próxima'), ico('avancar'))
-      : P.secao === 'revisao' ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', disabled: temErros(validarAtividade(P.A)), onclick: previa }, ico('previa'), 'Ver como fica') : null);
+      : P.secao === 'revisao' ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', disabled: temErros(validarAtividade(P.A)), onclick: previa }, numeroPasso(6),ico('previa'), 'Ver como fica') : null);
 }
 
 // ============================================================ renderização geral
@@ -196,7 +198,7 @@ function render() {
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
-  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
+  limpar($('app'), percursoDocente(5,true), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
 }
 
@@ -208,14 +210,14 @@ function renderAcoes() {
     h('span', { id:'estadoSalvamento', class:'estado-salvamento', role:'status', 'aria-live':'polite' }),
     h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
     h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
-    h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
-    h('button', { class:'btn', disabled:temErros(diags), title:temErros(diags)?'Complete os itens da Revisão para ensaiar a aula inteira':'Experimentar a aula com turma simulada', onclick:()=>previa() }, 'Ver como fica'),
+    h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, numeroPasso(P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags)?8:5),P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
+    h('button', { class:'btn', disabled:temErros(diags), title:temErros(diags)?'Complete os itens da Revisão para ensaiar a aula inteira':'Experimentar a aula com turma simulada', onclick:()=>previa() },numeroPasso(6), 'Ver como fica'),
     
     h('details',{class:'acoes-mais'},h('summary',{class:'btn'},'Guardar e exportar'),
       h('div',{class:'acoes-menu'},
         h('button',{class:'btn so-celular',disabled:!historico?.podeDesfazer,onclick:()=>restaurarHistorico()},'Desfazer'),
         h('button',{class:'btn so-celular',disabled:!historico?.podeRefazer,onclick:()=>restaurarHistorico(true)},'Refazer'),
-        temBiblioteca() && h('button',{class:'btn',onclick:()=>dialogoSalvar()},P.sujo?'Salvar na biblioteca':'Salvo na biblioteca ✓'),
+        temBiblioteca() && h('button',{class:'btn',onclick:()=>dialogoSalvar()},numeroPasso(7),P.sujo?'Salvar na biblioteca':'Salvo na biblioteca ✓'),
         temBiblioteca() && h('button',{class:'btn',onclick:continuarNoCelular},'Continuar no celular'),
         h('button',{class:'btn',onclick:()=>baixarPlanilha(P.A).catch(e=>avisoGeral(e.message,'erro'))},'Baixar planilha'),
         h('button',{class:'btn',onclick:()=>baixarJSON(P.A)},'Baixar arquivo da atividade'),
@@ -254,7 +256,7 @@ function renderPassos3(nErros, nErrosEtapas) {
     ['Revisar e preparar aula', s === 'revisao', 'revisao', nErros]
   ];
   limpar(alvo, passos.map(([rot, atual, destino, n], i) => h('button', { class: 'passo3', 'aria-current': atual ? 'step' : null, onclick: () => irPara(destino) },
-    h('span', { class: 'n' }, i + 1), h('span', { class: 'rot' }, rot),
+    h('span', { class: 'n' }, i===2?'5':'•'), h('span', { class: 'rot' }, rot),
     h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? (P.A.docente?.revisadoEm ? 'revisada' : 'estrutura completa') : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
 }
 
@@ -305,12 +307,13 @@ function telaInicio() {
     } catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
   };
   return h('div', {},
-    h('span',{class:'guia-selo'},'PASSO 1 · PREPARAR'),
+    percursoDocente(2),
+    h('span',{class:'guia-selo'},'PASSO 2 · ESCOLHA COMO COMEÇAR'),
     h('h1', { style: { marginTop: '12px' } }, 'Minhas atividades'),
     h('section',{class:'inicio-docente cartao destaque'},h('h2',{},'Por onde começar?'),h('p',{},'Escolha uma forma de preparar a aula. Se já tem um texto, comece pelo primeiro cartão.'),h('div',{class:'escolhas-autoria'},
-      h('article',{class:'escolha-autoria principal'},h('span',{class:'numero-opcao','aria-hidden':'true'},'1'),ilustra('e_material',76),h('span',{class:'guia-selo'},'COMECE AQUI'),h('h3',{},'Tenho um texto ou arquivo'),h('p',{},'Cole ou importe seu material. Depois informe a turma e peça à IA uma proposta.'),h('button',{class:'btn primario',onclick:()=>abrirIA()},ico('ia'),'Inserir texto e gerar com IA'),h('small',{},'1 Material → 2 Planejar e gerar → 3 Revisar proposta')),
-      h('article',{class:'escolha-autoria'},h('span',{class:'numero-opcao','aria-hidden':'true'},'2'),ilustra('e_planejar',64),h('h3',{},'Quero adaptar um modelo'),h('p',{},'Abra um exemplo e ajuste ao conteúdo da sua aula.'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto')),
-      h('article',{class:'escolha-autoria'},h('span',{class:'numero-opcao','aria-hidden':'true'},'3'),ilustra('e_revisar',64),h('h3',{},'Já comecei uma atividade'),h('p',{},'Retome um rascunho deste navegador ou uma atividade da biblioteca.'),h('button',{class:'btn',disabled:!rascunhosLocais().length && !P.bib?.length,onclick:()=>{const alvo=document.getElementById('rascunhosLocais')||document.getElementById('bibliotecaDocente');alvo?.scrollIntoView({behavior:'smooth',block:'start'});}},'Continuar meu trabalho')))),
+      h('article',{class:'escolha-autoria principal'},h('span',{class:'numero-opcao','aria-hidden':'true'},'2'),ilustra('e_material',76),h('span',{class:'guia-selo'},'COMECE AQUI'),h('h3',{},'Tenho um texto ou arquivo'),h('p',{},'Cole ou importe seu material. Depois informe a turma e peça à IA uma proposta.'),h('button',{class:'btn primario',onclick:()=>abrirIA()},ico('ia'),'Inserir texto e gerar com IA'),h('small',{},'2 Material → 3 Planejar → 4 Gerar → 5 Revisar')),
+      h('article',{class:'escolha-autoria'},h('span',{class:'alternativa-fluxo'},'Alternativa'),ilustra('e_planejar',64),h('h3',{},'Quero adaptar um modelo'),h('p',{},'Abra um exemplo e ajuste ao conteúdo da sua aula.'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto')),
+      h('article',{class:'escolha-autoria'},h('span',{class:'alternativa-fluxo'},'Retomar'),ilustra('e_revisar',64),h('h3',{},'Já comecei uma atividade'),h('p',{},'Retome um rascunho deste navegador ou uma atividade da biblioteca.'),h('button',{class:'btn',disabled:!rascunhosLocais().length && !P.bib?.length,onclick:()=>{const alvo=document.getElementById('rascunhosLocais')||document.getElementById('bibliotecaDocente');alvo?.scrollIntoView({behavior:'smooth',block:'start'});}},'Continuar meu trabalho')))),
     antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
     rascunhosLocais().length>0 && h('section',{class:'cartao',id:'rascunhosLocais'},h('h2',{},'Rascunhos neste navegador'),h('p',{class:'sutil'},'Disponíveis nesta conta e neste navegador. Salve na biblioteca para continuar em outro aparelho.'),h('ul',{class:'lista-bib'},rascunhosLocais().map(r=>h('li',{},h('div',{class:'tit'},h('strong',{},r.A.titulo),h('small',{},new Date(r.salvoEm).toLocaleString('pt-BR'))),h('button',{class:'btn pequeno',onclick:()=>{abrir(r.A,r.origem,r.rascunhoId);P.sujo=!!r.sujo;salvarRascunho();render();}},'Continuar'))))),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
@@ -425,10 +428,19 @@ async function apagarDaBiblioteca(item) {
   if (!confirmar(`Apagar “${item.titulo}” da biblioteca? Isso não pode ser desfeito.`)) return;
   try { await b.apagarBiblioteca(item.id); await carregarBiblioteca(); render(); avisoGeral('Apagada.', 'ok'); } catch (e) { avisoGeral('Não foi possível apagar: ' + e.message, 'erro'); }
 }
+function painelFinalizarAtividade(erros) {
+ const revisada=!!P.A.docente?.revisadoEm,liberada=!erros.length;
+ const cartao=(n,t,descricao,botao)=>h('article',{class:'finalizar-passo'},h('h3',{},numeroPasso(n),t),h('p',{},descricao),botao);
+ return h('section',{class:'cartao finalizar-atividade','aria-label':'Concluir a preparação da atividade'},h('h2',{},'Depois da revisão, conclua nesta ordem'),h('div',{class:'finalizar-grade'},
+  cartao(6,'Experimente a atividade','Abra a simulação e confira o que professor e alunos verão. Depois volte a esta aba.',h('button',{class:'btn',disabled:!liberada,onclick:()=>previa()},numeroPasso(6),'Ver como fica')),
+  cartao(7,'Salve sua atividade',temBiblioteca()?'Guarde na biblioteca para recuperar em outro aparelho.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
+  cartao(8,'Leve para a sala',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A atividade está pronta para abrir a sala e receber os alunos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},numeroPasso(8),'Abrir sala e conduzir'))));
+}
+
 function dialogoSalvar(aposSalvar = null) {
   let comp = !!P.origem?.compartilhada;
   const d = h('dialog', { class: 'explica' },
-    h('h2', {}, 'Salvar na biblioteca'),
+    h('h2', {}, numeroPasso(7),'Salvar na biblioteca'),
     h('p', { class: 'sutil' }, 'A biblioteca é fechada: só contas da lista de mestres entram. Ela guarda a atividade (incluindo o gabarito), nunca dados de participantes.'),
     h('label', { class: 'opcao', style: { marginTop: '8px' } }, h('input', { type: 'checkbox', checked: comp, onchange: e => { comp = e.target.checked; } }), h('span', {}, 'Compartilhar com os outros mestres (eles podem ver e duplicar; só você edita)')),
     h('div', { class: 'linha-botoes' },
@@ -437,9 +449,9 @@ function dialogoSalvar(aposSalvar = null) {
           if (JSON.stringify(P.A).length > 880000) throw new Error('A atividade ficou pesada demais para a biblioteca (imagens). Use imagens menores ou exporte a planilha.');
           const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: JSON.stringify(P.A), compartilhada: comp, autor: P.conta?.email || '' });
           P.origem = { bibId: id, compartilhada: comp }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
-          d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca.', 'ok'); if(typeof aposSalvar === 'function') aposSalvar();
+          d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca. Próximo: 8 · Abrir sala e conduzir.', 'ok'); if(typeof aposSalvar === 'function') aposSalvar();
         } catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: confira se as regras do Firestore foram publicadas.' : 'Não foi possível salvar: ' + e.message, 'erro'); d.close(); d.remove(); }
-      } }, 'Salvar'),
+      } }, numeroPasso(7),'Salvar'),
       h('button', { class: 'btn', onclick: () => { d.close(); d.remove(); } }, 'Cancelar')));
   document.body.append(d); d.showModal();
 }
@@ -1090,10 +1102,11 @@ function editorRevisao() {
   const a = P.A, d = validarAtividade(a), g = avisoGramatica(a), s = sugerirEquilibrio(a, { dispensadas: P.dispensadas });
   const erros = d.filter(x => x.severidade === 'erro'), outros = d.filter(x => x.severidade !== 'erro');
   return h('div', {},
-    painelRevisaoDocente(a,{editar:id=>irPara('etapa:'+id),guardar:()=>{P.sujo=true;salvarRascunho();historico?.registrar(P.A);},atualizar:()=>{renderAcoes();renderNav();}}),
+    painelRevisaoDocente(a,{editar:id=>irPara('etapa:'+id),guardar:()=>{P.sujo=true;salvarRascunho();historico?.registrar(P.A);},atualizar:()=>{renderAcoes();renderNav();const painel=document.querySelector('.finalizar-atividade');if(painel)painel.replaceWith(painelFinalizarAtividade(validarAtividade(P.A).filter(d=>d.severidade==='erro')));}}),
     h('div', { class: 'cartao' + (erros.length ? '' : ' destaque') }, h('h2', {}, erros.length ? `${erros.length} itens a completar ou corrigir` : 'Estrutura completa'),
       erros.length ? h('ul', { class: 'diag' }, erros.map(linhaDiag)) : h('p', {}, 'A estrutura está completa. Confira o conteúdo, as fontes e as respostas esperadas; depois experimente a aula.')),
     (outros.length > 0 || g) && h('div', { class: 'cartao' }, h('h3', {}, 'Avisos'), g && h('p', { class: 'aviso' }, g.mensagem), h('ul', { class: 'diag' }, outros.map(linhaDiag))),
+    painelFinalizarAtividade(erros),
     s.length > 0 && h('div', { class: 'cartao' }, h('h3', {}, 'Sugestões de equilíbrio'), h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
       h('ul', { class: 'diag' }, s.map(x => h('li', { class: 'info' }, x.mensagem, ' ', h('button', { class: 'btn pequeno discreto', onclick: () => { P.dispensadas.add(x.id); renderEditor(); } }, 'Dispensar'))))));
 }

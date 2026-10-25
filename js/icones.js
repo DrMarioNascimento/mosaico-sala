@@ -192,7 +192,7 @@ const POR_ROTULO = [
 ];
 function decorar(btn) {
   if (btn.dataset.semIco !== undefined || btn.querySelector(':scope > .ico, :scope > .ilu')) return;
-  const t = (btn.textContent || '').trim(); if (!t || t.length > 60) return;
+  const t = [...btn.childNodes].filter(n=>!(n instanceof Element && n.classList.contains('numero-fluxo'))).map(n=>n.textContent||'').join('').trim(); if (!t || t.length > 60) return;
   for (const [re, nome] of POR_ROTULO) if (re.test(t)) { if (nome) btn.prepend(ico(nome)); return; }
 }
 /** Coloca os ícones de [data-ico] e [data-ilu] e decora os botões (agora e quando a tela mudar). */

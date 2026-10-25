@@ -69,3 +69,7 @@ A entrada do professor apresenta três passos: 1 inserir material, 2 revisar e e
 Foram selecionadas 30 imagens da pasta fornecida pelo titular, otimizadas para 256 × 256, preservando a proporção e a transparência original. Elas atendem a 43 posições de ilustrações e ícones, mantendo símbolos de ações sem substituto visual adequado. A origem de cada arquivo está em assets/ilustracoes/docente/origens.json. Os rótulos de texto continuam visíveis e as imagens decorativas não duplicam a leitura por tecnologias assistivas.
 
 Validação: 113 testes do núcleo e sintaxe JavaScript; conferência da abertura direta do assistente, do botão de geração em tela de 390 × 844 e de imagens carregadas sem transbordamento horizontal. Não equivale a teste em aparelhos físicos.
+
+## Sequência completa de preparação
+
+A numeração é contínua: 1 entrar; 2 inserir material ou escolher um modelo; 3 planejar; 4 gerar com IA ou adaptar; 5 revisar conteúdo; 6 experimentar; 7 salvar; 8 aplicar em sala. As opções de modelo e retomada são alternativas do mesmo ponto de entrada, não etapas posteriores à criação por texto. A sequência completa aparece no início e pode ser expandida no assistente e no editor. Botões de geração, revisão, prévia e salvamento levam o número correspondente. A revisão termina com ações visíveis 6, 7 e 8; a liberação da sala respeita erros estruturais, revisão do conteúdo e autorização da conta. O ensaio orienta o retorno ao passo 7, e o salvamento indica o passo 8.

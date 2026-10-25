@@ -1,6 +1,8 @@
 /* MOSAICO · Navegação e ícones em todas as páginas.
    Põe os ícones próprios (js/icones.js) em [data-ico] / [data-ilu] e nos botões, e marca a página atual na barra de fluxo. */
 import { aplicarIcones } from './icones.js';
+import { percursoDocente } from './percurso-docente.js';
+for(const el of document.querySelectorAll('[data-percurso-docente]'))el.replaceChildren(percursoDocente(Number(el.dataset.percursoDocente)||1));
 
 function marcarNavegacao(){
  const pagina=location.pathname.split('/').pop().replace(/\.html$/, '')||'index';

@@ -205,3 +205,12 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
 .numero-opcao { position:absolute; right:14px; top:14px; width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--acento); color:var(--fundo); font:900 1.1rem var(--fonte); box-shadow:inset 0 2px 2px #fff7,0 3px 0 #0004; }
 .escolha-autoria h3 { padding-right:32px; }
 @media(max-width:900px) { .escolha-autoria .guia-selo { padding-right:30px; }.numero-opcao { width:30px; height:30px; top:12px; right:12px; font-size:1rem; } }
+.finalizar-grade { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.finalizar-passo { display:flex; flex-direction:column; padding:16px; border:1px solid var(--linha); border-radius:14px; background:var(--fundo-2); min-width:0; }
+.finalizar-passo h3 { display:flex; align-items:center; gap:3px; margin:0 0 8px; font-size:1rem; }
+.finalizar-passo p { color:var(--texto-2); line-height:1.45; text-align:left; margin:0 0 14px; }
+.finalizar-passo .btn { margin-top:auto; width:100%; white-space:normal; }
+.alternativa-fluxo { position:absolute; right:14px; top:16px; font-size:.72rem; font-weight:700; color:var(--texto-2); }
+.autoria-dialog .percurso-docente { margin:10px 0; }
+.autoria-passos .numero-fluxo { margin:0; }
+@media(max-width:900px) { .finalizar-grade { grid-template-columns:1fr; }.alternativa-fluxo { font-size:.65rem; right:12px; top:12px; } }

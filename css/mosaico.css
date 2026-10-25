@@ -621,3 +621,23 @@ body.com-barra-etapa .pagina { padding-bottom: 150px; }
 
 .jornada-card > [data-ilu] .ilu,.jornada-card.principal > [data-ilu] .ilu { --tam:72px!important; }
 .btn .ico.em-3d { width:1.2em; height:1.2em; }
+/* Sequência única do professor, do login à aplicação em sala. */
+.numero-fluxo { display:inline-grid; place-items:center; width:28px; height:28px; min-width:28px; border-radius:50%; background:var(--acento); color:var(--fundo); font:900 .95rem var(--fonte); box-shadow:inset 0 2px 2px #fff6,0 2px 0 #0004; flex-shrink:0; vertical-align:middle; margin-right:7px; }
+.btn .numero-fluxo { width:25px; height:25px; min-width:25px; font-size:.85rem; }
+.btn.primario .numero-fluxo { background:var(--fundo); color:var(--acento); }
+.percurso-docente { margin:18px 0; padding:16px; border:1px solid var(--linha); border-radius:18px; background:var(--fundo-2); }
+.percurso-docente h2 { font-size:1.1rem; margin:0 0 5px; }
+.percurso-docente > p { margin:4px 0 14px; color:var(--texto-2); font-size:.92rem; text-align:left; }
+.percurso-lista { list-style:none; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0; padding:0; }
+.percurso-lista li { display:flex; align-items:flex-start; gap:3px; min-width:0; padding:10px; border:1px solid var(--linha); border-radius:12px; }
+.percurso-lista li[aria-current=step] { border-color:var(--acento); background:#ff8a3d0d; }
+.percurso-lista strong { display:block; font-size:.88rem; line-height:1.3; }
+.percurso-lista small { display:block; margin-top:5px; color:var(--texto-2); font-size:.77rem; line-height:1.35; }
+.percurso-docente.compacto { padding:10px 14px; margin:12px 0; }
+.percurso-docente summary { cursor:pointer; display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-height:34px; }
+.percurso-docente summary .numero-fluxo { margin-right:4px; }
+.percurso-ver { font-size:.78rem; color:var(--texto-2); text-decoration:underline; text-underline-offset:3px; margin-left:auto; }
+.percurso-docente.compacto .percurso-lista { margin-top:12px; }
+.plan-login .percurso-docente h2 { font-size:1rem; }
+@media(min-width:1100px) { .boas-vindas-docente .percurso-lista { grid-template-columns:repeat(8,minmax(0,1fr)); }.boas-vindas-docente .percurso-lista li { flex-direction:column;gap:8px; } }
+@media(max-width:640px) { .percurso-lista { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }.percurso-lista li { padding:8px; }.percurso-lista .numero-fluxo { width:24px;height:24px;min-width:24px;font-size:.8rem; }.percurso-lista small { font-size:.73rem; }.percurso-ver { margin-left:37px; }.percurso-docente.compacto { padding:9px; }.percurso-docente summary > strong { font-size:.87rem; } }
