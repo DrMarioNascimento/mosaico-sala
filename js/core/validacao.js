@@ -159,6 +159,15 @@ export function validarAtividade(a) {
     });
   }
 
+  // Os celulares mostram as alternativas na ordem escrita: certa sempre na mesma letra vira padrão que a turma descobre.
+  for (const e of a.etapas) {
+    const qs = e.config?.perguntas, rp = respostas[e.id]?.perguntas;
+    if (!Array.isArray(qs) || qs.length < 3 || !rp) continue;
+    const letras = qs.map(q => rp[q.id]?.corretaId).filter(Boolean);
+    if (letras.length === qs.length && new Set(letras).size === 1)
+      d.push(aviso(`docente.respostas.${e.id}`, `Em "${e.titulo}", a resposta certa é sempre a alternativa ${String(letras[0]).toUpperCase()}. Varie a posição para a turma não decorar o padrão.`));
+  }
+
   // LGPD: casos devem ser fictícios. Avisa (não bloqueia) quando um texto parece ter dado pessoal real.
   const textos = [['introducao', a.introducao], ['perguntaCentral', a.perguntaCentral],
     ...a.pecas.map((p, i) => [`pecas[${i}].conteudo`, p.conteudo]),
@@ -193,8 +202,16 @@ export const temErros = diags => diags.some(x => x.severidade === 'erro');
 export function lerJsonImportado(textoBruto, limiteBytes = 2_000_000) {
   if (typeof textoBruto !== 'string') return { diagnosticos: [erro('arquivo', 'Conteúdo não é texto.')] };
   if (textoBruto.length > limiteBytes) return { diagnosticos: [erro('arquivo', `Arquivo acima do limite (${Math.round(limiteBytes / 1e6)} MB).`)] };
-  // Tolera cercas de código ```json ... ``` que algumas IAs acrescentam.
+  // Tolera o jeito como as IAs costumam responder: texto antes/depois e cercas de código ```json ... ```.
   const limpo = textoBruto.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   try { return { atividade: JSON.parse(limpo), diagnosticos: [] }; }
-  catch (e) { return { diagnosticos: [erro('arquivo', 'JSON inválido: ' + e.message)] }; }
+  catch (e) {
+    const cerca = /```(?:json)?\s*([\s\S]*?)```/i.exec(textoBruto)?.[1];
+    const i = textoBruto.indexOf('{'), j = textoBruto.lastIndexOf('}');
+    for (const candidato of [cerca, i >= 0 && j > i ? textoBruto.slice(i, j + 1) : null]) {
+      if (!candidato) continue;
+      try { return { atividade: JSON.parse(candidato), diagnosticos: [] }; } catch {}
+    }
+    return { diagnosticos: [erro('arquivo', 'JSON inválido: ' + e.message)] };
+  }
 }
