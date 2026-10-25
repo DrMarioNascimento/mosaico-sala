@@ -35,6 +35,13 @@ const CATEGORIAS = [
   ['Quizzes e jogos', ['quiz_grupos', 'corrida', 'quiz_pensar', 'sequencia']],
   ['Verificação individual', ['questao_individual']]
 ];
+/** “Ideal para” de cada tipo, na tela de nova etapa (ideia do protótipo do v0). */
+const IDEAL_PARA = {
+  investigacao_fragmentos: 'Abrir o tema com um problema', comparar_hipoteses: 'Depois de uma investigação', analise_imagem: 'Lâminas, gráficos, mapas e anatomia',
+  montagem_pecas: 'Textos, contas e imagens', cadeado_grupo: 'Revisão com desafio', cartoes_arrastar: 'Processos, categorias e debates', pares: 'Relacionar conceitos',
+  cruzadas: 'Vocabulário e conceitos-chave', quiz_grupos: 'Fechar a aula com energia', corrida: 'Revisão rápida e competitiva', quiz_pensar: 'Argumentar, decidir e refletir',
+  sequencia: 'Memorizar sequências e termos', questao_individual: 'Verificar o que cada um aprendeu'
+};
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
@@ -149,7 +156,7 @@ function render() {
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
-  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
+  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
 }
 
@@ -173,15 +180,31 @@ function renderNav() {
   const nav = document.getElementById('nav'); if (!nav || !P.A) return;
   const diags = validarAtividade(P.A), nErros = diags.filter(d => d.severidade === 'erro').length;
   const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => irPara(secao), ...extra }, conteudo);
+  const errosEtapa = new Map(P.A.etapas.map(e => [e.id, diagsDaEtapa(e, diags).filter(d => d.severidade === 'erro').length]));
+  renderPassos3(nErros, [...errosEtapa.values()].reduce((x, y) => x + y, 0));
   limpar(nav,
     item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
     item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })),
+    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n)], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId }); }),
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
     item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' erro(s)' : 'ok')]));
+}
+
+/** Os 3 passos do planejamento (Sobre a turma → Etapas → Revisar), com as pendências de cada um. */
+function renderPassos3(nErros, nErrosEtapas) {
+  const alvo = document.getElementById('passos3'); if (!alvo || !P.A) return;
+  const s = P.secao, primeira = etapasOrdenadas(P.A)[0];
+  const passos = [
+    ['Sobre a turma', s === 'geral' || s === 'grupos', 'geral', nErros - nErrosEtapas],
+    ['Etapas', s.startsWith('etapa:') || s === 'nova-etapa' || s === 'fontes', primeira ? 'etapa:' + primeira.id : 'nova-etapa', P.A.etapas.length ? nErrosEtapas : -1],
+    ['Revisar e dar a aula', s === 'revisao', 'revisao', nErros]
+  ];
+  limpar(alvo, passos.map(([rot, atual, destino, n], i) => h('button', { class: 'passo3', 'aria-current': atual ? 'step' : null, onclick: () => irPara(destino) },
+    h('span', { class: 'n' }, i + 1), h('span', { class: 'rot' }, rot),
+    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? 'pronta' : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
 }
 
 function renderEditor() {
@@ -330,9 +353,9 @@ function baixarJSON(a) {
 }
 
 // ============================================================ pré-visualização
-function previa() {
+function previa(etapaId) {
   try { localStorage.setItem('mosaico-previa', JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
-  const url = new URL('previa.html', location.href); url.search = '?ensaio=1';
+  const url = new URL('previa.html', location.href); url.search = '?ensaio=1' + (typeof etapaId === 'string' ? '&etapa=' + encodeURIComponent(etapaId) : '');
   window.open(url.href, '_blank');
 }
 
@@ -409,8 +432,11 @@ function editorNovaEtapa() {
   return h('div', { class: 'cartao' }, h('h2', {}, 'Nova etapa: escolha o tipo'),
     h('p', { class: 'sutil' }, 'A decisão é sua. A Revisão sugere equilíbrio (por exemplo, quando há muitas etapas iguais seguidas).'),
     CATEGORIAS.map(([cat, ids]) => h('div', {}, h('h3', { style: { margin: '16px 0 8px' } }, cat),
-      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, ilustra(id, 60), h('div', {}, h('strong', {}, t.nome), h('small', {}, t.descricao))); })))));
+      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, ilustra(id, 60), h('div', {}, h('strong', {}, t.nome),
+        h('span', { class: 'tipo-quem' }, quemResponde(t), IDEAL_PARA[id] && ' · ideal para ' + IDEAL_PARA[id].toLowerCase()), h('small', {}, t.descricao))); })))));
 }
+const quemResponde = t => [...new Set(t.participacao.organizacao.map(o => ({ grupos: 'Em grupos', individual: 'Individual', representantes: 'Entre grupos' })[o] || o))].join(' ou ');
+
 function configInicial(typeId, base) {
   const novo = ED.configInicial(typeId); if (novo) return novo;
   if (typeId === 'cadeado_grupo') return { regra: 'fragmentos', perguntas: [perguntaVazia('p1')], distribuicao: 'diferente', minAcertos: 0, fragmentos: [], espera: 30, mensagem: '' };
@@ -459,6 +485,7 @@ function editorEtapa(e) {
         h('div', { class: 'mini' },
           h('button', { class: 'btn', disabled: pos === 0, 'aria-label': 'Mover para antes', onclick: () => mover(-1) }, '↑'),
           h('button', { class: 'btn', disabled: pos === seq.length - 1, 'aria-label': 'Mover para depois', onclick: () => mover(1) }, '↓'),
+          h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(a)), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
           h('button', { class: 'btn', title: 'Duplicar etapa', onclick: () => duplicarEtapa(e) }, '⧉'),
           h('button', { class: 'btn perigo', 'aria-label': 'Remover etapa', onclick: () => removerEtapa(e) }, '✕'))),
       campo('Título', e.titulo, v => { e.titulo = v; }, { max: 120 }),
@@ -481,9 +508,9 @@ function editorEtapa(e) {
     h('div', { id: 'revEtapa' }, revEtapa(diagsEtapa)));
 }
 const revEtapa = ds => ds.length ? h('div', { class: 'cartao' }, h('h3', {}, 'Revisão desta etapa'), h('ul', { class: 'diag' }, ds.map(d => h('li', { class: d.severidade }, d.mensagem)))) : h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Esta etapa não tem pendências.');
-function diagsDaEtapa(e) {
+function diagsDaEtapa(e, diags = validarAtividade(P.A)) {
   const a = P.A, idx = a.etapas.indexOf(e);
-  return validarAtividade(a).filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}` || d.local.startsWith(`docente.respostas.${e.id}.`));
+  return diags.filter(d => d.local.startsWith(`etapas[${idx}]`) || (d.local.startsWith('pecas[') && a.pecas[Number(d.local.match(/pecas\[(\d+)\]/)?.[1])]?.etapaId === e.id) || d.local === `docente.respostas.${e.id}` || d.local.startsWith(`docente.respostas.${e.id}.`));
 }
 function atualizarRevEtapa() {
   const alvo = document.getElementById('revEtapa'); if (!alvo || !P.secao.startsWith('etapa:')) return;

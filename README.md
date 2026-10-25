@@ -29,8 +29,8 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 
 ## Fluxo da aula
 
-1. **Atividade:** modelo pronto, arquivo importado (botão ou arrastar e soltar) ou montagem por IA externa (prompt gerado na própria tela). No Planejamento, o botão **Dar esta aula** leva a atividade aberta direto para a Condução, já na aba Sala. Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
-2. **Sala:** abrir sala → QR Code e código → abrir o telão.
+1. **Atividade:** modelo pronto, arquivo importado (botão ou arrastar e soltar) ou montagem por IA externa (prompt gerado na própria tela). No Planejamento, o botão **Dar esta aula** leva a atividade aberta direto para a Condução, já na aba Sala. O Planejamento mostra os 3 passos (Sobre a turma → Etapas → Revisar) com as pendências de cada um, e **Ver esta etapa** abre a turma simulada já naquela etapa. Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
+2. **Sala:** abrir sala → QR Code e código → abrir o telão (no PC da sala, digitar os 6 números já abre o telão).
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
 5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.

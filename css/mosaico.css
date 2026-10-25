@@ -521,3 +521,7 @@ img.ico { width: 1.25em; height: 1.25em; object-fit: contain; }
 
 /* Condução no celular: com as abas da aula visíveis, a barra de fluxo some (uma navegação só). */
 @media (max-width: 720px) { body:has(#abas:not([hidden])) .fluxo { display: none; } }
+
+/* Condução: roteiro da aula em uma linha por etapa */
+.roteiro { margin: 12px 0 16px; padding-left: 1.4em; display: grid; gap: 6px; }
+.roteiro small { display: block; }
