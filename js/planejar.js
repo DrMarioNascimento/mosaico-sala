@@ -4,7 +4,7 @@ import { cadeadoIcone } from './lock-icons.js';
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
 
 import { backend, EM_ENSAIO } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
+import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
 import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
@@ -12,6 +12,7 @@ import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
+import { CASOS, carregarCaso } from './casos.js';
 import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
 import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
@@ -21,6 +22,7 @@ import { ico, ilustra } from './icones.js';
 
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
+const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem' };
 // Editores dos tipos novos: js/planejar-tipos.js
@@ -158,6 +160,7 @@ function renderAcoes() {
   limpar(alvo,
     temBiblioteca() && h('button', { class: 'btn primario', onclick: dialogoSalvar }, P.sujo ? 'Salvar na biblioteca' : 'Salvo ✓'),
     h('button', { class: 'btn', disabled: temErros(diags), title: temErros(diags) ? 'Corrija os erros (veja Revisão)' : 'Abrir telão, condução e turma simulados', onclick: previa }, 'Ver como fica'),
+    temBiblioteca() && h('button', { class: 'btn', 'data-ico': 'conduzir', disabled: temErros(diags), title: temErros(diags) ? 'Corrija os erros (veja Revisão)' : 'Levar esta atividade para a Condução e abrir a sala', onclick: conduzirAgora }, 'Dar esta aula'),
     h('button', { class: 'btn', onclick: () => baixarPlanilha(P.A).catch(e => avisoGeral(e.message, 'erro')) }, 'Planilha'),
     h('button', { class: 'btn', onclick: () => baixarJSON(P.A) }, 'JSON'),
     h('button', { class: 'btn', onclick: () => abrirImpressao(P.A) }, 'Imprimir'),
@@ -235,6 +238,11 @@ function telaInicio() {
         h('label', { for: 'novoTitulo' }, 'Título'), titulo,
         h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
         h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
+      h('div', { class: 'cartao' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
+        h('p', { class: 'sutil' }, 'Abra um modelo, ajuste ao seu conteúdo e salve como seu.'),
+        h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
+          h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
+          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))),
       temBiblioteca() && h('div', { class: 'cartao' }, h('h2', {}, ico('biblioteca'), 'Biblioteca'),
         P.bib.length ? h('ul', { class: 'lista-bib' }, P.bib.map(item => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
@@ -245,12 +253,16 @@ function telaInicio() {
             item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
       h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
         h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
-        h('label', { for: 'arqImport' }, 'Arquivo'), arquivo,
-        P.importacao.length && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
+        h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
+        P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
         h('div', { class: 'linha-botoes' },
-          h('button', { class: 'btn', onclick: async () => { try { abrir(await (await fetch('casos/ciclista-altitude.json', { cache: 'no-cache' })).json(), null); P.A.id = P.A.id + '-copia'; } catch (e) { avisoGeral(e.message, 'erro'); } } }, 'Abrir o caso piloto'),
           h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
       h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
+}
+
+async function abrirModelo(id) {
+  try { abrir(await carregarCaso(id), null); P.A.id = P.A.id + '-copia'; }
+  catch (e) { avisoGeral('Não foi possível abrir o modelo: ' + e.message, 'erro'); }
 }
 
 function cartaoPrompt() {
@@ -322,6 +334,13 @@ function previa() {
   try { localStorage.setItem('mosaico-previa', JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
   const url = new URL('previa.html', location.href); url.search = '?ensaio=1';
   window.open(url.href, '_blank');
+}
+
+/** Leva a atividade aberta direto para a Condução (sem escolher de novo lá). */
+function conduzirAgora() {
+  try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a Condução.', 'erro'); }
+  const url = new URL('conduzir.html', location.href); if (EM_ENSAIO) url.search = '?ensaio=1';
+  location.href = url.href;
 }
 
 // ============================================================ Geral e meta
@@ -624,7 +643,7 @@ function blocoMontagem(e) {
           h('button', { class: 'btn pequeno discreto', onclick: () => aplicarCorte('limpar') }, 'Tirar todos os cortes')),
         c.quantidade === 'celulares' && h('p', { class: 'sutil' }, 'Com "uma por celular", os trechos marcados são agrupados em tantas peças quantos forem os celulares, sempre na ordem.'))
       : h('div', {},
-        h('label', { for: 'mtImg' }, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (ela é reduzida e comprimida automaticamente)'), arquivo,
+        h('label', { for: 'mtImg' }, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (ela é reduzida e comprimida automaticamente)'), campoArquivo(arquivo),
         h('div', { class: 'campos-3' },
           seletor('Como cortar', c.corte?.tipo || 'colunas', [['colunas', 'Faixas lado a lado'], ['linhas', 'Faixas empilhadas'], ['grade', 'Grade']], v => { c.corte = { ...(c.corte || {}), tipo: v }; }, { redesenhar: true }),
           c.quantidade !== 'celulares' ? campo('Número de peças', c.corte?.n ?? 4, v => { c.corte = { ...(c.corte || {}), n: Math.max(2, Math.min(20, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'),

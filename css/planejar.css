@@ -5,12 +5,13 @@
 .plan-acoes .btn { min-height: 42px; padding: 0 14px; font-size: .92rem; }
 .plan-login { max-width: 520px; margin: 40px auto; }
 
-.plan-inicio { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 18px; }
+.plan-inicio { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); margin-top: 18px; }
 .plan-inicio .cartao { margin: 0; }
-.lista-bib { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
+.lista-bib { list-style: none; padding: 0; margin: 8px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .lista-bib li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--fundo-2); border: 1px solid var(--linha); }
 .lista-bib li .tit { flex: 1; min-width: 0; }
-.lista-bib li .tit strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lista-bib li .tit strong { display: block; overflow-wrap: anywhere; }
+.lista-bib li .mini { flex: none; }
 .etiqueta { font-size: .75rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #13263d; color: var(--acento-2); }
 
 .plan-grade { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; margin-top: 16px; align-items: start; }

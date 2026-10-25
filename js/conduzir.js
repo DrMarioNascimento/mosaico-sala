@@ -3,7 +3,8 @@
    Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
 
 import { backend, link, EM_ENSAIO } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
+import { CASOS, carregarCaso } from './casos.js';
+import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
@@ -31,6 +32,11 @@ let inscricoes = [], relogio = null;
 // ---------------- persistência local ----------------
 function salvar() {
   try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias, jogo: E.jogo })); } catch {}
+}
+/** Atividade enviada pelo botão “Dar esta aula” do Planejamento (lida uma vez só). */
+function tirarDoPlanejamento() {
+  const chave = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
+  try { const a = JSON.parse(localStorage.getItem(chave) || 'null'); localStorage.removeItem(chave); return a; } catch { return null; }
 }
 function lerGuardado() { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch { return null; } }
 function pendentes() { try { return JSON.parse(localStorage.getItem(PENDENTES) || '[]'); } catch { return []; } }
@@ -75,6 +81,13 @@ async function iniciar(conta) {
       if (s && s.owner === conta.uid && s.status === 'open') conectarSala(g.codigo);
       else { E.codigo = null; salvar(); }
     } catch { E.codigo = null; }
+  }
+  const levada = PREVIA ? null : tirarDoPlanejamento();
+  if (levada && E.codigo) avisoGeral('Há uma sala aberta. Encerre-a antes de trocar pela atividade que veio do Planejamento.', 'alerta');
+  else if (levada && aceitar(levada, 'do Planejamento')) {
+    mostrarAba('sala'); renderTudo();
+    avisoGeral(`“${levada.titulo}” veio do Planejamento. Abra a sala quando a turma estiver pronta.`, 'ok');
+    return faxina();
   }
   mostrarAba(E.codigo ? 'conducao' : 'atividade');
   renderTudo();
@@ -170,7 +183,7 @@ function renderAtividade() {
       gram && h('p', { class: 'aviso' }, gram.mensagem),
       listaDiag(naoErros)),
 
-    sugestoes.length && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
+    sugestoes.length > 0 && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
       h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
       h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
         h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar'))))),
@@ -201,7 +214,7 @@ function renderAtividade() {
         h('p', { class: 'sutil' }, a.meta.descricao || ''))),
 
     h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Material de quem conduz')),
-      (a.docente?.guia || []).length && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
+      (a.docente?.guia || []).length > 0 && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
       h('h3', {}, 'Respostas esperadas'),
       etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
         const r = a.docente.respostas[e.id];
@@ -212,7 +225,7 @@ function renderAtividade() {
         const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
         return h('div', { style: { marginBottom: '12px' } }, h('strong', {}, e.titulo + ': '), op?.texto || r.corretaId, h('p', { class: 'sutil' }, r.explicacao || ''));
       }),
-      (a.pendencias || []).length && h('div', {}, h('h3', {}, 'Pendências'), h('ul', {}, a.pendencias.map(x => h('li', {}, x))))));
+      (a.pendencias || []).length > 0 && h('div', {}, h('h3', {}, 'Pendências'), h('ul', {}, a.pendencias.map(x => h('li', {}, x))))));
 }
 
 function listaDiag(ds) {
@@ -235,12 +248,13 @@ function cartaoCarregar() {
   return h('div', {},
     minhas,
     h('div', { class: 'cartao' }, h('h1', {}, 'Escolha a atividade'),
-      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: usarPiloto }, 'Usar o caso piloto: a ciclista que voltou da altitude'))),
+      h('p', { class: 'sutil' }, 'Modelos prontos:'),
+      h('div', { class: 'linha-botoes' }, CASOS.map((c, i) => h('button', { class: 'btn bloco' + (i === 0 ? ' primario' : ''), onclick: () => usarModelo(c) }, c.titulo)))),
     h('div', { class: 'cartao' }, h('h2', {}, 'Importar atividade'),
-      h('label', { for: 'arquivoJson' }, 'Planilha (.xlsx) ou arquivo .json'), arquivo,
+      h('label', { for: 'arquivoJson' }, 'Planilha (.xlsx) ou arquivo .json'), campoArquivo(arquivo),
       h('label', { for: 'jsonColado' }, 'Texto colado'), colado,
       h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => importarTexto(colado.value, 'texto colado') }, 'Importar texto colado')),
-      E.importacao.length && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
+      E.importacao.length > 0 && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
     h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Montar com uma IA externa')),
       h('p', { class: 'sutil' }, 'Gere o prompt, cole na IA de sua preferência junto com o seu material e importe o JSON que ela devolver.'),
       h('label', { for: 'pPublico' }, 'Público'), h('input', { id: 'pPublico', placeholder: 'Ex.: Graduação em Fisioterapia, 3º período', oninput: e => cfg.publico = e.target.value }),
@@ -276,9 +290,9 @@ async function carregarMinhas(alvo) {
     h('p', { class: 'sutil' }, 'Para criar ou editar: ', h('a', { href: link('planejar.html'), target: '_blank' }, 'Planejamento')));
 }
 
-async function usarPiloto() {
-  try { aceitar(await (await fetch('casos/ciclista-altitude.json', { cache: 'no-cache' })).json(), 'caso piloto'); }
-  catch (e) { avisoGeral('Não foi possível carregar o caso piloto: ' + e.message, 'erro'); }
+async function usarModelo(c) {
+  try { aceitar(await carregarCaso(c.id), 'modelo pronto'); }
+  catch (e) { avisoGeral('Não foi possível carregar o modelo: ' + e.message, 'erro'); }
 }
 function importarTexto(texto, origem) {
   const r = lerJsonImportado(texto);

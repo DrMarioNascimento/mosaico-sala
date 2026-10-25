@@ -1,0 +1,419 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "pressao-arterial",
+  "titulo": "Quem controla a pressão?",
+  "publico": "Ensino superior — Fisiologia",
+  "duracaoMin": 50,
+  "regime": "simulacao",
+  "perguntaCentral": "Como o corpo mantém a pressão arterial quando algo a tira do lugar?",
+  "introducao": "Uma sequência de desafios sobre o controle da pressão arterial: a cascata da renina, o sistema nervoso autônomo e a resposta a uma hemorragia.",
+  "objetivos": [
+    "Ordenar a cascata renina–angiotensina.",
+    "Classificar efeitos simpáticos e parassimpáticos.",
+    "Prever a direção das variáveis diante de um estímulo."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g_rim",
+      "nome": "Rim",
+      "ordemAlocacao": 1,
+      "funcao": "Renina e volume"
+    },
+    {
+      "id": "g_coracao",
+      "nome": "Coração",
+      "ordemAlocacao": 2,
+      "funcao": "Frequência e débito"
+    },
+    {
+      "id": "g_vasos",
+      "nome": "Vasos",
+      "ordemAlocacao": 3,
+      "funcao": "Resistência periférica"
+    },
+    {
+      "id": "g_cerebro",
+      "nome": "Cérebro",
+      "ordemAlocacao": 4,
+      "funcao": "Barorreflexo e autônomo"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_cascata",
+      "ordem": 1,
+      "titulo": "A cascata da renina",
+      "typeId": "cartoes_arrastar",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Cada celular tem alguns cartões. Coloquem a cascata na ordem de causa e efeito.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "formato": "ordenar",
+        "enunciado": "Coloquem a cascata na ordem de causa e efeito.",
+        "cartoes": [
+          {
+            "id": "k_renina",
+            "texto": "Renina"
+          },
+          {
+            "id": "k_ang1",
+            "texto": "Angiotensina I"
+          },
+          {
+            "id": "k_ang2",
+            "texto": "Angiotensina II"
+          },
+          {
+            "id": "k_vaso",
+            "texto": "Vasoconstrição"
+          },
+          {
+            "id": "k_pa",
+            "texto": "Aumento da pressão arterial"
+          }
+        ],
+        "distribuicao": "fracionado",
+        "tentativas": "repetir",
+        "espera": 30,
+        "conferencia": "posicao",
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_autonomo",
+      "ordem": 2,
+      "titulo": "Simpático ou parassimpático?",
+      "typeId": "cartoes_arrastar",
+      "typeVersion": "1.0.0",
+      "tempoMin": 6,
+      "instrucao": "Arrastem cada efeito para o sistema que o provoca.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "formato": "classificar",
+        "enunciado": "Arrastem cada efeito para o sistema que o provoca.",
+        "colunas": [
+          {
+            "id": "simpatico",
+            "titulo": "Simpático"
+          },
+          {
+            "id": "parassimpatico",
+            "titulo": "Parassimpático"
+          }
+        ],
+        "cartoes": [
+          {
+            "id": "a_fc_sobe",
+            "texto": "Aumenta a frequência cardíaca"
+          },
+          {
+            "id": "a_digestao",
+            "texto": "Estimula a digestão"
+          },
+          {
+            "id": "a_pupila",
+            "texto": "Dilata as pupilas"
+          },
+          {
+            "id": "a_fc_desce",
+            "texto": "Reduz a frequência cardíaca"
+          },
+          {
+            "id": "a_bronco",
+            "texto": "Broncodilatação"
+          },
+          {
+            "id": "a_bexiga",
+            "texto": "Contrai a bexiga"
+          }
+        ],
+        "distribuicao": "todos",
+        "tentativas": "repetir",
+        "espera": 30,
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_memoria",
+      "ordem": 3,
+      "titulo": "Memória dos hormônios",
+      "typeId": "pares",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Na vez do seu grupo, virem duas cartas: substância e órgão que a produz.",
+      "participacao": {
+        "organizacao": "representantes",
+        "envio": "representante",
+        "competicao": "entre_grupos"
+      },
+      "config": {
+        "formato": "memoria",
+        "enunciado": "Encontrem cada substância e o órgão que a produz.",
+        "pares": [
+          {
+            "id": "m_epo",
+            "a": "EPO",
+            "b": "Rim"
+          },
+          {
+            "id": "m_renina",
+            "a": "Renina",
+            "b": "Aparelho justaglomerular"
+          },
+          {
+            "id": "m_insulina",
+            "a": "Insulina",
+            "b": "Pâncreas"
+          },
+          {
+            "id": "m_aldo",
+            "a": "Aldosterona",
+            "b": "Suprarrenal"
+          },
+          {
+            "id": "m_adh",
+            "a": "ADH",
+            "b": "Hipófise posterior"
+          }
+        ],
+        "segundos": 30,
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_direcao",
+      "ordem": 4,
+      "titulo": "Para onde vai cada variável?",
+      "typeId": "corrida",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Cada um responde no próprio ritmo: a variável sobe, desce ou não muda?",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "entre_grupos"
+      },
+      "config": {
+        "formato": "direcao",
+        "segundos": 30,
+        "embaralhar": true,
+        "rodadas": [
+          {
+            "id": "r_hemorragia",
+            "estimulo": "Hemorragia: o paciente perdeu 1 litro de sangue.",
+            "variaveis": [
+              {
+                "id": "v_fc",
+                "nome": "Frequência cardíaca"
+              },
+              {
+                "id": "v_renina",
+                "nome": "Renina"
+              },
+              {
+                "id": "v_adh",
+                "nome": "ADH"
+              },
+              {
+                "id": "v_urina",
+                "nome": "Volume de urina"
+              }
+            ]
+          },
+          {
+            "id": "r_altitude",
+            "estimulo": "Altitude: o atleta passou 3 semanas na montanha.",
+            "variaveis": [
+              {
+                "id": "v_epo",
+                "nome": "EPO"
+              },
+              {
+                "id": "v_hemacias",
+                "nome": "Massa de hemácias"
+              },
+              {
+                "id": "v_insulina",
+                "nome": "Insulina"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e_corrente",
+      "ordem": 5,
+      "titulo": "Corrente da hemorragia",
+      "typeId": "corrida",
+      "typeVersion": "1.0.0",
+      "tempoMin": 6,
+      "instrucao": "Cada acerto libera a próxima consequência. Um erro quebra a corrente.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "formato": "corrente",
+        "gatilho": "A pressão arterial cai depois de uma hemorragia.",
+        "aoQuebrar": "recomecar",
+        "segundos": 30,
+        "elos": [
+          {
+            "id": "l_baro",
+            "consequencia": "Os barorreceptores disparam menos.",
+            "distratores": [
+              "Os barorreceptores disparam mais.",
+              "O fígado libera glicose."
+            ]
+          },
+          {
+            "id": "l_simp",
+            "consequencia": "O simpático é ativado.",
+            "distratores": [
+              "O parassimpático é ativado.",
+              "A respiração para."
+            ]
+          },
+          {
+            "id": "l_efeito",
+            "consequencia": "O coração acelera e os vasos se contraem.",
+            "distratores": [
+              "Os vasos dilatam.",
+              "O coração desacelera."
+            ]
+          },
+          {
+            "id": "l_pa",
+            "consequencia": "A pressão volta a subir.",
+            "distratores": [
+              "A pressão continua caindo.",
+              "A glicemia cai."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "e_cruzadas",
+      "ordem": 6,
+      "titulo": "Cruzadas do sangue",
+      "typeId": "cruzadas",
+      "typeVersion": "1.0.0",
+      "tempoMin": 10,
+      "instrucao": "Cada celular tem só algumas dicas: juntem o grupo para completar a grade.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "dicas": "fracionadas",
+        "grade": "por_grupo",
+        "palavras": [
+          {
+            "id": "w_hemacia",
+            "palavra": "Hemácia",
+            "dica": "Célula que transporta oxigênio"
+          },
+          {
+            "id": "w_renina",
+            "palavra": "Renina",
+            "dica": "Enzima que inicia a cascata da pressão"
+          },
+          {
+            "id": "w_plaqueta",
+            "palavra": "Plaqueta",
+            "dica": "Fragmento celular da coagulação"
+          },
+          {
+            "id": "w_figado",
+            "palavra": "Fígado",
+            "dica": "Armazena ferro como hemossiderina"
+          },
+          {
+            "id": "w_insulina",
+            "palavra": "Insulina",
+            "dica": "Hormônio que reduz a glicemia"
+          },
+          {
+            "id": "w_rim",
+            "palavra": "Rim",
+            "dica": "Órgão que produz a EPO"
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [],
+  "conexoes": [],
+  "pendencias": [],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se acertar pelo menos 70% na cascata, no autônomo, na corrente e nas cruzadas.",
+    "etapas": [
+      "e_cascata",
+      "e_autonomo",
+      "e_corrente",
+      "e_cruzadas"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_cascata": {
+        "ordem": [
+          "k_renina",
+          "k_ang1",
+          "k_ang2",
+          "k_vaso",
+          "k_pa"
+        ]
+      },
+      "e_autonomo": {
+        "colunaDe": {
+          "a_fc_sobe": "simpatico",
+          "a_digestao": "parassimpatico",
+          "a_pupila": "simpatico",
+          "a_fc_desce": "parassimpatico",
+          "a_bronco": "simpatico",
+          "a_bexiga": "parassimpatico"
+        }
+      },
+      "e_direcao": {
+        "direcoes": {
+          "v_fc": "sobe",
+          "v_renina": "sobe",
+          "v_adh": "sobe",
+          "v_urina": "desce",
+          "v_epo": "sobe",
+          "v_hemacias": "sobe",
+          "v_insulina": "igual"
+        }
+      }
+    },
+    "guia": [
+      "Cascata (8 min): cada celular segura alguns cartões.",
+      "Autônomo (6 min): classificar.",
+      "Memória (8 min): entre grupos, tabuleiro no telão.",
+      "Direção (8 min): individual, pontos para o grupo.",
+      "Corrente (6 min): um erro recomeça a corrente.",
+      "Cruzadas (10 min): dicas fracionadas."
+    ],
+    "pontosDeDiscussao": [
+      "Por que o volume de urina cai na hemorragia?",
+      "Onde a cascata da renina se encontra com o barorreflexo?"
+    ]
+  }
+}

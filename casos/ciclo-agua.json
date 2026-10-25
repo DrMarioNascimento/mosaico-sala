@@ -1,0 +1,282 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "ciclo-agua",
+  "titulo": "Para onde foi a água da poça?",
+  "publico": "Ciências — 6º ano do Ensino Fundamental",
+  "duracaoMin": 30,
+  "regime": "simulacao",
+  "perguntaCentral": "De manhã havia uma poça no pátio. À tarde ela tinha sumido. O que aconteceu com a água?",
+  "introducao": "Depois da chuva da madrugada, uma poça se formou no pátio da escola. Às 15h, ela tinha sumido. Cada grupo recebeu uma parte das pistas. Nenhum grupo tem todas.",
+  "objetivos": [
+    "Reconhecer a evaporação como passagem da água do estado líquido para o gasoso.",
+    "Relacionar calor e vento à velocidade da evaporação.",
+    "Usar evidências para descartar explicações que não se sustentam."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g_clima",
+      "nome": "Clima",
+      "ordemAlocacao": 1,
+      "funcao": "Temperatura, sol e vento"
+    },
+    {
+      "id": "g_chao",
+      "nome": "Chão do pátio",
+      "ordemAlocacao": 2,
+      "funcao": "O piso e o que há debaixo da poça"
+    },
+    {
+      "id": "g_animais",
+      "nome": "Animais",
+      "ordemAlocacao": 3,
+      "funcao": "Quem passou pelo pátio"
+    },
+    {
+      "id": "g_ar",
+      "nome": "Ar e sombra",
+      "ordemAlocacao": 4,
+      "funcao": "Vidros, sombra e umidade do ar"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_misterio",
+      "ordem": 1,
+      "titulo": "O mistério da poça",
+      "typeId": "investigacao_fragmentos",
+      "typeVersion": "1.0.0",
+      "tempoMin": 10,
+      "instrucao": "Leiam as pistas do seu grupo e escolham a explicação que ELAS sustentam. Marquem as pistas que usaram.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "pergunta": "Com as pistas que vocês têm, para onde foi a água?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_evaporou",
+            "texto": "A água evaporou com o calor do Sol e o vento."
+          },
+          {
+            "id": "h_infiltrou",
+            "texto": "A água infiltrou no chão."
+          },
+          {
+            "id": "h_animais",
+            "texto": "Animais beberam a água da poça."
+          }
+        ],
+        "minEvidencias": 1,
+        "justificativa": "opcional"
+      }
+    },
+    {
+      "id": "e_juntando",
+      "ordem": 2,
+      "titulo": "Juntando as pistas",
+      "typeId": "comparar_hipoteses",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Agora vocês veem as escolhas e as pistas de todos os grupos. Qual explicação combina com TODAS as pistas?",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "pergunta": "Vendo as pistas de todos os grupos, qual explicação é a melhor?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_evaporou",
+            "texto": "A água evaporou com o calor do Sol e o vento."
+          },
+          {
+            "id": "h_infiltrou",
+            "texto": "A água infiltrou no chão."
+          },
+          {
+            "id": "h_animais",
+            "texto": "Animais beberam a água da poça."
+          }
+        ],
+        "aceitaParcial": false,
+        "justificativa": "obrigatoria"
+      }
+    },
+    {
+      "id": "e_voce",
+      "ordem": 3,
+      "titulo": "E agora, você",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 3,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "enunciado": "Uma roupa molhada no varal seca mais rápido em qual situação?",
+        "alternativas": [
+          {
+            "id": "a",
+            "texto": "Em um dia quente e com vento."
+          },
+          {
+            "id": "b",
+            "texto": "Em um dia frio e sem vento."
+          },
+          {
+            "id": "c",
+            "texto": "À noite, dentro de casa."
+          },
+          {
+            "id": "d",
+            "texto": "Dentro de um saco plástico."
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [
+    {
+      "id": "p_clima_1",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_clima"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O dia foi ensolarado, com 31 °C às 14h."
+    },
+    {
+      "id": "p_clima_2",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_clima"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Ventou bastante depois do almoço."
+    },
+    {
+      "id": "p_chao_1",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_chao"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O pátio é de cimento liso e não absorve água."
+    },
+    {
+      "id": "p_chao_2",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_chao"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Às 15h, o cimento onde estava a poça estava seco e quente, sem rachaduras."
+    },
+    {
+      "id": "p_animais_1",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_animais"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Não havia pegadas de animais perto da poça."
+    },
+    {
+      "id": "p_animais_2",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_animais"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O cachorro da escola passou o dia preso no canil, com a tigela de água cheia."
+    },
+    {
+      "id": "p_ar_1",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_ar"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O vidro da janela ao lado ficou embaçado por dentro ao meio-dia."
+    },
+    {
+      "id": "p_ar_2",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_ar"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Uma poça do mesmo tamanho, na parte do pátio que fica na sombra, ainda tinha água às 15h."
+    }
+  ],
+  "conexoes": [
+    {
+      "id": "c_hipoteses",
+      "de": {
+        "etapaId": "e_misterio",
+        "portId": "hipotese_grupo"
+      },
+      "para": {
+        "etapaId": "e_juntando",
+        "portId": "hipoteses_recebidas"
+      },
+      "agregacao": "colecao_uma_por_grupo_planejado"
+    }
+  ],
+  "pendencias": [],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se acertar pelo menos 70% das respostas da comparação e da questão individual.",
+    "etapas": [
+      "e_juntando",
+      "e_voce"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_juntando": {
+        "corretaId": "h_evaporou",
+        "explicacao": "O cimento não absorve água (descarta a infiltração) e não houve animais (descarta a terceira hipótese). Sol, calor e vento aceleram a evaporação; a poça da sombra, mais fria, ainda tinha água."
+      },
+      "e_voce": {
+        "corretaId": "a",
+        "explicacao": "Calor e vento aceleram a evaporação, como na poça do pátio."
+      }
+    },
+    "guia": [
+      "Abertura (3 min): leia a introdução no telão. Reforce que cada grupo tem só parte das pistas.",
+      "Investigação (10 min): é esperado que grupos escolham explicações diferentes.",
+      "Juntando as pistas (8 min): pergunte qual pista derruba cada explicação.",
+      "Questão individual (3 min): conta para a meta.",
+      "Fechamento (5 min): ligue a poça ao ciclo da água: evaporação, condensação (o vidro embaçado) e chuva."
+    ],
+    "pontosDeDiscussao": [
+      "Por que a poça da sombra demorou mais para secar?",
+      "O que o vidro embaçado tem a ver com a água da poça?"
+    ]
+  }
+}

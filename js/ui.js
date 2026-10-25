@@ -17,6 +17,24 @@ export function h(tag, attrs = {}, ...filhos) {
   return e;
 }
 
+/** Campo de arquivo em português: botão “Escolher arquivo”, nome do arquivo escolhido e arrastar e soltar.
+ *  Recebe o <input type=file> já pronto (com o seu onchange) e devolve a zona que o envolve. */
+export function campoArquivo(input, dica = 'ou arraste o arquivo para cá') {
+  input.classList.add('arq-oculto');
+  const nome = h('span', { class: 'arq-nome' }, dica);
+  const zona = h('label', { class: 'arq-zona' }, h('span', { class: 'btn pequeno', 'aria-hidden': 'true' }, 'Escolher arquivo'), nome, input);
+  input.addEventListener('change', () => { if (input.files?.[0]) nome.textContent = input.files[0].name; });
+  zona.addEventListener('dragover', ev => { ev.preventDefault(); zona.classList.add('arrastando'); });
+  zona.addEventListener('dragleave', () => zona.classList.remove('arrastando'));
+  zona.addEventListener('drop', ev => {
+    ev.preventDefault(); zona.classList.remove('arrastando');
+    if (!ev.dataTransfer?.files?.length) return;
+    input.files = ev.dataTransfer.files;
+    input.dispatchEvent(new Event('change'));
+  });
+  return zona;
+}
+
 export const limpar = (alvo, ...filhos) => { alvo.replaceChildren(...filhos.flat(Infinity).filter(Boolean)); return alvo; };
 
 /** Identidade visual dos grupos: forma 3D + cor, na ordem de alocação.

@@ -1,0 +1,16 @@
+# Roda os testes a cada pull request, antes de qualquer coisa ir para a main (e para o ar).
+name: Testes
+on:
+  pull_request:
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Testes do núcleo e dos modelos
+        run: node --test tests/*.test.mjs
+      - name: Sintaxe dos scripts
+        run: for f in js/*.js js/core/*.js; do node --check "$f"; done

@@ -29,7 +29,7 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 
 ## Fluxo da aula
 
-1. **Atividade:** caso piloto, arquivo importado ou montagem por IA externa (prompt gerado na própria tela). Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
+1. **Atividade:** modelo pronto, arquivo importado (botão ou arrastar e soltar) ou montagem por IA externa (prompt gerado na própria tela). No Planejamento, o botão **Dar esta aula** leva a atividade aberta direto para a Condução, já na aba Sala. Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
 2. **Sala:** abrir sala → QR Code e código → abrir o telão.
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
@@ -53,7 +53,7 @@ js/imprimir.js     Versão para imprimir (material docente em folha separada)
 js/backend.js      Escolhe Firebase ou ensaio local
 js/cloud-*.js      Firebase (Firestore + Auth) / ensaio (localStorage)
 js/qr.js           Gerador de QR Code próprio (mesmo do Eita!)
-casos/             Atividades prontas
+casos/             Modelos prontos (listados em js/casos.js; tests/casos.test.mjs confere cada um)
 js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
 firestore.rules    Regras do Firestore
 tests/             Testes automáticos (critérios da seção 22)
