@@ -51,7 +51,7 @@
       "participacao": {
         "organizacao": "grupos",
         "envio": "representante",
-        "competicao": "meta"
+        "competicao": "desligada"
       },
       "config": {
         "pergunta": "Com as pistas que vocês têm, para onde foi a água?",

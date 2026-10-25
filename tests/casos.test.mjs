@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { validarAtividade } from '../js/core/validacao.js';
+import { validarAtividade, falaComQuemConduz } from '../js/core/validacao.js';
 import { CASOS } from '../js/casos.js';
 
 const pasta = new URL('../casos/', import.meta.url);
@@ -46,4 +46,24 @@ test('Mistério do km 38: todo fato essencial sobrevive à falta de qualquer gru
   const cedo = [a.introducao, a.perguntaCentral, ...a.pecas.map(p => p.conteudo), ...a.grupos.map(g => g.nome + ' ' + g.funcao),
     ...a.etapas.filter(e => e.ordem <= 2).flatMap(e => [e.titulo, e.instrucao, e.config.pergunta, ...e.config.hipotesesCandidatas.map(h => h.texto)])].join(' ').toLowerCase();
   for (const palavra of ['sódio', 'hiponatrem', 'diluí', '1,8']) assert.ok(!cedo.includes(palavra), `"${palavra}" aparece antes da hora`);
+});
+
+// A introdução aparece no telão e na espera dos celulares: texto para quem conduz ali vaza para a turma.
+test('Nenhum modelo fala com quem conduz na introdução', () => {
+  for (const f of arquivos) {
+    const a = JSON.parse(readFileSync(new URL(f, pasta), 'utf8'));
+    assert.ok(!falaComQuemConduz(a.introducao), `${f}: a introdução fala com quem conduz`);
+  }
+  assert.ok(falaComQuemConduz('Banco de oficinas para três encontros. O professor pode remover as que não cabem.'));
+  assert.ok(!falaComQuemConduz('Uma ciclista voltou da altitude e a potência não melhorou.'));
+});
+
+// "Conta para a meta" e a conta da meta têm de ser a mesma lista (antes: 11 etapas diziam contar e só 2 contavam).
+test('Toda etapa marcada para a meta entra na conta da meta', () => {
+  for (const f of arquivos) {
+    const a = JSON.parse(readFileSync(new URL(f, pasta), 'utf8'));
+    if (a.meta?.ativa === false) continue;
+    const fora = a.etapas.filter(e => e.participacao?.competicao === 'meta' && !a.meta.etapas.includes(e.id)).map(e => e.id);
+    assert.deepEqual(fora, [], `${f}: marcadas para a meta e fora da conta`);
+  }
 });

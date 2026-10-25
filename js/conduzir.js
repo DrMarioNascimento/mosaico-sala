@@ -209,7 +209,9 @@ function renderAtividade() {
   const gram = avisoGramatica(a);
 
   const ORG = { grupos: 'em grupos', individual: 'individual', representantes: 'entre grupos (representantes)' };
-  const COMP = { desligada: 'sem competição', meta: 'conta para a meta', entre_grupos: 'entre grupos' };
+  // "conta para a meta" sai da mesma lista que faz a conta (meta.etapas), não do rótulo de cada etapa
+  const naMeta = new Set(a.meta?.ativa !== false ? a.meta?.etapas || [] : []);
+  const comp = e => naMeta.has(e.id) ? 'conta para a meta' : e.participacao.competicao === 'entre_grupos' ? 'entre grupos' : 'sem competição';
   const avisos = naoErros.length + (gram ? 1 : 0);
   limpar(alvo,
     h('div', { class: 'cartao' },
@@ -217,7 +219,7 @@ function renderAtividade() {
       h('p', { class: 'sutil' }, [a.duracaoMin && a.duracaoMin + ' min', `${a.grupos.length} grupos`, `${a.etapas.length} etapas`, a.meta?.ativa !== false && a.meta?.limiar ? `meta de ${Math.round(a.meta.limiar * 100)}%` : 'sem meta'].filter(Boolean).join(' · ')),
       h('ol', { class: 'roteiro' }, etapasOrdenadas(a).map(e => h('li', {},
         h('strong', {}, e.titulo), ' ',
-        h('small', { class: 'sutil' }, [e.tempoMin && e.tempoMin + ' min', ORG[e.participacao.organizacao] || e.participacao.organizacao, COMP[e.participacao.competicao]].filter(Boolean).join(' · '))))),
+        h('small', { class: 'sutil' }, [e.tempoMin && e.tempoMin + ' min', ORG[e.participacao.organizacao] || e.participacao.organizacao, comp(e)].filter(Boolean).join(' · '))))),
       salaAberta
         ? h('button', { class: 'btn primario bloco', onclick: () => mostrarAba('sala') }, 'Ir para a sala aberta')
         : h('button', { class: 'btn primario bloco', disabled: temErros(E.diags), onclick: async () => { await abrirSala(); if (E.codigo) mostrarAba('sala'); } }, 'Abrir sala'),

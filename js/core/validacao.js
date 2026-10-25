@@ -163,7 +163,7 @@ export function validarAtividade(a) {
     });
   }
 
-  // Os celulares mostram as alternativas na ordem escrita: certa sempre na mesma letra vira padrão que a turma descobre.
+  // Os celulares sorteiam a ordem, mas a planilha, a impressão e a conversa em sala usam a letra escrita: certa sempre na mesma letra vira padrão.
   for (const e of a.etapas) {
     const qs = e.config?.perguntas, rp = respostas[e.id]?.perguntas;
     if (!Array.isArray(qs) || qs.length < 3 || !rp) continue;
@@ -186,9 +186,24 @@ export function validarAtividade(a) {
     if (tipo) d.push(aviso(local, `Parece conter ${tipo}. Use casos fictícios, sem dados de pessoas reais.`));
   }
 
+  // Etapa marcada para competir pela meta, mas fora da conta (meta.etapas): a turma acha que conta e não conta.
+  if (a.meta?.ativa !== false && Array.isArray(a.meta?.etapas)) {
+    const fora = a.etapas.filter(e => e.participacao?.competicao === 'meta' && !a.meta.etapas.includes(e.id));
+    if (fora.length) d.push(aviso('meta.etapas', `${fora.length} etapa(s) marcadas para a meta não entram na conta: ${fora.map(e => '"' + e.titulo + '"').join(', ')}. Marque-as em "Etapas que contam para a meta" ou mude a competição delas.`));
+  }
+
+  // A introdução é pública (telão e espera dos celulares): texto dirigido ao professor ali vaza para a turma.
+  if (falaComQuemConduz(a.introducao))
+    d.push(aviso('introducao', 'A introdução aparece para os alunos, mas parece falar com quem conduz (plano, material de origem, gabarito). Leve esse texto para o guia de condução.'));
+
   if (Array.isArray(a.pendencias) && a.pendencias.length)
     d.push(info('pendencias', `${a.pendencias.length} pendência(s) registrada(s) pela montagem para revisão docente.`));
   return d;
+}
+
+/** Texto escrito para quem conduz, não para a turma (usado na introdução, que é pública). */
+export function falaComQuemConduz(texto) {
+  return /(o|a) professor(a)? (pode|deve|decide|escolhe|use|usa)|banco de oficinas|gabarito|remover as (oficinas|etapas)|\.pdf|não (tente )?aplicar todas/i.test(String(texto || ''));
 }
 
 /** Detecta padrões de dado pessoal: CPF, e-mail, telefone celular brasileiro. */

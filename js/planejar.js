@@ -505,7 +505,7 @@ function editorGeral() {
         campo('Duração (min)', a.duracaoMin, v => { a.duracaoMin = v; }, { tipo: 'number' }),
         seletor('Como usar o material', a.regime, [['fiel', 'Usar somente informações do texto'], ['simulacao', 'Permitir situações fictícias identificadas']], v => { a.regime = v; }, { redesenhar: true })),
       campo('Pergunta central', a.perguntaCentral, v => { a.perguntaCentral = v; }, { area: true, linhas: 2 }),
-      campo('Introdução (lida no telão; não revela a solução)', a.introducao, v => { a.introducao = v; }, { area: true, linhas: 4 }),
+      campo('Introdução (aparece no telão e no celular dos alunos; não revela a solução)', a.introducao, v => { a.introducao = v; }, { area: true, linhas: 4 }),
       campo('Objetivos (um por linha)', (a.objetivos || []).join('\n'), v => { a.objetivos = listaTexto(v); }, { area: true, linhas: 3 })),
     h('div', { class: 'cartao' }, h('h2', {}, 'Meta da turma'),
       h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: m.ativa !== false, onchange: e => mudar(() => { m.ativa = e.target.checked; }) }), h('span', {}, 'A turma compete para superar uma meta coletiva')),

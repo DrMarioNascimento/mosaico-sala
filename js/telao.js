@@ -5,6 +5,7 @@ import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escala
 import { svgPeca } from './quebra-cabeca.js';
 import { criarTelao } from './telao-tipos.js';
 import { ilustra } from './icones.js';
+import { embaralharPor } from './core/embaralhar.js';
 
 const b = await backend();
 
@@ -15,7 +16,8 @@ async function alternarTelaCheia() {
 $('telaCheia').onclick = alternarTelaCheia;
 addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !(e.target instanceof HTMLInputElement)) alternarTelaCheia(); });
 let codigo = null, sala = null, relogio = null, revelacao = null, inscRevelacao = null, revelacaoDe = null;
-const TT = criarTelao({ sala: () => sala, revelacao: () => revelacao });
+const ordemDaSala = (opcoes, enunciado) => embaralharPor(opcoes, codigo + '|' + (enunciado || ''));   // a mesma ordem dos celulares
+const TT = criarTelao({ sala: () => sala, revelacao: () => revelacao, ordemDaSala });
 
 const inicial = new URLSearchParams(location.search).get('sala');
 if (inicial) abrir(inicial);
@@ -166,7 +168,7 @@ function quiz() {
       h('div', { class: 'quiz-nome' }, j.estado === 'respondendo' ? vezDo(nome) : { certo: nome + ' acertou!', errado: nome + ' errou', tempo: 'Tempo esgotado para ' + nome, encerrada: 'Pergunta encerrada' }[j.estado] || nome)),
     j.estado === 'respondendo' ? h('span', { class: 'relogio', id: 'relogioQuiz' }, '') : h('span', { class: 'quiz-sinal' }, j.estado === 'certo' ? '✔' : '✗'));
   const corpo = [];
-  if (j.enunciado) corpo.push(h('div', { class: 'explicacao', style: { fontSize: '1.1em' } }, h('strong', {}, j.enunciado), h('ol', { type: 'A' }, (j.alternativas || []).map(a => h('li', {}, a.texto)))));
+  if (j.enunciado) corpo.push(h('div', { class: 'explicacao', style: { fontSize: '1.1em' } }, h('strong', {}, j.enunciado), h('ol', { type: 'A' }, ordemDaSala(j.alternativas, j.enunciado).map(a => h('li', {}, a.texto)))));
   else if (j.estado === 'respondendo') corpo.push(h('p', { class: 'sutil', style: { textAlign: 'center' } }, 'A pergunta está só no celular do líder do grupo.'));
   if (j.revelacao?.texto && j.estado !== 'respondendo') corpo.push(h('div', { class: 'explicacao' }, h('strong', {}, 'Resposta: ' + j.revelacao.texto), j.revelacao.explicacao && h('p', {}, j.revelacao.explicacao)));
   setTimeout(atualizarRelogio, 0);

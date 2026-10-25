@@ -7,6 +7,7 @@ import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arra
 import { aplicarMovimento } from './core/cartoes.js';
 import { criarTelas } from './participar-tipos.js';
 import { ilustra } from './icones.js';
+import { embaralharPor } from './core/embaralhar.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
@@ -22,7 +23,7 @@ let uid = null, codigo = null, sala = null, meuNome = '';
 const pacotes = {}, inscricoes = {};
 // Tipos novos (memória, corrida, cruzadas, quiz que faz pensar, análise de imagem): js/participar-tipos.js
 const TP = criarTelas({ sala: () => sala, uid: () => uid, pacotes, b, explicar: (...a) => explicar(...a), carregando: () => carregando(),
-  enviar: (prefixo, minimo, dados, grupoId) => enviarTentativa(prefixo, minimo, dados, grupoId), botaoConfirmar: (...a) => botaoConfirmar(...a), listaOpcoes: (...a) => listaOpcoes(...a),
+  enviar: (prefixo, minimo, dados, grupoId) => enviarTentativa(prefixo, minimo, dados, grupoId), botaoConfirmar: (...a) => botaoConfirmar(...a), listaOpcoes: (...a) => listaOpcoes(...a), ordemDaSala: (...a) => ordemDaSala(...a),
   rascunho: k => rascunho(k), contador: (...a) => contador(...a), agora: () => Date.now(), grupoDe: s => grupoDe(s), nomeDe: (s, u) => nomeDe(s, u),
   redesenhar: () => { chaveRenderizada = ''; render(); }, aviso: (t, k) => aviso($('status'), t, k) });
 const rascunhos = {};
@@ -247,7 +248,7 @@ function tarefaMontagem(info) {
   const pk = pacotes[uid];
   explicar('mont-' + sala.etapaAtual, info.titulo, ['Seu celular mostra uma peça de quebra-cabeça. As saliências e os recortes indicam quem fica ao lado de quem.', 'Juntem os celulares na ordem certa para entender o todo. Não há botão de envio: prestem atenção, a próxima etapa depende do que vocês virem.']);
   if (pk === undefined) return carregando();
-  const caixa = h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+  const caixa = h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
   if (montagemExpirou()) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Tempo esgotado: as peças foram recolhidas. Guarde o que vocês montaram.')); return caixa; }
   if (!pk || pk.etapaId !== sala.etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'As peças já foram distribuídas. Ajude seu grupo a colocar os celulares na ordem.')); return caixa; }
   if (!pk.pecas.length) {
@@ -329,7 +330,7 @@ function tarefaCadeado(info) {
   if (pk === undefined || (pk && pk.etapaId !== sala.etapaAtual)) return carregando();
   if (!pk) return carregando();
   const g = grupoDe(sala), cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
-  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && h('p', {}, pk.instrucao), placaCadeado(pk));
+  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== pk.titulo && h('p', {}, pk.instrucao), placaCadeado(pk));
   if (pk.grupo?.destravado) {
     if (pk.mensagem) caixa.append(h('div', { class: 'cadeado-mensagem' }, pk.mensagem));
     else caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Vocês conseguiram! Aguardem a próxima etapa.'));
@@ -408,7 +409,7 @@ function tarefaQuiz(info) {
     const r = rascunho('quiz-' + pk.envioId), fim = pk.inicio + pk.segundos * 1000;
     caixa.append(h('div', { class: 'quiz-vez minha' }, h('strong', {}, pk.repasse ? 'A pergunta passou para o seu grupo!' : 'Sua vez!'), ' Tempo: ', contador(fim, 'relogio')),
       h('h3', {}, pk.enunciado), h('p', { class: 'sutil' }, 'Só você vê a pergunta: leia em voz alta para o grupo e decidam juntos.'),
-      listaOpcoes(pk.alternativas, r, true, 'q-' + pk.envioId));
+      listaOpcoes(ordemDaSala(pk.alternativas, pk.enunciado), r, true, 'q-' + pk.envioId, null));
     const msg = h('p', { class: 'aviso', hidden: true });
     caixa.append(botaoConfirmar('Responder pelo grupo', async () => {
       if (!r.escolha) throw new Error('Escolham uma alternativa.');
@@ -423,7 +424,7 @@ function tarefaQuiz(info) {
       iconeGrupo(sala.publico.grupos, vezDe, 40),
       h('div', {}, h('strong', {}, meu ? 'Vez do seu grupo!' : (/^grupo\b/i.test(nome) ? 'Vez do ' + nome : 'Vez do grupo ' + nome)), j.repasseDe ? h('small', {}, ` (repassada por ${nomeGrupo(sala, j.repasseDe)})`) : '', h('br'),
         h('small', {}, meu ? `Só ${nomeDe(sala, sala.executores?.[g] || sala.representantes?.[g])} tem a pergunta. Ajudem a responder!` : 'Acompanhe no telão.'), ' ', contador(j.inicio + j.segundos * 1000, 'relogio'))));
-    if (j.enunciado) caixa.append(h('h3', {}, j.enunciado), listaOpcoes(j.alternativas || [], {}, false, 'qv'));
+    if (j.enunciado) caixa.append(h('h3', {}, j.enunciado), listaOpcoes(ordemDaSala(j.alternativas, j.enunciado), {}, false, 'qv', null));
   } else {
     const txt = { certo: `${nome} acertou!`, errado: `${nome} errou.`, tempo: `O tempo de ${nome} acabou.`, encerrada: 'Pergunta encerrada.' }[j.estado] || '';
     caixa.append(h('p', { class: 'aviso', 'data-tipo': j.estado === 'certo' ? 'ok' : 'erro' }, txt));
@@ -473,7 +474,7 @@ function tarefaCartoes(info) {
   if (!rep && !g) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
   if (pk === undefined) return carregando();
   if (!pk || pk.etapaId !== sala.etapaAtual) return rep
-    ? h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), h('p', { class: 'aviso' }, 'Os representantes dos grupos estão montando um quadro só, juntos. Acompanhe no telão e ajude o representante do seu grupo.'))
+    ? h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao), h('p', { class: 'aviso' }, 'Os representantes dos grupos estão montando um quadro só, juntos. Acompanhe no telão e ajude o representante do seu grupo.'))
     : carregando();
   const quadro = quadroAtual(pk), total = pk.cartoes.length;
   const colocados = Object.values(quadro).filter(v => v !== null && v !== undefined).length;
@@ -481,7 +482,7 @@ function tarefaCartoes(info) {
   const lider = rep ? uid : (sala.executores?.[g] || sala.representantes?.[g]);
   const cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
   const meus = pk.cartoes.filter(c => pk.dono?.[c.id] === uid).length, fracionado = Object.keys(pk.dono || {}).length > 0;
-  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && h('p', {}, pk.instrucao), pk.enunciado && h('h3', {}, pk.enunciado),
+  const caixa = h('div', { class: 'cartao', style: { '--cor': cor } }, h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== pk.titulo && h('p', {}, pk.instrucao), pk.enunciado && pk.enunciado !== pk.instrucao && h('h3', {}, pk.enunciado),
     pk.trecho && h('p', { class: 'aviso' }, `Seu grupo tem o trecho ${pk.trecho.de} de ${pk.trecho.total} da cadeia. Ponham na ordem: no fim, o telão junta os trechos de todos os grupos.`));
 
   const u = pk.ultimo, liberado = agora() >= (pk.liberaEm || 0);
@@ -545,7 +546,7 @@ function tarefaGrupo(pk, g, possoEnviar) {
   const s = sala, r = rascunho(pk.etapaId + '__' + g), cfg = pk.config || {};
   const jaFoi = !!s.progresso?.porGrupo?.[g];
   const caixa = h('div', { class: 'cartao' });
-  caixa.append(h('h2', {}, pk.titulo), pk.instrucao && h('p', {}, pk.instrucao));
+  caixa.append(h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== pk.titulo && h('p', {}, pk.instrucao));
 
   if (pk.typeId === 'investigacao_fragmentos') {
     caixa.append(h('h3', {}, 'Peças do grupo'));
@@ -594,7 +595,7 @@ function tarefaGrupo(pk, g, possoEnviar) {
 
 function tarefaIndividual(pk) {
   const r = rascunho(pk.etapaId + '__eu'), cfg = pk.config || {};
-  const caixa = h('div', { class: 'cartao' }, h('h2', {}, pk.titulo), pk.instrucao && h('p', { class: 'sutil' }, pk.instrucao), h('h3', {}, cfg.enunciado));
+  const caixa = h('div', { class: 'cartao' }, h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== cfg.enunciado && pk.instrucao !== pk.titulo && h('p', { class: 'sutil' }, pk.instrucao), h('h3', {}, cfg.enunciado));
   const jaFoi = !!sala.progresso?.porParticipante?.[uid];
   caixa.append(listaOpcoes(cfg.alternativas || [], r, !jaFoi, 'a-' + pk.etapaId));
   if (jaFoi) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta enviada.')); return caixa; }
@@ -606,11 +607,16 @@ function tarefaIndividual(pk) {
   return caixa;
 }
 
-function listaOpcoes(opcoes, r, editavel, nome) {
-  return h('div', { class: 'opcoes', role: editavel ? 'radiogroup' : null }, opcoes.map(o => editavel
+/** Alternativas em ordem sorteada por aluno (a ordem do autor entrega a resposta). semente null = já vem na ordem certa. */
+function listaOpcoes(opcoes, r, editavel, nome, semente = uid + '|' + nome) {
+  const lista = semente === null ? opcoes : embaralharPor(opcoes, semente);
+  return h('div', { class: 'opcoes', role: editavel ? 'radiogroup' : null }, lista.map(o => editavel
     ? h('label', { class: 'opcao' }, h('input', { type: 'radio', name: nome, value: o.id, checked: r.escolha === o.id, onchange: () => { r.escolha = o.id; } }), h('span', {}, o.texto))
     : h('div', { class: 'opcao leitura' + (r.escolha === o.id ? ' escolhida' : '') }, h('span', {}, '• ' + o.texto))));
 }
+
+/** Ordem da sala: igual em todos os celulares e no telão, que mostra a mesma lista com letras. */
+const ordemDaSala = (opcoes, enunciado) => embaralharPor(opcoes, codigo + '|' + (enunciado || ''));
 
 /** Botão de dois toques: o primeiro pede confirmação, o segundo envia. */
 function botaoConfirmar(rotulo, acao, msg) {

@@ -62,7 +62,7 @@ export function criarTelas(ctx) {
       ? ['Responda e diga o quanto tem certeza.', 'Certeza vale mais pontos, mas perde pontos se errar. Seja honesto com você!']
       : ['Responda no seu ritmo: cada acerto soma pontos para o seu grupo.', 'Acertos seguidos dão power-ups. Use na hora certa!']);
     if (pk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     if (temMidia(info)) caixa.append(midia(info));
     if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(h('p', { class: 'aviso' }, porGrupo ? 'Aguardando o pacote do grupo…' : 'Você entrou depois do início. Ajude o seu grupo!')); return caixa; }
     if (j.placar) caixa.append(placar(j.placar));
@@ -113,7 +113,7 @@ export function criarTelas(ctx) {
     const j = S().jogo || {}, pk = telao ? (j.tipo === 'memoria' ? j : null) : P(g());
     ctx.explicar('mem-' + S().etapaAtual, info.titulo, telao ? ['O tabuleiro está no telão. Na vez do seu grupo, o líder escolhe duas cartas pelo celular.', 'Acertou, joga de novo. Errou, passa a vez.'] : ['Virem duas cartas: se formam par, ficam abertas.', 'Combinem antes: o tabuleiro é do grupo inteiro.']);
     if (pk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), pk?.enunciado && h('h3', {}, pk.enunciado));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao), pk?.enunciado && pk.enunciado !== info.instrucao && h('h3', {}, pk.enunciado));
     if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
     if (!pk.cartas) { caixa.append(ctx.carregando()); return caixa; }
     const minha = telao ? (pk.vez === g() && souLider(g())) : true;
@@ -156,7 +156,7 @@ export function criarTelas(ctx) {
     const dk = P(uid()), gpk = dk && P(dk.pacoteGrade);
     ctx.explicar('cruz-' + S().etapaAtual, info.titulo, ['Cada um tem algumas dicas. Resolva as suas e ajude os colegas.', 'Acentos não importam. A palavra certa aparece na grade de todos.']);
     if (dk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     if (!dk || dk.etapaId !== S().etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'Você entrou depois da distribuição das dicas. Ajude seu grupo!')); return caixa; }
     if (!gpk || gpk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
     caixa.append(h('p', {}, h('strong', {}, `${gpk.acertos} de ${gpk.total} palavras`), gpk.conjunto === 'turma' ? ' · a grade é da turma inteira' : ''), gpk.concluido && h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Grade completa!'));
@@ -187,31 +187,32 @@ export function criarTelas(ctx) {
     ctx.explicar('eq-' + S().etapaAtual, info.titulo, ['Primeiro cada um responde sozinho, sem conversar.', 'Depois o grupo debate e decide a resposta do grupo. A resposta do grupo vale mais!']);
     if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
     if (pk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
     caixa.append(h('p', { class: 'sutil' }, `Pergunta ${pk.q + 1} de ${pk.total} · grupo: ${pk.placar?.pontos ?? 0} pts`));
     if (pk.fase === 'espera') { caixa.append(h('p', { class: 'aviso' }, 'Aguardem: quem conduz vai abrir a pergunta.')); return caixa; }
     caixa.append(h('h3', {}, pk.pergunta.enunciado));
+    const alts = ctx.ordemDaSala(pk.pergunta.alternativas, pk.pergunta.enunciado);
     const meuNome = S().nomes?.[uid()], chave = S().etapaAtual + '#eq' + pk.q;
     if (pk.fase === 'individual') {
       const ja = pk.respondidos.includes(meuNome) || pend[chave + 'i'];
       if (ja) caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta individual enviada. Aguarde a fase do grupo.'), h('small', { class: 'sutil' }, `${pk.respondidos.length} de ${pk.membros} do grupo responderam.`));
-      else caixa.append(h('p', { class: 'sutil' }, 'Responda sozinho, sem conversar.'), h('div', { class: 'corrida-alts' }, pk.pergunta.alternativas.map(a => h('button', { class: 'corrida-alt', 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__t`, 1, { q: pk.q, alternativaId: a.id }, g()).then(() => { pend[chave + 'i'] = true; ctx.redesenhar(); }).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))));
+      else caixa.append(h('p', { class: 'sutil' }, 'Responda sozinho, sem conversar.'), h('div', { class: 'corrida-alts' }, alts.map(a => h('button', { class: 'corrida-alt', 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__t`, 1, { q: pk.q, alternativaId: a.id }, g()).then(() => { pend[chave + 'i'] = true; ctx.redesenhar(); }).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))));
       return caixa;
     }
     if (pk.individuais) {
       const tot = Object.values(pk.individuais).reduce((x, y) => x + y, 0) || 1;
-      caixa.append(h('p', { class: 'sutil' }, 'Como o grupo respondeu sozinho:'), h('div', { class: 'dist' }, pk.pergunta.alternativas.map(a => h('div', { class: 'dist-linha' }, h('span', {}, a.texto), h('div', { class: 'dist-barra' }, h('i', { style: { width: Math.round(100 * (pk.individuais[a.id] || 0) / tot) + '%' } })), h('small', {}, pk.individuais[a.id] || 0)))));
+      caixa.append(h('p', { class: 'sutil' }, 'Como o grupo respondeu sozinho:'), h('div', { class: 'dist' }, alts.map(a => h('div', { class: 'dist-linha' }, h('span', {}, a.texto), h('div', { class: 'dist-barra' }, h('i', { style: { width: Math.round(100 * (pk.individuais[a.id] || 0) / tot) + '%' } })), h('small', {}, pk.individuais[a.id] || 0)))));
     }
     if (pk.fase === 'grupo') {
       if (pk.doGrupo) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Resposta do grupo: ', h('strong', {}, pk.pergunta.alternativas.find(a => a.id === pk.doGrupo)?.texto), '. Aguardem a revelação.')); return caixa; }
       if (pk.consenso === 'todos') {
         const meu = pk.votos?.[meuNome];
-        caixa.append(h('p', {}, 'Debatam. A resposta do grupo vale quando todos votarem igual.'), h('div', { class: 'corrida-alts' }, pk.pergunta.alternativas.map(a => h('button', { class: 'corrida-alt' + (meu === a.id ? ' ativo' : ''), 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__v`, 1, { q: pk.q, alternativaId: a.id }, g()).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))),
+        caixa.append(h('p', {}, 'Debatam. A resposta do grupo vale quando todos votarem igual.'), h('div', { class: 'corrida-alts' }, alts.map(a => h('button', { class: 'corrida-alt' + (meu === a.id ? ' ativo' : ''), 'data-auto': 'alt', onclick: () => ctx.enviar(`${S().etapaAtual}__${uid()}__v`, 1, { q: pk.q, alternativaId: a.id }, g()).catch(e => ctx.aviso(e.message, 'erro')) }, a.texto))),
           pk.votos && h('small', { class: 'sutil' }, 'Votos: ' + Object.entries(pk.votos).map(([n, v]) => `${n} → ${pk.pergunta.alternativas.find(a => a.id === v)?.texto?.slice(0, 18)}`).join(' · ')));
       } else if (souLider(g())) {
         const r = ctx.rascunho('eqg-' + chave);
-        caixa.append(h('p', {}, 'Debatam e marque a resposta do grupo.'), ctx.listaOpcoes(pk.pergunta.alternativas, r, true, 'eqg' + chave));
+        caixa.append(h('p', {}, 'Debatam e marque a resposta do grupo.'), ctx.listaOpcoes(alts, r, true, 'eqg' + chave, null));
         const msg = h('p', { class: 'aviso', hidden: true });
         caixa.append(ctx.botaoConfirmar('Enviar a resposta do grupo', async () => { if (!r.escolha) throw new Error('Escolham uma alternativa.'); await ctx.enviar(`${S().etapaAtual}__${g()}__g`, pk.proximaG, { q: pk.q, alternativaId: r.escolha }, g()); }, msg), msg);
       } else caixa.append(h('p', { class: 'sutil' }, `Debatam. ${ctx.nomeDe(S(), S().representantes?.[g()])} envia a resposta do grupo.`));
@@ -230,7 +231,7 @@ export function criarTelas(ctx) {
     ctx.explicar('ram-' + S().etapaAtual, info.titulo, ['Cada escolha do grupo leva a um cenário diferente.', 'Discutam as consequências antes: o líder confirma a escolha.']);
     if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
     if (pk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     if (!pk || pk.etapaId !== S().etapaAtual || !pk.cenario) { caixa.append(ctx.carregando()); return caixa; }
     if (pk.escolhaAnterior) caixa.append(h('p', { class: 'sutil' }, 'Vocês escolheram: ', h('strong', {}, pk.escolhaAnterior)), pk.feedback && h('p', { class: 'aviso' }, pk.feedback));
     caixa.append(h('div', { class: 'cenario' + (pk.final ? ' final ' + pk.desfecho : '') }, h('p', {}, pk.cenario.texto)));
@@ -246,9 +247,9 @@ export function criarTelas(ctx) {
   function observar(info) {
     const pk = P(g());
     if (!g()) return h('div', { class: 'cartao' }, h('p', {}, 'Aguardando quem conduz incluir você em um grupo.'));
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao), midia(info));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao), midia(info));
     if (pk === undefined || !pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
-    caixa.append(h('h3', {}, pk.enunciado));
+    if (pk.enunciado !== info.instrucao) caixa.append(h('h3', {}, pk.enunciado));
     if (!souLider(g())) { caixa.append(h('p', { class: 'sutil' }, `Observem juntos. ${ctx.nomeDe(S(), S().representantes?.[g()])} escreve pelo grupo.`), pk.minha && h('p', { class: 'aviso' }, 'O grupo escreveu: ', pk.minha)); return caixa; }
     const r = ctx.rascunho('obs-' + S().etapaAtual);
     if (!r.justificativa && pk.minha) r.justificativa = pk.minha;
@@ -409,7 +410,7 @@ export function criarTelas(ctx) {
     const pk = P(uid());
     ctx.explicar('seq-' + S().etapaAtual, info.titulo, ['Observe a ordem em que os termos acendem e tocam. Depois, repita tocando nos termos.', 'A cada acerto a sequência cresce mais um. Vale o seu recorde, que soma para o grupo. Ligue o som!']);
     if (pk === undefined) return ctx.carregando();
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'Preparando o seu painel…')); return caixa; }
     if (!jogoSeq || jogoSeq.etapa !== S().etapaAtual) { jogoSeq?.parar(); jogoSeq = criarJogoSeq(S().etapaAtual); }
     jogoSeq.atualizar(pk);
@@ -436,7 +437,7 @@ export function criarTelas(ctx) {
   function escala(info) {
     const etapa = S().etapaAtual, ins = INSTRUMENTOS[info.formato] || INSTRUMENTOS['mini-ipip6'], pk = P(uid());
     ctx.explicar('esc-' + etapa, info.titulo, [ins.instrucao]);
-    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
     const meu = pk && pk.etapaId === etapa ? pk.escores : local['esc-' + etapa];
     if (meu) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Respostas enviadas. Obrigado!'), perfil(ins, meu)); return caixa; }
     const r = respostasEscala[etapa] ||= guardaEscala(etapa);

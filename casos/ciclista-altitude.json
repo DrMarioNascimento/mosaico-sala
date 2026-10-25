@@ -58,7 +58,7 @@
       "typeVersion": "1.0.0",
       "tempoMin": 15,
       "instrucao": "Leiam as peças do seu grupo. Escolham a hipótese que as SUAS peças sustentam melhor e marquem quais peças usaram. Vocês ainda não têm o quadro completo.",
-      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "meta" },
+      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "desligada" },
       "config": {
         "pergunta": "Com as peças que vocês têm, qual explicação parece mais provável?",
         "hipotesesCandidatas": [
@@ -80,7 +80,7 @@
       "typeVersion": "1.0.0",
       "tempoMin": 15,
       "instrucao": "Agora vocês veem a hipótese e as peças que cada grupo escolheu. Discutam e decidam qual explicação integra TODOS os registros.",
-      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "meta" },
+      "participacao": { "organizacao": "grupos", "envio": "representante", "competicao": "desligada" },
       "config": {
         "pergunta": "Considerando as peças de todos os grupos, qual explicação integra o conjunto?",
         "hipotesesCandidatas": [

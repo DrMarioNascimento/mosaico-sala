@@ -52,7 +52,7 @@
       "participacao": {
         "organizacao": "grupos",
         "envio": "representante",
-        "competicao": "meta"
+        "competicao": "desligada"
       },
       "config": {
         "pergunta": "Com o que vocês ouviram, o que derrubou a Lívia?",

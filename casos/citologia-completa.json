@@ -6,7 +6,7 @@
   "duracaoMin": 156,
   "regime": "simulacao",
   "perguntaCentral": "Como as estruturas celulares sustentam funções diferentes nos seres vivos?",
-  "introducao": "Banco de oficinas para três ou mais encontros. O professor pode usar todas as oficinas em dias diferentes ou remover as que não cabem no plano. Situações e personagens de decisão são fictícios.\n\nBase: Cito.pdf, 31 páginas, Professor André, Biologia. Células são unidades estruturais e funcionais. Membranas controlam trocas; ribossomos sintetizam proteínas; mitocôndrias participam da respiração celular; RER e Golgi participam da via secretora; cloroplastos realizam fotossíntese. Complementos corrigem generalizações do PDF: o nucléolo produz/processa rRNA e monta subunidades ribossômicas; peroxissomos não derivam simplesmente do Golgi; há células sem núcleo e células vegetais sem cloroplastos.",
+  "introducao": "Uma célula é pequena demais para ver a olho nu, mas faz quase tudo o que um organismo precisa: produz, transporta, guarda e gasta energia. Cada estrutura cumpre uma parte do trabalho. Cada grupo recebe uma parte das evidências: só juntando a turma dá para explicar como a célula funciona como um todo.",
   "objetivos": [
     "Interpretar evidências e justificar conclusões.",
     "Relacionar linguagem ou estrutura às suas funções.",
@@ -342,7 +342,7 @@
       "typeId": "cartoes_arrastar",
       "typeVersion": "1.0.0",
       "tempoMin": 6,
-      "instrucao": "Classifiquem pelos critérios dos títulos e expliquem um caso.",
+      "instrucao": "Classifiquem pelos critérios dos títulos. Depois, um de vocês explica um caso em voz alta para a turma.",
       "participacao": {
         "organizacao": "grupos",
         "envio": "representante",
@@ -378,7 +378,7 @@
             "titulo": "Energia e trocas"
           }
         ],
-        "enunciado": "Classifiquem pelos critérios dos títulos e expliquem um caso.",
+        "enunciado": "Classifiquem pelos critérios dos títulos. Depois, um de vocês explica um caso em voz alta para a turma.",
         "distribuicao": "todos",
         "tentativas": "repetir",
         "espera": 0,
@@ -834,24 +834,24 @@
             "id": "l0",
             "consequencia": "A organização de subunidades ribossômicas é prejudicada.",
             "distratores": [
-              "O DNA desaparece imediatamente de todas as células.",
-              "A célula passa automaticamente a fazer fotossíntese."
+              "O núcleo deixa de guardar o DNA da célula.",
+              "A membrana plasmática perde a capacidade de fazer trocas."
             ]
           },
           {
             "id": "l1",
             "consequencia": "A capacidade de formar ribossomos funcionais pode cair.",
             "distratores": [
-              "O DNA desaparece imediatamente de todas as células.",
-              "A célula passa automaticamente a fazer fotossíntese."
+              "A produção de ATP pelas mitocôndrias para de imediato.",
+              "Os ribossomos passam a ser montados no Golgi."
             ]
           },
           {
             "id": "l2",
             "consequencia": "A síntese proteica pode diminuir.",
             "distratores": [
-              "O DNA desaparece imediatamente de todas as células.",
-              "A célula passa automaticamente a fazer fotossíntese."
+              "A célula passa a produzir mais proteínas para compensar.",
+              "A fotossíntese substitui a síntese de proteínas."
             ]
           }
         ],
@@ -1282,6 +1282,15 @@
     "descricao": "Atingir 70% nas etapas de aplicação e síntese, com discussão das justificativas.",
     "etapas": [
       "e2",
+      "e6",
+      "e8",
+      "e9",
+      "e13",
+      "e15",
+      "e16",
+      "e17",
+      "e18",
+      "e20",
       "e22"
     ],
     "limiar": 0.7
@@ -1431,6 +1440,7 @@
       }
     },
     "guia": [
+      "Banco de oficinas para três ou mais encontros. O professor pode usar todas as oficinas em dias diferentes ou remover as que não cabem no plano. Situações e personagens de decisão são fictícios.",
       "Plano sugerido: encontro 1, investigação e imagens; encontro 2, relações e desafios; encontro 3, quizzes, decisões e fechamento. Não tente aplicar todas as oficinas em 50 minutos.",
       "Antes: confira o material, os anexos e o gabarito. Experimente a sequência e salve uma cópia própria.",
       "Em imagem: cada celular recebe uma peça. O quebra-cabeça se monta aproximando os aparelhos; cartões de arrastar é outra atividade.",

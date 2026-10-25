@@ -136,7 +136,7 @@ export function criarTelao(ctx) {
       if (t === 'equipe') {
         const fase = { espera: 'Aguardem a pergunta', individual: '🤫 Cada um responde sozinho', grupo: '💬 Agora o grupo decide junto', revelada: 'Resposta' }[j.fase] || '';
         corpo.push(frase(`${fase}${j.total ? ` · pergunta ${j.q + 1} de ${j.total}` : ''}`));
-        if (j.pergunta) corpo.push(h('div', { class: 'explicacao', style: { fontSize: '1.05em' } }, h('strong', {}, j.pergunta.enunciado), h('ol', { type: 'A' }, j.pergunta.alternativas.map(a => h('li', { class: j.certaId === a.id ? 'certa' : '' }, a.texto,
+        if (j.pergunta) corpo.push(h('div', { class: 'explicacao', style: { fontSize: '1.05em' } }, h('strong', {}, j.pergunta.enunciado), h('ol', { type: 'A' }, ctx.ordemDaSala(j.pergunta.alternativas, j.pergunta.enunciado).map(a => h('li', { class: j.certaId === a.id ? 'certa' : '' }, a.texto,
           j.respostasGrupos ? h('span', { class: 'quem-marcou' }, Object.entries(j.respostasGrupos).filter(([, v]) => v === a.id).map(([g]) => iconeGrupo(gs(), g, 28))) : '')))));
         if (j.revelacao?.explicacao) corpo.push(h('div', { class: 'explicacao' }, j.revelacao.explicacao));
         if (j.respondidos && j.fase !== 'revelada') corpo.push(h('div', { class: 'quiz-placar telao-placar' }, Object.entries(j.respondidos).map(([g, x]) => chipG(g, h('small', {}, j.fase === 'individual' ? ` ${x.n}/${x.de}` : x.grupo ? ' ✔' : ' …')))));

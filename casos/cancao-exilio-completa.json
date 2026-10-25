@@ -6,7 +6,7 @@
   "duracaoMin": 156,
   "regime": "simulacao",
   "perguntaCentral": "Como a distância transforma a maneira de apresentar a terra natal?",
-  "introducao": "Banco de oficinas para três ou mais encontros. O professor pode usar todas as oficinas em dias diferentes ou remover as que não cabem no plano. Situações e personagens de decisão são fictícios.\n\nMinha terra tem palmeiras,\nOnde canta o Sabiá;\nAs aves, que aqui gorjeiam,\nNão gorjeiam como lá.\n\nNosso céu tem mais estrelas,\nNossas várzeas têm mais flores,\nNossos bosques têm mais vida,\nNossa vida mais amores.\n\nEm cismar, sozinho, à noite,\nMais prazer encontro eu lá;\nMinha terra tem palmeiras,\nOnde canta o Sabiá.\n\nMinha terra tem primores,\nQue tais não encontro eu cá;\nEm cismar, sozinho, à noite,\nMais prazer encontro eu lá;\nMinha terra tem palmeiras,\nOnde canta o Sabiá.\n\nNão permita Deus que eu morra,\nSem que eu volte para lá;\nSem que eu desfrute os primores\nQue não encontro por cá;\nSem qu'inda aviste as palmeiras,\nOnde canta o Sabiá.",
+  "introducao": "Minha terra tem palmeiras,\nOnde canta o Sabiá;\nAs aves, que aqui gorjeiam,\nNão gorjeiam como lá.\n\nNosso céu tem mais estrelas,\nNossas várzeas têm mais flores,\nNossos bosques têm mais vida,\nNossa vida mais amores.\n\nEm cismar, sozinho, à noite,\nMais prazer encontro eu lá;\nMinha terra tem palmeiras,\nOnde canta o Sabiá.\n\nMinha terra tem primores,\nQue tais não encontro eu cá;\nEm cismar, sozinho, à noite,\nMais prazer encontro eu lá;\nMinha terra tem palmeiras,\nOnde canta o Sabiá.\n\nNão permita Deus que eu morra,\nSem que eu volte para lá;\nSem que eu desfrute os primores\nQue não encontro por cá;\nSem qu'inda aviste as palmeiras,\nOnde canta o Sabiá.",
   "objetivos": [
     "Interpretar evidências e justificar conclusões.",
     "Relacionar linguagem ou estrutura às suas funções.",
@@ -337,7 +337,7 @@
       "typeId": "cartoes_arrastar",
       "typeVersion": "1.0.0",
       "tempoMin": 6,
-      "instrucao": "Classifiquem pelos critérios dos títulos e expliquem um caso.",
+      "instrucao": "Classifiquem pelos critérios dos títulos. Depois, um de vocês explica um caso em voz alta para a turma.",
       "participacao": {
         "organizacao": "grupos",
         "envio": "representante",
@@ -373,7 +373,7 @@
             "titulo": "Espaço e lugar"
           }
         ],
-        "enunciado": "Classifiquem pelos critérios dos títulos e expliquem um caso.",
+        "enunciado": "Classifiquem pelos critérios dos títulos. Depois, um de vocês explica um caso em voz alta para a turma.",
         "distribuicao": "todos",
         "tentativas": "repetir",
         "espera": 0,
@@ -829,24 +829,24 @@
             "id": "l0",
             "consequencia": "A voz poética recorda a terra natal.",
             "distratores": [
-              "O poema se transforma em um mapa exato.",
-              "A comparação prova uma medição científica."
+              "A voz poética descreve com precisão a terra onde está agora.",
+              "O poema abandona a primeira pessoa."
             ]
           },
           {
             "id": "l1",
             "consequencia": "A paisagem é valorizada pela comparação.",
             "distratores": [
-              "O poema se transforma em um mapa exato.",
-              "A comparação prova uma medição científica."
+              "A terra de exílio é apresentada como superior.",
+              "As comparações deixam de aparecer no poema."
             ]
           },
           {
             "id": "l2",
             "consequencia": "O desejo de retornar se torna explícito.",
             "distratores": [
-              "O poema se transforma em um mapa exato.",
-              "A comparação prova uma medição científica."
+              "A voz poética decide ficar onde está.",
+              "O poema termina sem mencionar a terra natal."
             ]
           }
         ],
@@ -1277,6 +1277,15 @@
     "descricao": "Atingir 70% nas etapas de aplicação e síntese, com discussão das justificativas.",
     "etapas": [
       "e2",
+      "e6",
+      "e8",
+      "e9",
+      "e13",
+      "e15",
+      "e16",
+      "e17",
+      "e18",
+      "e20",
       "e22"
     ],
     "limiar": 0.7
@@ -1426,6 +1435,7 @@
       }
     },
     "guia": [
+      "Banco de oficinas para três ou mais encontros. O professor pode usar todas as oficinas em dias diferentes ou remover as que não cabem no plano. Situações e personagens de decisão são fictícios.",
       "Plano sugerido: encontro 1, investigação e imagens; encontro 2, relações e desafios; encontro 3, quizzes, decisões e fechamento. Não tente aplicar todas as oficinas em 50 minutos.",
       "Antes: confira o material, os anexos e o gabarito. Experimente a sequência e salve uma cópia própria.",
       "Em imagem: cada celular recebe uma peça. O quebra-cabeça se monta aproximando os aparelhos; cartões de arrastar é outra atividade.",
