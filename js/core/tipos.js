@@ -10,6 +10,8 @@
    (js/telas/...), nunca indicados pelo arquivo importado. */
 
 import { problemasRamos as problemasRamosTipos } from './pensar.js';
+import { INSTRUMENTOS } from './escalas.js';
+import { JOGOS } from './jogos.js';
 const ID_CURTO = /^[a-z0-9][a-z0-9_-]{0,31}$/;
 const POWER_UPS_IDS = ['dobrar', 'congelar', 'escudo', 'ajuda', 'congelar_rival', 'roubar', 'embaralhar_rival', 'bloquear'];
 const texto = (v, max = 2000) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
@@ -542,6 +544,58 @@ export const TIPOS = {
       if (c.tarefa === 'perguntas') for (const p of c.perguntas || []) if (!(p.alternativas || []).some(a => a.id === r?.perguntas?.[p.id]?.corretaId)) d.push(erro(`docente.respostas.${etapa.id}.perguntas.${p.id}`, `Marque a alternativa correta da pergunta "${String(p.enunciado || p.id).slice(0, 40)}".`));
       return d;
     }
+  },
+
+  escala_padronizada: {
+    typeId: 'escala_padronizada',
+    typeVersion: '1.0.0',
+    nome: 'Escala padronizada',
+    descricao: 'Cada aluno responde uma escala de autorrelato de domínio público (Mini-IPIP6: Big Five + Honestidade-Humildade, o fator do HEXACO) e vê o próprio perfil no celular. O telão mostra só a média da turma, a partir de 5 respostas. Para refletir sobre traços e conduta, não para avaliar pessoas.',
+    configuracao: {
+      formato: "instrumento: 'mini-ipip6'",
+      mostrarTurma: 'booleano (padrão true): ao encerrar, o telão mostra a média da turma por fator (só com 5 ou mais respostas)'
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['individual'], envio: ['individual'], competicao: ['desligada'] },
+    completionPolicy: 'envio_confirmado', assessmentPolicy: 'nao_avaliada', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa) {
+      const d = [], c = etapa.config || {};
+      if (!INSTRUMENTOS[c.formato]) d.push(erro('config.formato', `Escolha o instrumento: ${Object.keys(INSTRUMENTOS).join(', ')}.`));
+      if (c.mostrarTurma !== undefined && typeof c.mostrarTurma !== 'boolean') d.push(erro('config.mostrarTurma', 'mostrarTurma deve ser verdadeiro ou falso.'));
+      return d;
+    },
+    validarRespostas() { return []; }   // não há resposta certa
+  },
+
+  jogo_economico: {
+    typeId: 'jogo_economico',
+    typeVersion: '1.0.0',
+    nome: 'Jogo econômico',
+    descricao: 'Jogos padronizados da economia comportamental: ditador, ultimato, confiança e bens públicos. Cada aluno decide uma vez, sem saber com quem joga; os pares são sorteados e cada celular vê o próprio ganho. O telão mostra a distribuição da turma e, se houver uma escala antes, a relação com a Honestidade-Humildade.',
+    configuracao: {
+      formato: "'ditador' | 'ultimato' | 'confianca' | 'bens_publicos'",
+      dotacao: 'pontos que cada um recebe (padrão 10)',
+      multiplicador: 'confiança: o que é enviado é multiplicado (padrão 3)',
+      fator: 'bens públicos: o fundo do grupo é multiplicado (padrão 2)',
+      relacionarCom: 'opcional: id de uma etapa de escala anterior; o telão mostra a relação entre a Honestidade-Humildade e a decisão'
+    },
+    acceptedInputs: [], producedOutputs: [],
+    participacao: { organizacao: ['individual'], envio: ['individual'], competicao: ['desligada'] },
+    completionPolicy: 'envio_confirmado', assessmentPolicy: 'nao_avaliada', contingencyPolicy: ['aguardar'], usaPecas: false,
+    validar(etapa, ctx) {
+      const d = [], c = etapa.config || {};
+      if (!JOGOS[c.formato]) d.push(erro('config.formato', "Escolha o jogo: 'ditador', 'ultimato', 'confianca' ou 'bens_publicos'."));
+      const D = c.dotacao ?? 10; if (!(Number.isInteger(D) && D >= 2 && D <= 100)) d.push(erro('config.dotacao', 'Pontos de cada um: de 2 a 100.'));
+      if (c.formato === 'confianca') { const k = c.multiplicador ?? 3; if (!(Number.isFinite(k) && k >= 1 && k <= 5)) d.push(erro('config.multiplicador', 'Multiplicador da confiança: de 1 a 5.')); }
+      if (c.formato === 'bens_publicos') { const f = c.fator ?? 2; if (!(Number.isFinite(f) && f > 1 && f <= 5)) d.push(erro('config.fator', 'Fator do fundo: maior que 1 e até 5.')); }
+      if (c.relacionarCom) {
+        const alvo = ctx?.atividade?.etapas?.find(x => x.id === c.relacionarCom);
+        if (!alvo || alvo.typeId !== 'escala_padronizada') d.push(erro('config.relacionarCom', 'A relação precisa apontar para uma etapa de escala padronizada.'));
+        else if (alvo.ordem >= etapa.ordem) d.push(erro('config.relacionarCom', 'A escala precisa vir antes do jogo.'));
+      }
+      return d;
+    },
+    validarRespostas() { return []; }   // não há resposta certa
   },
 
   questao_individual: {

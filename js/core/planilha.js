@@ -44,7 +44,8 @@ export const ABAS = {
     'cruzadas_dicas', 'cruzadas_grade',
     'sequencia_botoes', 'sequencia_velocidade', 'sequencia_partidas', 'sequencia_placar', 'sequencia_meta',
     'pensar_formato', 'pensar_consenso', 'pensar_mostrar_individuais', 'pensar_pontuar_confianca', 'pensar_calibracao',
-    'analise_midia', 'analise_tarefa', 'analise_tolerancia', 'analise_distribuicao', 'analise_tentativas', 'analise_modelo_url'],
+    'analise_midia', 'analise_tarefa', 'analise_tolerancia', 'analise_distribuicao', 'analise_tentativas', 'analise_modelo_url',
+    'escala_instrumento', 'escala_mostrar_turma', 'jogo_formato', 'jogo_dotacao', 'jogo_multiplicador', 'jogo_fator', 'jogo_relacionar'],
   Opcoes: ['etapa', 'id', 'texto', 'correta'],
   Perguntas: ['etapa', 'pergunta', 'enunciado', 'a', 'b', 'c', 'd', 'e', 'correta', 'explicacao'],
   Cartoes: ['etapa', 'id', 'texto', 'ordem_certa', 'coluna_certa', 'posicao_certa'],
@@ -122,6 +123,8 @@ export function atividadeParaAbas(a) {
         corrida_formato: c.formato || '', corrida_gatilho: c.gatilho || '', corrida_ao_quebrar: c.formato === 'corrente' ? (c.aoQuebrar || 'recomecar') : '',
         corrida_segundos: c.segundos ?? 30, corrida_embaralhar: c.embaralhar === false ? 'não' : 'sim', corrida_power_ups: (c.powerUps || []).join('; '), corrida_sequencia: c.sequencia ?? 3
       } : {}),
+      ...(e.typeId === 'escala_padronizada' ? { escala_instrumento: c.formato || '', escala_mostrar_turma: c.mostrarTurma === false ? 'não' : 'sim' } : {}),
+      ...(e.typeId === 'jogo_economico' ? { jogo_formato: c.formato || '', jogo_dotacao: c.dotacao ?? 10, jogo_multiplicador: c.formato === 'confianca' ? (c.multiplicador ?? 3) : '', jogo_fator: c.formato === 'bens_publicos' ? (c.fator ?? 2) : '', jogo_relacionar: c.relacionarCom || '' } : {}),
       ...(e.typeId === 'sequencia' ? { sequencia_botoes: c.botoes ?? 4, sequencia_velocidade: c.velocidade || 'classica', sequencia_partidas: c.partidas ?? 0, sequencia_placar: c.placar || 'soma', sequencia_meta: c.meta ?? 6 } : {}),
       ...(e.typeId === 'cruzadas' ? { cruzadas_dicas: c.dicas || 'fracionadas', cruzadas_grade: c.grade || 'por_grupo' } : {}),
       ...(e.typeId === 'quiz_pensar' ? {
@@ -338,6 +341,17 @@ export function abasParaAtividade(abas) {
       config.sequencia = num(l.corrida_sequencia) ?? 3;
       if (txt(l.explicacao)) resp.explicacao = txt(l.explicacao);
       respostas[id] = resp;
+    } else if (typeId === 'escala_padronizada') {
+      config.formato = txt(l.escala_instrumento) || 'mini-ipip6';
+      config.mostrarTurma = !nao(l.escala_mostrar_turma);
+      respostas[id] = {};
+    } else if (typeId === 'jogo_economico') {
+      config.formato = txt(l.jogo_formato) || 'ditador';
+      config.dotacao = num(l.jogo_dotacao) ?? 10;
+      if (config.formato === 'confianca') config.multiplicador = num(l.jogo_multiplicador) ?? 3;
+      if (config.formato === 'bens_publicos') config.fator = num(l.jogo_fator) ?? 2;
+      if (txt(l.jogo_relacionar)) config.relacionarCom = txt(l.jogo_relacionar);
+      respostas[id] = {};
     } else if (typeId === 'sequencia') {
       config.termos = (tab.termos || []).filter(x => txt(x.etapa) === id && txt(x.termo)).map((x, k) => ({ id: txt(x.id) || 't' + (k + 1), termo: txt(x.termo), definicao: txt(x.definicao) }));
       config.botoes = num(l.sequencia_botoes) ?? 4;

@@ -526,3 +526,46 @@ img.ico { width: 1.25em; height: 1.25em; object-fit: contain; }
 .roteiro { margin: 12px 0 16px; padding-left: 1.4em; display: grid; gap: 6px; }
 .roteiro small { display: block; }
 .aviso-rede { position: sticky; top: 0; z-index: 30; }
+
+/* Escala padronizada: celular */
+.escala-legenda { display: grid; gap: 2px; font-size: .85rem; color: var(--texto-2); margin: 8px 0 12px; }
+.escala-itens { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; counter-reset: item; }
+.escala-item { padding: 12px; border-radius: 12px; background: var(--fundo-2); border: 1px solid var(--linha); counter-increment: item; }
+.escala-item > p { margin: 0 0 10px; text-align: left; font-weight: 600; }
+.escala-item > p::before { content: counter(item) ". "; color: var(--texto-2); }
+.likert { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.likert-op { min-height: 48px; border-radius: 10px; border: 1px solid var(--linha); background: var(--cartao-2); color: var(--texto); font: 800 1.1rem var(--fonte); cursor: pointer; }
+.likert-op.ativo { background: var(--acento); color: #1a0d00; border-color: transparent; }
+.likert-op:focus-visible { outline: 3px solid var(--acento-2); outline-offset: 2px; }
+.escala-contador { text-align: center; margin: 12px 0 6px; }
+.perfil { display: grid; gap: 12px; margin-top: 8px; }
+.perfil-linha { display: flex; justify-content: space-between; align-items: baseline; }
+.perfil-linha span { font: 800 1.2rem var(--fonte-titulo); color: var(--acento); }
+.perfil-barra { height: 12px; border-radius: 999px; background: var(--fundo-2); border: 1px solid var(--linha); overflow: hidden; margin: 4px 0; }
+.perfil-barra i { display: block; height: 100%; background: linear-gradient(90deg, var(--acento-2), var(--acento)); }
+.perfil small, .perfil p { text-align: left; }
+
+/* Jogo econômico: celular */
+.jogo-campos { display: grid; gap: 16px; margin: 12px 0; }
+.jogo-campo { display: grid; gap: 8px; margin: 0; }
+.jogo-campo output { font: 800 1.3rem var(--fonte-titulo); color: var(--acento); }
+.jogo-campo input[type=range] { width: 100%; min-height: 44px; accent-color: var(--acento); }
+.jogo-ganho { display: grid; justify-items: center; padding: 16px; border-radius: 16px; background: var(--fundo-2); margin: 10px 0; }
+.jogo-ganho strong { font: 900 3rem var(--fonte-titulo); color: var(--acento); }
+
+/* Telão: escala e jogo (só a turma) */
+.telao-contagem { text-align: center; font-size: 1.6em; margin: .2em 0; }
+.telao-contagem strong { font-size: 1.6em; color: var(--acento); }
+.escala-telao { display: grid; gap: .7em; max-width: 1000px; margin: 0 auto; width: 100%; }
+.escala-telao-linha { display: grid; grid-template-columns: minmax(8em, 14em) 1fr 3em; gap: 1em; align-items: center; font-size: 1.25em; }
+.escala-telao-trilho { position: relative; height: 1.1em; border-radius: 999px; background: var(--fundo-2); border: 1px solid var(--linha); }
+.escala-telao-trilho .faixa { position: absolute; top: 0; bottom: 0; background: rgba(61, 220, 255, .35); border-radius: 999px; }
+.escala-telao-trilho .ponto { position: absolute; top: 50%; width: 1.1em; height: 1.1em; border-radius: 50%; background: var(--acento); transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--fundo); }
+.jogo-telao { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5em; align-items: end; }
+.hist-barras { display: flex; align-items: flex-end; gap: 4px; height: clamp(110px, 22vh, 200px); }
+.hist-col { flex: 1; display: grid; grid-template-rows: auto 1fr auto; align-items: end; justify-items: center; height: 100%; }
+.hist-col i { display: block; width: 100%; background: var(--acento); border-radius: 6px 6px 0 0; min-height: 2px; }
+.hist-col span, .hist-col small { font-size: .85em; color: var(--texto-2); }
+.hist-eixo { text-align: center; margin: .4em 0 0; color: var(--texto-2); }
+.relacao-telao .dispersao { width: 100%; max-height: clamp(130px, 26vh, 240px); color: var(--texto-2); }
+.relacao-telao p { margin: .3em 0 0; }

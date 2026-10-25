@@ -82,12 +82,15 @@ export function aviso(alvo, texto, tipo = 'info') {
 export function explicar(chave, titulo, texto) {
   if (window.MOSAICO_SEM_EXPLICACAO) return;   // piloto automático do simulador
   try { if (sessionStorage.getItem('mosaico-explicado:' + chave)) return; } catch {}
-  const d = h('dialog', { class: 'explica' },
+  const d = h('dialog', { class: 'explica', 'data-chave': chave },
     h('h2', {}, titulo),
     ...[].concat(texto).map(p => h('p', {}, p)),
     h('button', { class: 'btn primario', onclick: () => { d.close(); d.remove(); } }, 'Entendi'));
+  // Uma explicação por vez: se já há uma aberta, esta espera ela fechar (antes ficavam empilhadas).
+  const aberta = [...document.querySelectorAll('dialog.explica[open]')].pop();
+  const mostrar = () => { if (!d.isConnected) return; d.showModal(); };
   document.body.append(d);
-  d.showModal();
+  if (aberta) aberta.addEventListener('close', mostrar, { once: true }); else mostrar();
   try { sessionStorage.setItem('mosaico-explicado:' + chave, '1'); } catch {}
 }
 

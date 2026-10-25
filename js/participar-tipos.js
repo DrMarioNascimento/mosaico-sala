@@ -5,6 +5,8 @@
 import { h, corDoGrupo, iconeGrupo } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { VELOCIDADES, duracaoTom, frequencias, TOM_ERRO, sortearPainel, proximoBotao, conferirToque, MAX_PASSOS } from './core/sequencia.js';
+import { INSTRUMENTOS, OPCOES_RESPOSTA, pontuar } from './core/escalas.js';
+import { JOGOS } from './core/jogos.js';
 
 export function criarTelas(ctx) {
   const { b } = ctx;
@@ -26,6 +28,8 @@ export function criarTelas(ctx) {
     if (info.typeId === 'corrida') return 'corrida';
     if (info.typeId === 'cruzadas') return 'cruzadas';
     if (info.typeId === 'sequencia') return 'sequencia';
+    if (info.typeId === 'escala_padronizada') return 'escala';
+    if (info.typeId === 'jogo_economico') return 'jogo';
     if (info.typeId === 'quiz_pensar') return info.formato === 'equipe' ? 'equipe' : info.formato === 'ramificado' ? 'ramos' : 'corrida';
     if (info.typeId === 'analise_imagem') return info.formato === 'perguntas' ? 'corrida' : info.formato === 'observar' ? 'observar' : null;
     return null;
@@ -414,6 +418,103 @@ export function criarTelas(ctx) {
     return caixa;
   }
 
+  // ---------- escala padronizada ----------
+  // As respostas item a item ficam só neste celular (também na sessão, para sobreviver a recarregar a página);
+  // para quem conduz vai só a média de cada fator.
+  const respostasEscala = {};
+  const guardaEscala = etapa => { try { return JSON.parse(sessionStorage.getItem('mosaico-escala:' + etapa) || 'null') || {}; } catch { return {}; } };
+  function perfil(ins, escores) {
+    return h('div', { class: 'perfil' },
+      h('p', { class: 'sutil' }, 'Seu perfil (de 1 a 5). Só você vê. Não é bom nem ruim: é um retrato de como você se descreveu hoje.'),
+      ins.fatores.map(f => { const v = escores?.[f.id];
+        return h('div', { class: 'perfil-fator' },
+          h('div', { class: 'perfil-linha' }, h('strong', {}, f.nome), h('span', {}, v === null || v === undefined ? '—' : String(v).replace('.', ','))),
+          h('div', { class: 'perfil-barra', role: 'img', 'aria-label': `${f.nome}: ${v ?? 'sem escore'} de 5` }, h('i', { style: { width: v ? `${(v - 1) * 25}%` : '0' } })),
+          h('small', { class: 'sutil' }, v >= 3.5 ? `Mais alto: ${f.alto}.` : v <= 2.5 ? `Mais baixo: ${f.baixo}.` : `Na média: entre “${f.baixo}” e “${f.alto}”.`)); }),
+      h('p', { class: 'sutil' }, ins.traducao));
+  }
+  function escala(info) {
+    const etapa = S().etapaAtual, ins = INSTRUMENTOS[info.formato] || INSTRUMENTOS['mini-ipip6'], pk = P(uid());
+    ctx.explicar('esc-' + etapa, info.titulo, [ins.instrucao]);
+    const caixa = cartao(h('h2', {}, info.titulo), info.instrucao && h('p', {}, info.instrucao));
+    const meu = pk && pk.etapaId === etapa ? pk.escores : local['esc-' + etapa];
+    if (meu) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Respostas enviadas. Obrigado!'), perfil(ins, meu)); return caixa; }
+    const r = respostasEscala[etapa] ||= guardaEscala(etapa);
+    const contador = h('p', { class: 'sutil escala-contador' });
+    const enviar = h('button', { class: 'btn primario bloco', 'data-auto': 'escala-enviar' }, 'Enviar e ver meu perfil');
+    const atualizar = () => { const n = ins.itens.filter(i => r[i.id]).length; contador.textContent = `${n} de ${ins.itens.length} respondidas`; enviar.disabled = n < ins.itens.length; };
+    enviar.onclick = async () => {
+      const escores = pontuar(ins.id, r);
+      enviar.disabled = true;
+      try { await ctx.enviar(`${etapa}__${uid()}__r`, 1, { escores }, g()); local['esc-' + etapa] = escores; ctx.redesenhar(); }
+      catch (e) { enviar.disabled = false; ctx.aviso('Não foi possível enviar: ' + e.message, 'erro'); }
+    };
+    caixa.append(
+      h('p', { class: 'sutil' }, ins.instrucao),
+      h('div', { class: 'escala-legenda' }, OPCOES_RESPOSTA.map(o => h('span', {}, h('strong', {}, o.valor), ' ', o.texto))),
+      h('ol', { class: 'escala-itens' }, ins.itens.map(it => h('li', { class: 'escala-item', 'data-auto': 'likert-linha' },
+        h('p', {}, it.texto),
+        h('div', { class: 'likert', role: 'radiogroup', 'aria-label': it.texto }, OPCOES_RESPOSTA.map(o => {
+          const b = h('button', { type: 'button', class: 'likert-op' + (r[it.id] === o.valor ? ' ativo' : ''), role: 'radio', 'aria-checked': String(r[it.id] === o.valor), 'aria-label': o.texto, title: o.texto }, String(o.valor));
+          b.onclick = () => {
+            r[it.id] = o.valor;
+            try { sessionStorage.setItem('mosaico-escala:' + etapa, JSON.stringify(r)); } catch {}
+            for (const x of b.parentElement.children) { x.classList.toggle('ativo', x === b); x.setAttribute('aria-checked', String(x === b)); }
+            atualizar();
+          };
+          return b;
+        }))))),
+      contador, enviar);
+    atualizar();
+    return caixa;
+  }
+
+  // ---------- jogo econômico ----------
+  const rascunhoJogo = {};   // fora de `local`: mexer no controle não deve redesenhar a tela
+  function jogo(info) {
+    const etapa = S().etapaAtual, j = S().jogo || {}, J = JOGOS[info.formato] || JOGOS.ditador, pk = P(uid());
+    const D = j.dotacao ?? 10;
+    ctx.explicar('jogo-' + etapa, J.nome, [J.resumo, 'Você joga com colegas sorteados, sem saber quem são, e ninguém fica sabendo da sua escolha. Os pontos não valem nota.']);
+    const caixa = cartao(h('h2', {}, info.titulo || J.nome), h('p', {}, J.resumo), info.instrucao && h('p', { class: 'sutil' }, info.instrucao));
+    const minha = pk && pk.etapaId === etapa ? pk.minha : local['jogo-' + etapa];
+    if (j.revelado && pk?.resultado) {
+      caixa.append(h('div', { class: 'jogo-ganho' }, h('small', {}, 'Seus pontos'), h('strong', {}, String(pk.resultado.ganho).replace('.', ','))),
+        h('ul', {}, pk.resultado.linhas.map(l => h('li', {}, l))), h('p', { class: 'sutil' }, 'Veja no telão o que a turma decidiu.'));
+      return caixa;
+    }
+    if (j.revelado) { caixa.append(h('p', { class: 'aviso' }, 'Os resultados já foram revelados, e sua decisão não entrou no cálculo. Acompanhe pelo telão.')); return caixa; }
+    if (minha) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Decisão enviada. Aguarde quem conduz revelar os resultados.'), h('p', { class: 'sutil' }, descreverDecisao(info.formato, minha, j))); return caixa; }
+    const d = rascunhoJogo[etapa] ||= {};
+    const deslizador = (chave, rot, max, passo, sufixo, inicial) => {
+      if (d[chave] === undefined) d[chave] = inicial;
+      const valor = h('output', {}, d[chave] + sufixo);
+      const input = h('input', { type: 'range', min: 0, max, step: passo, value: d[chave], 'data-auto': 'jogo-valor', 'aria-label': rot,
+        oninput: ev => { d[chave] = Number(ev.target.value); valor.textContent = d[chave] + sufixo; } });
+      return h('label', { class: 'jogo-campo' }, h('span', {}, rot, ' ', valor), input);
+    };
+    const campos = {
+      ditador: () => [deslizador('dar', `De ${D} pontos, quantos você dá ao colega?`, D, 1, '', Math.round(D / 2))],
+      ultimato: () => [deslizador('oferta', `Quanto você oferece (de ${D})?`, D, 1, '', Math.round(D / 2)), deslizador('minimo', 'Quando for a sua vez de receber, qual é a menor oferta que você aceita?', D, 1, '', Math.round(D / 4))],
+      confianca: () => [deslizador('enviar', `Quantos dos seus ${D} pontos você envia? (Chegam multiplicados por ${j.multiplicador ?? 3}.)`, D, 1, '', Math.round(D / 2)), deslizador('devolver', 'Quando você receber pontos, que parte devolve?', 100, 10, '%', 50)],
+      bens_publicos: () => [deslizador('contribuir', `Quantos dos seus ${D} pontos você põe no fundo do grupo? (O fundo é multiplicado por ${j.fator ?? 2} e dividido entre todos.)`, D, 1, '', Math.round(D / 2))]
+    }[info.formato] || (() => []);
+    const enviar = h('button', { class: 'btn primario bloco', 'data-auto': 'jogo-enviar' }, 'Confirmar decisão');
+    enviar.onclick = async () => {
+      enviar.disabled = true;
+      try { await ctx.enviar(`${etapa}__${uid()}__d`, 1, { ...d }, g()); local['jogo-' + etapa] = { ...d }; ctx.redesenhar(); }
+      catch (e) { enviar.disabled = false; ctx.aviso('Não foi possível enviar: ' + e.message, 'erro'); }
+    };
+    caixa.append(h('div', { class: 'jogo-campos' }, campos()), enviar, h('p', { class: 'sutil' }, 'Depois de confirmar, não dá para mudar.'));
+    return caixa;
+  }
+  function descreverDecisao(formato, d, j) {
+    if (formato === 'ditador') return `Você vai dar ${d.dar} ponto(s).`;
+    if (formato === 'ultimato') return `Você oferece ${d.oferta} e aceita a partir de ${d.minimo}.`;
+    if (formato === 'confianca') return `Você envia ${d.enviar} e devolve ${d.devolver}% do que receber.`;
+    if (formato === 'bens_publicos') return `Você põe ${d.contribuir} no fundo do grupo.`;
+    return '';
+  }
+
   return {
     tem: info => !!tipo(info),
     pacotes(info) {
@@ -421,12 +522,12 @@ export function criarTelas(ctx) {
       if (t === 'corrida') return [info.organizacao === 'individual' ? uid() : g(), ...extra].filter(Boolean);
       if (t === 'memoria' || t === 'equipe' || t === 'ramos' || t === 'observar') return [g(), ...extra].filter(Boolean);
       if (t === 'cruzadas') return [uid(), P(uid())?.pacoteGrade || g()].filter(Boolean);
-      if (t === 'sequencia') return [uid()].filter(Boolean);
+      if (t === 'sequencia' || t === 'escala' || t === 'jogo') return [uid()].filter(Boolean);
       return extra;
     },
     chave(info) {
       const t = tipo(info), ids = this.pacotes(info);
-      return JSON.stringify([ids.map(i => P(i) === undefined ? 'c' : P(i)), t === 'memoriaTelao' || t === 'corrida' || t === 'equipe' ? S().jogo : null, Object.keys(local).length, JSON.stringify(local), Object.keys(pend)]);
+      return JSON.stringify([ids.map(i => P(i) === undefined ? 'c' : P(i)), t === 'memoriaTelao' || t === 'corrida' || t === 'equipe' ? S().jogo : t === 'jogo' ? S().jogo?.revelado : null, Object.keys(local).length, JSON.stringify(local), Object.keys(pend)]);
     },
     tarefa(info) {
       const t = tipo(info);
@@ -438,6 +539,8 @@ export function criarTelas(ctx) {
       if (t === 'equipe') return equipe(info);
       if (t === 'ramos') return ramos(info);
       if (t === 'observar') return observar(info);
+      if (t === 'escala') return escala(info);
+      if (t === 'jogo') return jogo(info);
     },
     midia,
     /** Piloto automático (simulador): uma ação de cada vez, como uma pessoa. */
@@ -445,6 +548,9 @@ export function criarTelas(ctx) {
       const um = l => l[Math.floor(Math.random() * l.length)];
       const pega = sel => [...raiz.querySelectorAll(sel)].filter(x => !x.disabled);
       const seq = raiz.querySelector('.seq-jogo'); if (seq?._auto) return seq._auto();
+      const linhas = [...raiz.querySelectorAll('[data-auto=likert-linha]')];
+      if (linhas.length) { for (const l of linhas) if (!l.querySelector('.ativo')) um([...l.querySelectorAll('button')]).click(); const env = pega('[data-auto=escala-enviar]'); if (env.length) env[0].click(); return; }
+      const jv = pega('[data-auto=jogo-valor]'); if (jv.length) { for (const i of jv) { i.value = Math.round(Math.random() * Number(i.max) / Number(i.step || 1)) * Number(i.step || 1); i.dispatchEvent(new Event('input')); } const env = pega('[data-auto=jogo-enviar]'); if (env.length) env[0].click(); return; }
       const pu = pega('[data-auto=pu]'); if (pu.length && Math.random() < 0.3) return um(pu).click();
       const conf = pega('[data-auto=conf]'); if (conf.length) return um(conf).click();
       const alts = pega('[data-auto=alt]'); if (alts.length) return um(alts).click();
