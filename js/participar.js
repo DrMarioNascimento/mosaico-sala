@@ -10,6 +10,7 @@ import { ilustra } from './icones.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
+const SEM_AJUDA = params.get('explica') === '0';   // a prévia ao vivo do Planejamento não abre as janelas de ajuda
 // Simulador de aula: ?perfil=N cria um participante independente; &auto liga o piloto automático.
 const PERFIL = params.get('perfil');
 const SESSAO = 'mosaico-participante' + (PERFIL ? '-' + PERFIL : '');
@@ -36,10 +37,10 @@ if (PERFIL) {
     h('label', { style: { margin: 0, display: 'flex', gap: '6px', alignItems: 'center' } },
       h('input', { type: 'checkbox', id: 'autoPiloto', checked: auto, onchange: e => definirAuto(e.target.checked) }), 'Piloto automático'));
   document.querySelector('main').prepend(barra);
-  window.MOSAICO_SEM_EXPLICACAO = auto;
+  window.MOSAICO_SEM_EXPLICACAO = auto || SEM_AJUDA;
 }
 function definirAuto(v) {
-  auto = !!v; window.MOSAICO_SEM_EXPLICACAO = auto;
+  auto = !!v; window.MOSAICO_SEM_EXPLICACAO = auto || SEM_AJUDA;
   const c = document.getElementById('autoPiloto'); if (c) c.checked = auto;
   if (auto) agendarAuto(); else clearTimeout(autoTimer);
 }

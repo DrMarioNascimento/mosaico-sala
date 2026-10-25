@@ -71,7 +71,8 @@ $('entrarGoogle').onclick = () => {
 /** Pré-visualização: entra sozinho, carrega a atividade do Planejamento, abre a sala e avisa a página-mãe. */
 async function iniciarPrevia() {
   await iniciar(await b.entrarGoogle());
-  let a = null; try { a = JSON.parse(localStorage.getItem('mosaico-previa') || 'null'); } catch {}
+  const chave = new URLSearchParams(location.search).get('fonte') === 'viva' ? 'mosaico-previa-viva' : 'mosaico-previa';
+  let a = null; try { a = JSON.parse(localStorage.getItem(chave) || 'null'); } catch {}
   if (!a) return avisoGeral('Nada para pré-visualizar. Abra pelo Planejamento.', 'erro');
   if (!aceitar(a, 'pré-visualização')) return avisoGeral('A atividade tem erros. Corrija na Revisão do Planejamento.', 'erro');
   await abrirSala();

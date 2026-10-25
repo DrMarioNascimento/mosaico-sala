@@ -22,6 +22,14 @@
   .pv-telao { width: 100%; aspect-ratio: 16 / 9; border: 2px solid var(--linha); border-radius: 12px; overflow: hidden; background: #000; }
   .pv-telao iframe { width: 1280px; height: 720px; border: 0; transform-origin: 0 0; }
   .pv-turma { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; --e: .5; }
+  /* Compacta (prévia ao vivo dentro do Planejamento): telão em cima, um celular embaixo; a condução roda fora da vista */
+  body.compacta { background: transparent; }
+  body.compacta .pv-topo, body.compacta .rodape-licenca { display: none; }
+  body.compacta .pv-grade { grid-template-columns: minmax(0, 1fr); padding: 0; gap: 0; }
+  body.compacta .pv-conducao { position: absolute; left: -10000px; top: 0; }
+  body.compacta .pv-turma { --e: .62; justify-content: center; margin-top: 6px; }
+  body.compacta .pv-turma > p { font-size: .85rem; }
+  body.compacta .pv-col h2 { font-size: .7rem; margin: 8px 0 4px; }
   @media (max-width: 900px) { .pv-grade { grid-template-columns: 1fr; } .pv-conducao { position: static; } }
 </style>
 </head>

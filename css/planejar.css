@@ -121,3 +121,17 @@
 .passo3 small.pend { color: var(--alerta, #f3bf0a); }
 @media (max-width: 640px) { .passo3 { grid-template-columns: 1fr; grid-template-areas: "n" "rot" "est"; justify-items: center; text-align: center; font-size: .85rem; } }
 .tipo-cartao .tipo-quem { display: block; color: var(--acento-2); font-weight: 700; font-size: .85rem; margin: 2px 0 4px; }
+
+/* Prévia ao vivo: telão + celular de um aluno, fixa à direita do editor */
+.plan-previa { position: fixed; z-index: 9; top: 68px; right: 12px; bottom: 12px; width: 372px; display: flex; flex-direction: column; gap: 6px; background: var(--fundo-2); border: 1px solid var(--linha); border-radius: 16px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.plan-previa[hidden], .pv-abrir[hidden] { display: none; }
+.plan-previa .pv-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.plan-previa .pv-estado { margin: 0; font-size: .82rem; }
+.plan-previa .diag { margin: 0; font-size: .85rem; }
+.plan-previa .pv-moldura { position: relative; flex: 1; min-height: 0; }
+.plan-previa iframe { width: 100%; height: 100%; border: 0; border-radius: 10px; background: transparent; }
+.plan-previa .pv-cobrir { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(11, 15, 23, .55); color: var(--texto); font-weight: 700; border-radius: 10px; }
+.plan-previa .pv-cobrir[hidden] { display: none; }
+.pv-abrir { position: fixed; z-index: 9; right: 16px; bottom: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+@media (min-width: 1240px) { body.com-previa .plan-pagina, body.com-previa .plan-barra { margin-right: 396px; margin-left: 16px; } }
+@media (max-width: 1239px) { .plan-previa { width: min(372px, calc(100vw - 24px)); } }

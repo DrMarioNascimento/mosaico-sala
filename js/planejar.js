@@ -10,6 +10,7 @@ import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
+import { atividadeParaPrevia } from './core/previa-ao-vivo.js';
 import { abrirImpressao } from './imprimir.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
@@ -75,9 +76,9 @@ const souAdmin = () => EM_ENSAIO || ehAdmin(P.conta?.email);
 function salvarRascunho() { try { localStorage.setItem(RASCUNHO, JSON.stringify({ A: P.A, origem: P.origem, sujo: P.sujo })); } catch {} }
 let tempo = null;
 /** Mudança de texto: guarda sem redesenhar (não perde o foco); atualiza navegação/revisão logo depois. */
-function tocar() { P.sujo = true; salvarRascunho(); clearTimeout(tempo); tempo = setTimeout(() => { renderNav(); renderAcoes(); atualizarRevEtapa(); }, 350); }
+function tocar() { P.sujo = true; salvarRascunho(); clearTimeout(tempo); tempo = setTimeout(() => { renderNav(); renderAcoes(); atualizarRevEtapa(); }, 350); agendarPrevia(); }
 /** Mudança de estrutura: guarda e redesenha. */
-function mudar(fn) { fn(P.A); P.sujo = true; salvarRascunho(); render(); }
+function mudar(fn) { fn(P.A); P.sujo = true; salvarRascunho(); render(); agendarPrevia(); }
 
 const slug = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'atividade';
 function novoId(prefixo, usados) { let i = 1; while (usados.has(`${prefixo}${i}`)) i++; return `${prefixo}${i}`; }
@@ -158,7 +159,7 @@ function passosSecao() {
 
 // ============================================================ renderização geral
 function render() {
-  renderAcoes();
+  renderAcoes(); painelPrevia.mostrar(!!P.A);
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
   limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
@@ -213,6 +214,7 @@ function renderPassos3(nErros, nErrosEtapas) {
 }
 
 function renderEditor() {
+  agendarPrevia(400);
   const alvo = document.getElementById('editor'); if (!alvo) return;
   const s = P.secao;
   const mostrar = x => limpar(alvo, x, passosSecao());
@@ -224,6 +226,64 @@ function renderEditor() {
   if (s.startsWith('etapa:')) { const e = etapa(s.slice(6)); if (e) return mostrar(editorEtapa(e)); }
   P.secao = 'geral'; renderEditor();
 }
+
+// ============================================================ prévia ao vivo (telão + celular de um aluno, ao lado do editor)
+// Roda a sala de ensaio compacta (previa.html?compacta) num iframe que fica fora do #app: redesenhar o editor não o recarrega.
+const CHAVE_VIVA = 'mosaico-previa-viva', PREF_VIVA = 'mosaico-previa-viva-aberta';
+const painelPrevia = (() => {
+  let aberto = innerWidth >= 1240; try { const v = localStorage.getItem(PREF_VIVA); if (v) aberto = v === '1'; } catch {}   // em tela estreita começa fechada
+  let ultima = '', etapaAtual = undefined, prontoEm = 0;
+  const estado = h('p', { class: 'pv-estado sutil' });
+  const problemas = h('ul', { class: 'diag', hidden: true });
+  const quadro = h('iframe', { title: 'Prévia ao vivo: telão e celular de um aluno', loading: 'lazy' });
+  const cobrir = h('div', { class: 'pv-cobrir', hidden: true }, 'Atualizando…');
+  const painel = h('aside', { class: 'plan-previa', 'aria-label': 'Prévia ao vivo', hidden: true },
+    h('div', { class: 'pv-cab' }, h('strong', {}, 'Prévia ao vivo'),
+      h('div', { class: 'mini' },
+        h('button', { class: 'btn pequeno', title: 'Atualizar agora', 'aria-label': 'Atualizar a prévia', onclick: () => { ultima = ''; atualizar(); } }, '⟳'),
+        h('button', { class: 'btn pequeno', title: 'Esconder a prévia', 'aria-label': 'Esconder a prévia', onclick: () => alternar(false) }, '✕'))),
+    estado, problemas, h('div', { class: 'pv-moldura' }, quadro, cobrir));
+  const botao = h('button', { class: 'btn pv-abrir', hidden: true, onclick: () => alternar(true) }, 'Ver prévia ao vivo');
+  document.body.append(painel, botao);
+  addEventListener('message', e => {
+    if (e.origin !== location.origin || e.source !== quadro.contentWindow || e.data?.tipo !== 'mosaico-previa-pronta') return;
+    prontoEm = Date.now(); setTimeout(() => { if (Date.now() - prontoEm >= 2400) cobrir.hidden = true; }, 2500);   // a etapa começa ~2 s depois que o aluno entra
+  });
+  function alternar(v) {
+    aberto = v; try { localStorage.setItem(PREF_VIVA, v ? '1' : '0'); } catch {}
+    mostrar(!!P.A); if (v) { ultima = ''; atualizar(); }
+  }
+  const encaixar = () => { const t = document.querySelector('header.topo')?.getBoundingClientRect().bottom || 60; painel.style.top = Math.round(t + 8) + 'px'; };
+  addEventListener('resize', encaixar);
+  function mostrar(temAtividade) {
+    painel.hidden = !(temAtividade && aberto); botao.hidden = !(temAtividade && !aberto); encaixar();
+    document.body.classList.toggle('com-previa', !painel.hidden);
+  }
+  function atualizar() {
+    if (!P.A || painel.hidden) return;
+    const id = P.secao?.startsWith('etapa:') ? P.secao.slice(6) : null;
+    const r = atividadeParaPrevia(P.A, id);
+    if (!r.atividade) {
+      estado.textContent = 'Para a prévia abrir, falta:';
+      limpar(problemas, r.problemas.slice(0, 6).map(m => h('li', { class: 'erro' }, m))); problemas.hidden = false;
+      return;
+    }
+    problemas.hidden = true;
+    const e = r.etapaId && P.A.etapas.find(x => x.id === r.etapaId);
+    estado.textContent = e ? `Etapa ${etapasOrdenadas(P.A).indexOf(e) + 1}: ${e.titulo || '(sem título)'}. Os campos em branco aparecem como “…”.` : 'Abertura da aula: o telão mostra a introdução e o código da sala.';
+    const chave = JSON.stringify(r.atividade) + '|' + r.etapaId;
+    if (chave === ultima) return;
+    ultima = chave;
+    try { localStorage.setItem(CHAVE_VIVA, JSON.stringify(r.atividade)); } catch { estado.textContent = 'O navegador não deixou guardar a prévia.'; return; }
+    cobrir.hidden = false;
+    if (etapaAtual === r.etapaId && quadro.src) quadro.contentWindow?.postMessage({ tipo: 'mosaico-previa-recomecar' }, location.origin);
+    else { etapaAtual = r.etapaId; const u = new URL('previa.html', location.href); u.search = '?ensaio=1&compacta=1&qtd=1&auto=0' + (r.etapaId ? '&etapa=' + encodeURIComponent(r.etapaId) : ''); quadro.src = u.href; }
+  }
+  return { mostrar, atualizar };
+})();
+let tempoPrevia = null;
+/** Atualiza a prévia quando o professor para de digitar (refazer a sala de ensaio leva alguns segundos). */
+function agendarPrevia(ms = 1800) { clearTimeout(tempoPrevia); tempoPrevia = setTimeout(() => painelPrevia.atualizar(), ms); }
 
 // ============================================================ campos (sem redesenhar a cada tecla)
 function campo(rotulo, valor, aoMudar, { tipo = 'text', area = false, linhas = 3, id, ajuda, max } = {}) {
