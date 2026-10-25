@@ -88,6 +88,12 @@ for (const caso of CASOS) {
 
       t.diagnostic(resultado.replace(/\s+/g, ' ').trim());
 
+      // Relatório da aula: baixa e confere que traz as etapas e nenhum nome dos participantes
+      const [download] = await Promise.all([cond.waitForEvent('download'), cond.getByRole('button', { name: 'Baixar relatório da aula (planilha)' }).click()]);
+      const csv = await readFile(await download.path(), 'utf8');
+      assert.match(csv, /Etapa;Organização;Grupo;Envios;Avaliados;Acertos;% de acertos/);
+      for (let i = 1; i <= PARTICIPANTES; i++) assert.ok(!csv.includes('Simulado ' + i), 'O relatório não pode trazer nomes');
+
       // Os celulares veem o fim da atividade
       await espera(1500);
       for (const p of turma) assert.ok((await p.locator('body').innerText()).trim().length > 0);

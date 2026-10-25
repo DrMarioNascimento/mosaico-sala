@@ -87,5 +87,7 @@ export const backend = {
     return novo;
   },
   async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
+  async lerMestres() { return ler('config/mestres')?.emails || []; },
+  async salvarMestres(emails) { gravar('config/mestres', { emails }); },
   async apagarSala(c) { chaves(`rooms/${c}`).forEach(k => gravar(k, null)); }
 };

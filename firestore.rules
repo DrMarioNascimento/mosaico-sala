@@ -10,10 +10,13 @@ service cloud.firestore {
       return signed() && request.auth.token.firebase.sign_in_provider == 'google.com'
         && request.auth.token.email_verified == true;
     }
-    // Lista de mestres: o e-mail fixo abaixo + o documento config/mestres {emails: [...]}.
+    // Administradores: e-mails fixos (os mesmos de ADMINS em js/mestres.js). Só eles editam a lista de mestres.
+    function fixos() { return ['mariocnascimento@gmail.com', 'ramonmelo.com@gmail.com']; }
+    function admin() { return google() && request.auth.token.email in fixos(); }
+    // Lista de mestres: os e-mails fixos + o documento config/mestres {emails: [...]}.
     function mestre() {
       return google() && (
-        request.auth.token.email in ['mariocnascimento@gmail.com', 'ramonmelo.com@gmail.com'] ||
+        request.auth.token.email in fixos() ||
         (exists(/databases/$(database)/documents/config/mestres) &&
          request.auth.token.email in get(/databases/$(database)/documents/config/mestres).data.emails));
     }
@@ -21,6 +24,13 @@ service cloud.firestore {
     function dono(c) { return signed() && sala(c).owner == request.auth.uid; }
 
     match /config/{d} { allow read: if signed(); allow write: if false; }
+    // A lista de mestres é editada na tela de Planejamento, só pelos administradores.
+    match /config/mestres {
+      allow read: if signed();
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['emails'])
+        && request.resource.data.emails is list && request.resource.data.emails.size() <= 200;
+      allow delete: if false;
+    }
 
     // Biblioteca de atividades: FECHADA. Só contas da lista de mestres; cada uma lê e edita as suas,
     // e lê as que outro mestre marcou como compartilhadas. Nenhum dado de participante fica aqui.

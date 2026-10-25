@@ -21,3 +21,14 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA }}
           projectId: mosaico-sala
           channelId: live
+      # Regras do Firestore (por exemplo, a lista de mestres editável na tela). Se a conta de serviço não tiver
+      # permissão para publicar regras, este passo falha sem impedir a publicação do site: aí publique
+      # o firestore.rules pelo console do Firebase (Firestore → Regras).
+      - name: Publicar as regras do Firestore
+        continue-on-error: true
+        env:
+          CONTA_SERVICO: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA }}
+        run: |
+          printf '%s' "$CONTA_SERVICO" > "$RUNNER_TEMP/conta.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/conta.json" npx --yes firebase-tools@13 deploy --only firestore:rules --project mosaico-sala --non-interactive
+          rm -f "$RUNNER_TEMP/conta.json"

@@ -8,6 +8,7 @@ import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, e
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
+import { relatorioAula, relatorioCSV } from './core/relatorio.js';
 import { etapasOrdenadas, projecaoGrupo, prontidaoEtapa, calcularMeta, escalaDesempenho, montarResultado, registrarContingencia } from './core/motor.js';
 import { obterTipo } from './core/tipos.js';
 import { gerarPrompt } from './core/prompt.js';
@@ -328,6 +329,15 @@ function importarTexto(texto, origem) {
   if (!r.atividade) { E.importacao = r.diagnosticos; return renderAtividade(); }
   aceitar(r.atividade, origem);
 }
+/** Relatório da aula: acertos por etapa e por grupo, sem nomes (planilha .csv). */
+function baixarRelatorio() {
+  const csv = relatorioCSV(relatorioAula(A(), resultados()));
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const data = new Date().toISOString().slice(0, 10);
+  const l = h('a', { href: url, download: `relatorio-${A().id || 'aula'}-${data}.csv` }); document.body.append(l); l.click(); l.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30e3);
+}
+
 function baixar(a) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
   const l = h('a', { href: url, download: (a.id || 'atividade') + '.json' }); document.body.append(l); l.click(); l.remove();
@@ -377,7 +387,9 @@ function renderSala() {
         h('button', { class: 'btn', onclick: () => simularEntradas(5) }, '+5 simulados'),
         h('button', { class: 'btn', onclick: () => simularEntradas(1) }, '+1 simulado'),
         h('a', { class: 'btn', href: urlP, target: '_blank' }, 'Abrir aba de participante'))),
-    h('div', { class: 'cartao' }, btnEncerrar, h('p', { class: 'sutil' }, 'Encerrar apaga participantes, envios e a sala. Os resultados não ficam guardados.')));
+    h('div', { class: 'cartao' },
+      (s.encerradas || []).length > 0 && h('button', { class: 'btn bloco', style: { marginBottom: '10px' }, onclick: baixarRelatorio }, 'Baixar relatório da aula (planilha)'),
+      btnEncerrar, h('p', { class: 'sutil' }, 'Encerrar apaga participantes, envios e a sala. Os resultados não ficam guardados: baixe o relatório antes.')));
 }
 
 async function abrirSala() {
@@ -588,6 +600,8 @@ function renderConducao() {
       h('button', { class: 'btn primario bloco', onclick: revelarFinal }, 'Revelar resultado final')),
     s.fase === 'final' && h('div', { class: 'cartao destaque' }, h('h2', {}, 'Resultado revelado'),
       s.final?.meta && h('p', {}, `${s.final.meta.acertos} de ${s.final.meta.total} acertos · meta ${Math.round(s.final.meta.limiar * 100)}% · ${s.final.meta.atingida ? 'atingida' : 'não atingida'}`),
+      h('button', { class: 'btn bloco', onclick: baixarRelatorio }, 'Baixar relatório da aula (planilha)'),
+      h('p', { class: 'sutil' }, 'Acertos por etapa e por grupo, sem nomes. Baixe antes de encerrar: ao encerrar a sala, tudo é apagado.'),
       h('p', { class: 'sutil' }, 'Quando terminar a discussão, encerre a sala na aba Sala.')),
     EM_ENSAIO && s.fase === 'etapa' && h('div', { class: 'cartao' }, h('h3', {}, 'Ensaio'), h('button', { class: 'btn', onclick: pilotoAutomatico }, 'Simulados enviam agora')));
 }
