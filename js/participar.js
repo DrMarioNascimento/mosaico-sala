@@ -6,6 +6,7 @@ import { svgPeca } from './quebra-cabeca.js';
 import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arrastar.js';
 import { aplicarMovimento } from './core/cartoes.js';
 import { criarTelas } from './participar-tipos.js';
+import { ilustra } from './icones.js';
 
 const b = await backend();
 const params = new URLSearchParams(location.search);
@@ -162,6 +163,7 @@ function enviados() {
 function renderStatus() {
   const s = sala, g = grupoDe(s), p = s.progresso;
   const partes = [];
+  if (s.fase === 'etapa' && s.etapaInfo?.typeId) partes.push(ilustra(s.etapaInfo.typeId, 38));
   if (g) partes.push(chipGrupo(s.publico.grupos, g, nomeGrupo(s, g)));
   if (s.fase === 'etapa' && p && !p.montagem && !p.cadeado && !p.quiz && !p.cartoes && !p.novo) partes.push(h('span', { class: 'sutil' }, ` ${p.enviados} de ${p.esperados} ${s.etapaInfo?.organizacao === 'individual' ? 'responderam' : 'grupos enviaram'}`));
   limpar($('status'), partes.length ? h('div', { class: 'linha-botoes' }, partes) : null);

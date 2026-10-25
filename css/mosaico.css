@@ -127,7 +127,7 @@ dialog.explica .btn { width: 100%; margin-top: 8px; }
 .grupo select { min-height: 38px; padding: 4px 8px; font-size: .9rem; width: auto; }
 
 /* Etapas na condução */
-.etapa-linha { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.etapa-linha { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
 .etapa-linha.atual { outline: 2px solid var(--acento); }
 .etapa-linha .tipo { font-size: .85rem; color: var(--texto-2); }
 
@@ -462,3 +462,52 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 .rodape-licenca { margin: 32px auto 18px; padding: 0 16px; text-align: center; font-size: .82rem; color: var(--texto-2); line-height: 1.5; }
 .rodape-licenca a { color: var(--texto-2); text-decoration: underline; text-underline-offset: 2px; }
 .rodape-licenca a:hover { color: var(--acento-2); }
+
+/* ---------- Ícones próprios (js/icones.js) ---------- */
+.ico { display: inline-flex; width: 1.15em; height: 1.15em; flex: none; vertical-align: -.18em; }
+.ico svg { width: 100%; height: 100%; }
+.btn .ico { width: 1.2em; height: 1.2em; }
+.ilu { display: inline-flex; width: var(--tam, 56px); height: var(--tam, 56px); flex: none; }
+.ilu svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35)); }
+
+/* ---------- Navegação: do planejamento à execução ---------- */
+.fluxo { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding: 10px 0 4px; margin: 0 0 4px; scrollbar-width: none; }
+.fluxo::-webkit-scrollbar { display: none; }
+.fluxo a, .fluxo button { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--linha);
+  background: linear-gradient(180deg, #1f2a42, #182033); color: var(--texto-2); font: 700 .9rem var(--fonte); text-decoration: none; white-space: nowrap; cursor: pointer; box-shadow: 0 3px 0 #0c111d; }
+.fluxo a:hover, .fluxo button:hover { color: var(--texto); border-color: var(--acento-2); }
+.fluxo a[aria-current=page] { color: #1a0d00; background: linear-gradient(180deg, #ffa25c, #ff8a3d); border-color: transparent; box-shadow: 0 3px 0 #a84a10; }
+.fluxo .sep { color: var(--linha); font-weight: 800; flex: none; }
+.fluxo .num { font-family: var(--fonte-titulo); font-weight: 900; opacity: .75; }
+.fluxo .inicio { padding: 0 12px; }
+.fluxo .inicio .rot { display: none; }
+@media (min-width: 560px) { .fluxo .inicio .rot { display: inline; } }
+/* voltar / anterior / próxima */
+.passos-nav { display: flex; justify-content: space-between; gap: 10px; margin: 18px 0 6px; flex-wrap: wrap; }
+.passos-nav .btn { min-height: 48px; }
+.passos-nav .btn .rot-curto { display: none; }
+.passos-nav .proximo { margin-left: auto; }
+@media (max-width: 480px) { .passos-nav .btn { flex: 1; } .passos-nav .btn .rot-longo { display: none; } .passos-nav .btn .rot-curto { display: inline; } }
+.voltar-link { display: inline-flex; align-items: center; gap: 6px; color: var(--texto-2); text-decoration: none; font-weight: 700; min-height: 44px; }
+.voltar-link:hover { color: var(--texto); }
+.marca-link { color: inherit; text-decoration: none; }
+/* abas da condução com ícone */
+.abas button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.abas button .ico { width: 1.25em; height: 1.25em; }
+@media (max-width: 420px) { .abas button { padding: 0 6px; font-size: .86rem; gap: 4px; } }
+/* etapa com ilustração */
+.etapa-cab { display: flex; align-items: center; gap: 12px; }
+.etapa-cab > div { min-width: 0; flex: 1; }
+.tarefa-ilu { float: right; margin: -4px 0 6px 10px; }
+
+/* ---------- Textos justificados (parágrafos de leitura; títulos, botões e telão ficam como estão) ---------- */
+:where(body:not(.telao)) :where(.cartao, .licenca, dialog, .plan-editor) :where(p, dd) { text-align: justify; hyphens: auto; -webkit-hyphens: auto; text-wrap: pretty; }
+.telao .titulo-etapa { display: flex; align-items: center; gap: .4em; }
+.telao .titulo-etapa .ilu { width: 1.35em; height: 1.35em; }
+.telao .cartao .fluxo { margin-bottom: 10px; }
+#status .linha-botoes { align-items: center; }
+#status .ilu svg { filter: none; }
+.embutida .fluxo, .embutida .voltar-link, .embutida .passos-nav a[href] { display: none !important; }
+img.ilu { width: var(--tam, 56px); height: var(--tam, 56px); object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4)); }
+img.ico { width: 1.25em; height: 1.25em; object-fit: contain; }
+.telao .titulo-etapa img.ilu { width: 1.35em; height: 1.35em; }

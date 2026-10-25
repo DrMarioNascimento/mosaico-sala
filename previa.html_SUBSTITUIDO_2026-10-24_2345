@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOSAICO · Ver como fica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="css/mosaico.css">
+<style>
+  .pv-topo { position: sticky; top: 0; z-index: 5; background: rgba(11,15,23,.96); border-bottom: 1px solid var(--linha); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .pv-topo input { width: 90px; min-height: 42px; }
+  .pv-topo input[type=checkbox] { width: 22px; height: 22px; min-height: 0; }
+  .pv-topo .btn { min-height: 42px; }
+  .pv-grade { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; padding: 16px; align-items: start; }
+  .pv-col h2 { font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-2); margin: 0 0 6px; }
+  .pv-cel { width: calc(390px * var(--e)); height: calc(760px * var(--e)); border: 2px solid var(--linha); border-radius: 22px; overflow: hidden; background: var(--fundo); position: relative; box-shadow: 0 6px 0 #0c111d, 0 18px 30px rgba(0,0,0,.4); }
+  .pv-cel iframe { width: 390px; height: 760px; border: 0; transform: scale(var(--e)); transform-origin: 0 0; }
+  .pv-conducao { --e: .82; position: sticky; top: 76px; }
+  .pv-telao { width: 100%; aspect-ratio: 16 / 9; border: 2px solid var(--linha); border-radius: 12px; overflow: hidden; background: #000; }
+  .pv-telao iframe { width: 1280px; height: 720px; border: 0; transform-origin: 0 0; }
+  .pv-turma { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; --e: .5; }
+  @media (max-width: 900px) { .pv-grade { grid-template-columns: 1fr; } .pv-conducao { position: static; } }
+</style>
+</head>
+<body>
+<div class="pv-topo">
+  <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Ver como fica</span>
+  <label for="qtd" style="margin:0">Participantes</label><input id="qtd" type="number" min="1" max="20" value="8">
+  <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="auto" checked> Piloto automático</label>
+  <button class="btn" id="recomecar">Recomeçar</button>
+  <span class="sutil" id="info">Ensaio local: nada sai deste computador.</span>
+</div>
+<div class="pv-grade">
+  <section class="pv-col pv-conducao"><h2>Seu celular (condução)</h2><div class="pv-cel"><iframe id="conducao" title="Condução"></iframe></div></section>
+  <section class="pv-col">
+    <h2>Telão</h2><div class="pv-telao" id="telao"></div>
+    <h2 style="margin-top:14px">Turma simulada</h2><div class="pv-turma" id="turma"><p class="sutil">Os participantes aparecem assim que a sala abrir.</p></div>
+  </section>
+</div>
+<footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
+<script type="module" src="js/previa.js"></script>
+</body>
+</html>

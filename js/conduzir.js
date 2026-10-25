@@ -18,6 +18,7 @@ import { abrirImpressao } from './imprimir.js';
 import { prepararCartoes, estadoCartoes, conferirQuadro, distribuicaoTermometro, temGabaritoTermometro, respostaEsperadaTexto, quadroCompleto, conjuntosPorTrechos } from './core/cartoes.js';
 import { ligarComoCartoes } from './core/pares.js';
 import { criarTipos } from './conduzir-tipos.js';
+import { ico, ilustra } from './icones.js';
 
 const b = await backend();
 // ?previa (aberta pelo Planejamento): ensaio automático com a atividade em edição.
@@ -87,9 +88,22 @@ function mostrarAba(nome) {
   for (const btn of $('abas').querySelectorAll('button')) btn.setAttribute('aria-selected', String(btn.dataset.aba === nome));
   for (const n of ['atividade', 'sala', 'grupos', 'conducao']) $('aba-' + n).hidden = n !== nome;
   aviso($('avisoGeral'), '');
+  renderPassos();
   window.scrollTo({ top: 0 });
 }
-function renderTudo() { renderAtividade(); renderSala(); renderGrupos(); renderConducao(); renderTopo(); }
+/** Anterior / próximo passo da condução (Atividade → Sala → Grupos → Condução), embaixo de cada aba. */
+const ABAS = [['atividade', 'Atividade'], ['sala', 'Sala'], ['grupos', 'Grupos'], ['conducao', 'Condução']];
+function renderPassos() {
+  const alvo = $('passosNav'); if (!alvo) return;
+  const i = ABAS.findIndex(x => x[0] === E.aba), ant = ABAS[i - 1], prox = ABAS[i + 1];
+  alvo.hidden = !E.conta;
+  limpar(alvo,
+    ant ? h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => mostrarAba(ant[0]) }, ico('voltar'), ant[1])
+      : h('a', { class: 'btn discreto', href: 'planejar.html' }, ico('planejar'), 'Planejamento'),
+    prox ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', onclick: () => mostrarAba(prox[0]) }, 'Próximo: ' + prox[1], ico('avancar'))
+      : E.codigo ? h('a', { class: 'btn proximo', href: link('telao.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, ico('telao'), 'Abrir o telão') : null);
+}
+function renderTudo() { renderAtividade(); renderSala(); renderGrupos(); renderConducao(); renderTopo(); renderPassos(); }
 
 // ---------------- auxiliares da atividade ----------------
 const A = () => E.atividade;
@@ -517,7 +531,7 @@ function renderConducao() {
       const t = obterTipo(e.typeId, e.typeVersion);
       const atual = s.etapaAtual === e.id && s.fase === 'etapa', feita = encerradas.has(e.id);
       const caixa = h('div', { class: 'cartao' + (atual ? ' destaque' : '') },
-        h('div', { class: 'etapa-linha' }, h('div', {}, h('h3', {}, e.titulo), h('div', { class: 'tipo' }, `${t?.nome} · ${{ grupos: 'grupos', individual: 'individual', representantes: 'entre grupos (representantes)' }[e.participacao.organizacao] || e.participacao.organizacao}${e.tempoMin ? ' · ' + e.tempoMin + ' min' : ''}`)),
+        h('div', { class: 'etapa-linha' }, ilustra(e.typeId, 44), h('div', { style: { flex: 1, minWidth: 0 } }, h('h3', {}, e.titulo), h('div', { class: 'tipo' }, `${t?.nome} · ${{ grupos: 'grupos', individual: 'individual', representantes: 'entre grupos (representantes)' }[e.participacao.organizacao] || e.participacao.organizacao}${e.tempoMin ? ' · ' + e.tempoMin + ' min' : ''}`)),
           h('span', { class: 'estado ' + (feita ? 'ok' : atual ? 'pend' : '') }, feita ? 'encerrada' : atual ? 'em andamento' : '')));
       if (atual) caixa.append(painelEtapaAtual(e));
       else if (proxima?.id === e.id && s.fase !== 'final') caixa.append(painelProxima(e, res));

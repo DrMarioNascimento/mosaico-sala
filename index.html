@@ -12,12 +12,22 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="css/mosaico.css">
 <style>
-  .hero { padding: 56px 0 24px; }
+  .hero { padding: 48px 0 18px; }
   .hero .marca { font-size: 2.4rem; }
   .hero .marca .logo { width: 2.4em; height: 2.4em; }
   .hero p { font-size: 1.15rem; color: var(--texto-2); max-width: 34em; }
   .entradas { display: grid; gap: 14px; }
-  @media (min-width: 640px) { .entradas { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 640px) { .entradas { grid-template-columns: 1fr 1fr; } .entradas .largo { grid-column: 1 / -1; } }
+  .entrada { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "ilu tit" "txt txt" "acoes acoes"; gap: 10px 14px; align-items: center; }
+  .entrada > [data-ilu] { grid-area: ilu; display: inline-flex; }
+  .entrada h2 { grid-area: tit; margin: 0; font-size: 1.4rem; }
+  .entrada p { grid-area: txt; margin: 0; }
+  .entrada .acoes { grid-area: acoes; display: grid; gap: 10px; margin-top: 4px; }
+  @media (max-width: 520px) { .fluxo-ilustrado .ilu { --tam: 44px !important; } .fluxo-ilustrado { gap: 2px; } .fluxo-ilustrado a { font-size: .78rem; padding: 4px; } }
+  .fluxo-ilustrado { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
+  .fluxo-ilustrado a { display: grid; justify-items: center; gap: 4px; color: var(--texto-2); text-decoration: none; font-weight: 700; font-size: .85rem; padding: 6px; border-radius: 12px; }
+  .fluxo-ilustrado a:hover { color: var(--texto); background: var(--cartao); }
+  .fluxo-ilustrado .seta { color: var(--acento); font-weight: 900; font-size: 1.3rem; }
 </style>
 </head>
 <body>
@@ -26,21 +36,46 @@
     <h1 class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="96" height="96">MOSAICO</h1>
     <p>Cada grupo tem uma parte. Ninguém tem o quadro completo. Juntem as peças e superem a meta.</p>
   </section>
+  <nav class="fluxo-ilustrado" aria-label="Do planejamento à execução">
+    <a href="planejar.html" data-ilu="e_planejar" data-tam="58">1 · Planejar</a><span class="seta" aria-hidden="true">→</span>
+    <a href="conduzir.html" data-ilu="e_conduzir" data-tam="58">2 · Conduzir</a><span class="seta" aria-hidden="true">→</span>
+    <a href="telao.html" data-ilu="e_telao" data-tam="58">3 · Telão</a><span class="seta" aria-hidden="true">→</span>
+    <a href="participar.html" data-ilu="e_participar" data-tam="58">Turma participa</a>
+  </nav>
   <section class="entradas">
-    <div class="cartao">
+    <div class="cartao entrada largo">
+      <span data-ilu="e_participar" data-tam="72"></span>
       <h2>Participar</h2>
       <p class="sutil">Entre com o código que aparece no telão. Não precisa de cadastro.</p>
-      <a class="btn primario bloco" id="lnkParticipar" href="participar.html">Entrar com código</a>
+      <div class="acoes"><a class="btn primario bloco" id="lnkParticipar" href="participar.html" data-ico="participar">Entrar com código</a></div>
     </div>
-    <div class="cartao">
+    <div class="cartao entrada">
+      <span data-ilu="e_planejar" data-tam="72"></span>
+      <h2>Planejar</h2>
+      <p class="sutil">Monte a atividade no computador: etapas, grupos, peças e meta.</p>
+      <div class="acoes"><a class="btn bloco" id="lnkPlanejar" href="planejar.html" data-ico="planejar">Planejar atividade</a></div>
+    </div>
+    <div class="cartao entrada">
+      <span data-ilu="e_conduzir" data-tam="72"></span>
       <h2>Conduzir</h2>
-      <p class="sutil">Planeje no computador, abra a sala e conduza pelo celular.</p>
-      <a class="btn bloco" id="lnkConduzir" href="conduzir.html">Área de condução</a>
-      <div class="linha-botoes"><a class="btn bloco" id="lnkPlanejar" href="planejar.html">Planejar atividade</a></div>
-      <div class="linha-botoes"><a class="btn discreto bloco" id="lnkTelao" href="telao.html">Abrir telão</a></div>
+      <p class="sutil">Abra a sala, forme os grupos e conduza cada etapa pelo celular.</p>
+      <div class="acoes"><a class="btn bloco" id="lnkConduzir" href="conduzir.html" data-ico="conduzir">Área de condução</a></div>
+    </div>
+    <div class="cartao entrada">
+      <span data-ilu="e_telao" data-tam="72"></span>
+      <h2>Telão</h2>
+      <p class="sutil">Na TV ou no projetor da sala: QR Code, andamento e resultados.</p>
+      <div class="acoes"><a class="btn bloco" id="lnkTelao" href="telao.html" data-ico="telao">Abrir telão</a></div>
+    </div>
+    <div class="cartao entrada">
+      <span data-ilu="e_simulador" data-tam="72"></span>
+      <h2>Simulador</h2>
+      <p class="sutil">Ensaie a aula no PC: o telão em cima e a turma simulada embaixo.</p>
+      <div class="acoes"><a class="btn bloco" href="simulador.html" data-ico="simulador">Abrir simulador</a></div>
     </div>
   </section>
   <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 </main>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

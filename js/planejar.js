@@ -17,6 +17,7 @@ import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
 import { cartoesDoTexto, prepararCartoes } from './core/cartoes.js';
 import { criarEditores } from './planejar-tipos.js';
+import { ico, ilustra } from './icones.js';
 
 const b = await backend();
 const RASCUNHO = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
@@ -46,7 +47,7 @@ $('entrarGoogle').onclick = () => {
 async function iniciar(conta) {
   P.conta = conta; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
-  try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
+  try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   render();
 }
 
@@ -92,17 +93,62 @@ function modelo(titulo, nGrupos, completo) {
 
 function abrir(atividade, origem) {
   P.A = JSON.parse(JSON.stringify(atividade)); P.origem = origem || null; P.sujo = false; P.secao = 'geral'; P.dispensadas = new Set(); P.importacao = [];
-  salvarRascunho(); render(); window.scrollTo({ top: 0 });
+  salvarRascunho(); marcarHistorico(); render(); window.scrollTo({ top: 0 });
 }
-function fechar() { P.A = null; P.origem = null; P.sujo = false; try { localStorage.removeItem(RASCUNHO); } catch {} render(); }
+function fechar() { P.A = null; P.origem = null; P.sujo = false; try { localStorage.removeItem(RASCUNHO); } catch {} render(); window.scrollTo({ top: 0 }); }
+
+// ============================================================ navegação (botões e o “voltar” do navegador)
+/** Partes da atividade, na ordem em que se planeja. */
+function secoes() {
+  if (!P.A) return [];
+  return [['geral', 'Geral e meta', 'geral'], ['grupos', 'Grupos', 'grupos'],
+    ...etapasOrdenadas(P.A).map((e, i) => ['etapa:' + e.id, `Etapa ${i + 1}: ${e.titulo || NOMES_TIPO[e.typeId]}`, null, e.typeId]),
+    ['fontes', 'Fontes', 'fontes'], ['revisao', 'Revisão', 'revisao']];
+}
+const nomeSecao = s => s === 'nova-etapa' ? 'Nova etapa' : (secoes().find(x => x[0] === s)?.[1] || '');
+function marcarHistorico() { try { history.pushState({ plan: P.secao }, '', location.pathname + location.search + '#' + encodeURIComponent(P.secao)); } catch {} }
+function irPara(secao) {
+  if (!P.A) return;
+  if (P.secao !== secao) { P.secao = secao; marcarHistorico(); }
+  renderNav(); renderEditor(); renderMigalhas(); window.scrollTo({ top: 0 });
+}
+function voltarMinhas() {
+  if (P.sujo && !confirmar(temBiblioteca() ? 'Voltar para Minhas atividades sem salvar? O rascunho será descartado.' : 'Voltar para Minhas atividades? Exporte a planilha antes: o rascunho será descartado.')) return false;
+  fechar(); try { history.replaceState(null, '', location.pathname + location.search); } catch {}
+  return true;
+}
+addEventListener('popstate', ev => {
+  if (!P.A) return;
+  const alvo = ev.state?.plan;
+  if (alvo && (alvo === 'nova-etapa' || secoes().some(x => x[0] === alvo))) { P.secao = alvo; renderNav(); renderEditor(); renderMigalhas(); window.scrollTo({ top: 0 }); return; }
+  if (!voltarMinhas()) marcarHistorico();     // desistiu: continua na atividade
+});
+function renderMigalhas() {
+  const alvo = document.getElementById('migalhas'); if (!alvo || !P.A) return;
+  limpar(alvo,
+    h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), 'Minhas atividades'),
+    h('span', { class: 'sep', 'aria-hidden': 'true' }, '›'), h('strong', { class: 'tit' }, P.A.titulo || '(sem título)'),
+    h('span', { class: 'sep', 'aria-hidden': 'true' }, '›'), h('span', { class: 'sutil' }, nomeSecao(P.secao)));
+}
+/** Anterior / próxima no fim de cada parte. */
+function passosSecao() {
+  const l = secoes(), i = l.findIndex(x => x[0] === P.secao);
+  const ant = i > 0 ? l[i - 1] : null, prox = i >= 0 && i < l.length - 1 ? l[i + 1] : null;
+  const rot = x => x[1].replace(/^Etapa (\d+): .*/, 'Etapa $1');
+  return h('nav', { class: 'passos-nav', 'aria-label': 'Parte anterior e próxima' },
+    ant ? h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => irPara(ant[0]) }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Anterior: ' + rot(ant)), h('span', { class: 'rot-curto' }, 'Anterior'))
+      : h('button', { class: 'btn discreto', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Minhas atividades'), h('span', { class: 'rot-curto' }, 'Voltar')),
+    prox ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', onclick: () => irPara(prox[0]) }, h('span', { class: 'rot-longo' }, 'Próxima: ' + rot(prox)), h('span', { class: 'rot-curto' }, 'Próxima'), ico('avancar'))
+      : P.secao === 'revisao' ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', disabled: temErros(validarAtividade(P.A)), onclick: previa }, ico('previa'), 'Ver como fica') : null);
+}
 
 // ============================================================ renderização geral
 function render() {
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · não salvo' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), telaInicio());
-  limpar($('app'), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
-  renderNav(); renderEditor();
+  limpar($('app'), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
+  renderNav(); renderEditor(); renderMigalhas();
 }
 
 function renderAcoes() {
@@ -123,27 +169,28 @@ const confirmar = t => window.confirm(t);
 function renderNav() {
   const nav = document.getElementById('nav'); if (!nav || !P.A) return;
   const diags = validarAtividade(P.A), nErros = diags.filter(d => d.severidade === 'erro').length;
-  const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => { P.secao = secao; renderNav(); renderEditor(); window.scrollTo({ top: 0 }); }, ...extra }, conteudo);
+  const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => irPara(secao), ...extra }, conteudo);
   limpar(nav,
-    item('geral', h('span', { class: 'rot' }, 'Geral e meta')),
-    item('grupos', [h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
+    item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
+    item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => item('etapa:' + e.id, [h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })),
-    item('nova-etapa', h('span', { class: 'rot' }, '＋ Nova etapa'), { class: 'sub' }),
+    etapasOrdenadas(P.A).map((e, i) => item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })),
+    item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
-    item('fontes', [h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
-    item('revisao', [h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' erro(s)' : 'ok')]));
+    item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
+    item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' erro(s)' : 'ok')]));
 }
 
 function renderEditor() {
   const alvo = document.getElementById('editor'); if (!alvo) return;
   const s = P.secao;
-  if (s === 'geral') return limpar(alvo, editorGeral());
-  if (s === 'grupos') return limpar(alvo, editorGrupos());
-  if (s === 'fontes') return limpar(alvo, editorFontes());
-  if (s === 'revisao') return limpar(alvo, editorRevisao());
-  if (s === 'nova-etapa') return limpar(alvo, editorNovaEtapa());
-  if (s.startsWith('etapa:')) { const e = etapa(s.slice(6)); if (e) return limpar(alvo, editorEtapa(e)); }
+  const mostrar = x => limpar(alvo, x, passosSecao());
+  if (s === 'geral') return mostrar(editorGeral());
+  if (s === 'grupos') return mostrar(editorGrupos());
+  if (s === 'fontes') return mostrar(editorFontes());
+  if (s === 'revisao') return mostrar(editorRevisao());
+  if (s === 'nova-etapa') return limpar(alvo, editorNovaEtapa(), h('nav', { class: 'passos-nav' }, h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => history.back() }, ico('voltar'), 'Voltar')));
+  if (s.startsWith('etapa:')) { const e = etapa(s.slice(6)); if (e) return mostrar(editorEtapa(e)); }
   P.secao = 'geral'; renderEditor();
 }
 
@@ -179,31 +226,31 @@ function telaInicio() {
     } catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
   };
   return h('div', {},
-    h('h1', { style: { marginTop: '20px' } }, 'Minhas atividades'),
+    h('h1', { style: { marginTop: '12px' } }, 'Minhas atividades'),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
       ? 'Sua conta não está na lista de mestres: a biblioteca fechada não fica disponível. Você pode montar e exportar a planilha normalmente (modo aberto, nada é guardado).'
       : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
     h('div', { class: 'plan-inicio' },
-      h('div', { class: 'cartao' }, h('h2', {}, 'Nova atividade'),
+      h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Nova atividade'),
         h('label', { for: 'novoTitulo' }, 'Título'), titulo,
         h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
         h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
-      temBiblioteca() && h('div', { class: 'cartao' }, h('h2', {}, 'Biblioteca'),
+      temBiblioteca() && h('div', { class: 'cartao' }, h('h2', {}, ico('biblioteca'), 'Biblioteca'),
         P.bib.length ? h('ul', { class: 'lista-bib' }, P.bib.map(item => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
           item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
           h('div', { class: 'mini' },
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
-            h('button', { class: 'btn pequeno discreto', title: 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, '⧉'),
-            item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, '🗑'))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
-      h('div', { class: 'cartao' }, h('h2', {}, 'Importar'),
+            h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
+            item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar')))))) : h('p', { class: 'sutil' }, 'Nada guardado ainda. Crie ou importe uma atividade e use “Salvar na biblioteca”.')),
+      h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
         h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
         h('label', { for: 'arqImport' }, 'Arquivo'), arquivo,
         P.importacao.length && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn', onclick: async () => { try { abrir(await (await fetch('casos/ciclista-altitude.json', { cache: 'no-cache' })).json(), null); P.A.id = P.A.id + '-copia'; } catch (e) { avisoGeral(e.message, 'erro'); } } }, 'Abrir o caso piloto'),
           h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
-      h('div', { class: 'cartao' }, h('h2', {}, 'Montar com IA'), cartaoPrompt())));
+      h('div', { class: 'cartao' }, h('h2', {}, ico('ia'), 'Montar com IA'), cartaoPrompt())));
 }
 
 function cartaoPrompt() {
@@ -343,7 +390,7 @@ function editorNovaEtapa() {
   return h('div', { class: 'cartao' }, h('h2', {}, 'Nova etapa: escolha o tipo'),
     h('p', { class: 'sutil' }, 'A decisão é sua. A Revisão sugere equilíbrio (por exemplo, quando há muitas etapas iguais seguidas).'),
     CATEGORIAS.map(([cat, ids]) => h('div', {}, h('h3', { style: { margin: '16px 0 8px' } }, cat),
-      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, h('strong', {}, t.nome), h('small', {}, t.descricao)); })))));
+      h('div', { class: 'tipo-cartoes' }, ids.filter(id => TIPOS[id]).map(id => { const t = TIPOS[id]; return h('button', { class: 'tipo-cartao', onclick: () => adicionarEtapa(t.typeId) }, ilustra(id, 60), h('div', {}, h('strong', {}, t.nome), h('small', {}, t.descricao))); })))));
 }
 function configInicial(typeId, base) {
   const novo = ED.configInicial(typeId); if (novo) return novo;
@@ -367,6 +414,7 @@ function adicionarEtapa(typeId) {
     const anterior = etapasOrdenadas(a).at(-1);
     novo = { id, ordem, titulo: NOMES_TIPO[typeId], typeId, typeVersion: TIPOS[typeId].typeVersion, tempoMin: typeId === 'questao_individual' ? 4 : ['cartoes_arrastar', 'pares', 'corrida', 'sequencia'].includes(typeId) ? 8 : typeId === 'analise_imagem' ? 10 : 15, instrucao: '', participacao: participacaoPadrao(typeId), config: configInicial(typeId, anterior) };
     a.etapas.push(novo);
+    P.secao = 'etapa:' + id;
     if (typeId === 'comparar_hipoteses') {
       const fonte = etapasOrdenadas(a).filter(e => e.typeId === 'investigacao_fragmentos' && e.ordem < ordem).at(-1);
       if (fonte) a.conexoes.push({ id: `c_${fonte.id}_${id}`, de: { etapaId: fonte.id, portId: 'hipotese_grupo' }, para: { etapaId: id, portId: 'hipoteses_recebidas' }, agregacao: 'colecao_uma_por_grupo_planejado' });
@@ -374,6 +422,7 @@ function adicionarEtapa(typeId) {
     if (typeId === 'investigacao_fragmentos') a.grupos.forEach(g => a.pecas.push({ id: novoId('p', idsDe(a.pecas)), etapaId: id, destinatarios: [g.id], origem: { natureza: 'sintetico' }, conteudo: '' }));
     P.secao = 'etapa:' + id;
   });
+  marcarHistorico();
 }
 
 // ============================================================ Etapa
@@ -387,7 +436,7 @@ function editorEtapa(e) {
   return h('div', {},
     h('div', { class: 'cartao' },
       h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', alignItems: 'center' } },
-        h('h2', { style: { margin: 0 } }, `Etapa ${pos + 1}`),
+        h('div', { class: 'etapa-cab' }, ilustra(e.typeId, 52), h('div', {}, h('h2', { style: { margin: 0 } }, `Etapa ${pos + 1}`), h('small', { class: 'sutil' }, t?.nome || NOMES_TIPO[e.typeId] || e.typeId))),
         h('div', { class: 'mini' },
           h('button', { class: 'btn', disabled: pos === 0, 'aria-label': 'Mover para antes', onclick: () => mover(-1) }, '↑'),
           h('button', { class: 'btn', disabled: pos === seq.length - 1, 'aria-label': 'Mover para depois', onclick: () => mover(1) }, '↓'),
@@ -870,7 +919,7 @@ function onde(local) {
   m = local.match(/^fontes/); if (m) return 'Fontes';
   return local;
 }
-function irPara(local) {
+function secaoDoLocal(local) {
   const a = P.A;
   let m = local.match(/^pecas\[(\d+)\]/); if (m && a.pecas[Number(m[1])]) return 'etapa:' + a.pecas[Number(m[1])].etapaId;
   m = local.match(/^etapas\[(\d+)\]/); if (m && a.etapas[Number(m[1])]) return 'etapa:' + a.etapas[Number(m[1])].id;
@@ -880,7 +929,7 @@ function irPara(local) {
   return 'geral';
 }
 const linhaDiag = x => h('li', { class: x.severidade }, x.mensagem, ' ',
-  h('button', { class: 'btn pequeno discreto', onclick: () => { P.secao = irPara(x.local); renderNav(); renderEditor(); window.scrollTo({ top: 0 }); } }, 'Ir para ' + onde(x.local)));
+  h('button', { class: 'btn pequeno discreto', onclick: () => irPara(secaoDoLocal(x.local)) }, 'Ir para ' + onde(x.local)));
 
 function editorRevisao() {
   const a = P.A, d = validarAtividade(a), g = avisoGramatica(a), s = sugerirEquilibrio(a, { dispensadas: P.dispensadas });

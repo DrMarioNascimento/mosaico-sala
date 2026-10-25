@@ -15,12 +15,19 @@
 <body>
 <header class="topo">
   <div class="barra plan-barra">
-    <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Planejamento</span>
+    <a class="marca marca-link" href="index.html" title="Início"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Planejamento</a>
     <span class="status" id="statusTopo"></span>
     <div class="plan-acoes" id="acoes" hidden></div>
   </div>
 </header>
 <main class="plan-pagina">
+  <nav class="fluxo" aria-label="Do planejamento à execução">
+    <a class="inicio" href="index.html" data-ico="inicio" title="Início"><span class="rot">Início</span></a><span class="sep" aria-hidden="true">›</span>
+    <a href="planejar.html" data-ico="planejar"><span class="num">1</span> Planejar</a>
+    <a href="conduzir.html" data-ico="conduzir"><span class="num">2</span> Conduzir</a>
+    <a href="telao.html" data-ico="telao"><span class="num">3</span> Telão</a>
+    <a href="simulador.html" data-ico="simulador">Simulador</a>
+  </nav>
   <section id="login" class="cartao plan-login">
     <h1>Planejamento</h1>
     <p>Entre com sua conta Google para montar, revisar e guardar atividades.</p>
@@ -32,5 +39,6 @@
   <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 </main>
 <script type="module" src="js/planejar.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

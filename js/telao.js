@@ -4,6 +4,7 @@ import { backend, link } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { criarTelao } from './telao-tipos.js';
+import { ilustra } from './icones.js';
 
 const b = await backend();
 
@@ -63,7 +64,7 @@ function render() {
     const info = sala.etapaInfo || {};
     return limpar(c,
       h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1em' } },
-        h('h1', {}, info.titulo), h('span', { class: 'relogio', id: 'relogio' }, sala.fase === 'revisao' ? 'Encerrada' : '')),
+        h('h1', { class: 'titulo-etapa' }, ilustra(info.typeId, 96), info.titulo), h('span', { class: 'relogio', id: 'relogio' }, sala.fase === 'revisao' ? 'Encerrada' : '')),
       info.instrucao && h('p', {}, info.instrucao),
       sala.fase === 'revisao' && revelacao && revelacao.tipo !== 'midia' && revelacao.etapaId === sala.revelacao ? todoMontado()
         : sala.fase === 'revisao' && sala.etapaInfo?.typeId === 'quiz_grupos' ? quiz()
