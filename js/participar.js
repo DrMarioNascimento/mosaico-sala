@@ -13,6 +13,10 @@ const params = new URLSearchParams(location.search);
 // Simulador de aula: ?perfil=N cria um participante independente; &auto liga o piloto automático.
 const PERFIL = params.get('perfil');
 const SESSAO = 'mosaico-participante' + (PERFIL ? '-' + PERFIL : '');
+// Quem participa de verdade fica guardado no aparelho (sobrevive a fechar o navegador ou o celular descarregar a aba);
+// os simulados ficam só na aba, para cada um ser um participante diferente.
+const GUARDA = PERFIL ? sessionStorage : localStorage;
+const VALIDADE = 12 * 3600e3;   // depois disso, a sessão guardada é ignorada
 let auto = !!PERFIL && params.has('auto');
 let uid = null, codigo = null, sala = null, meuNome = '';
 const pacotes = {}, inscricoes = {};
@@ -55,7 +59,7 @@ $('entrar').onclick = async () => {
       await b.entrar(c, uid, n);
     }
     meuNome = existente?.nome || n;
-    try { sessionStorage.setItem(SESSAO, JSON.stringify({ codigo: c, nome: meuNome })); } catch {}
+    try { GUARDA.setItem(SESSAO, JSON.stringify({ codigo: c, nome: meuNome, em: Date.now() })); } catch {}
     conectar(c);
   } catch (e) {
     aviso($('avisoEntrada'), e.message === 'recusado' ? 'A sala recusou a entrada (entrada fechada ou sala encerrada).' : e.message, 'erro');
@@ -65,7 +69,10 @@ $('entrar').onclick = async () => {
 
 // Retomar depois de recarregar a página (ou entrar sozinho, no simulador)
 (async () => {
-  let salvo = null; try { salvo = JSON.parse(sessionStorage.getItem(SESSAO) || 'null'); } catch {}
+  let salvo = null; try { salvo = JSON.parse(GUARDA.getItem(SESSAO) || 'null'); } catch {}
+  // Sessão vencida, ou o link (QR) pede outra sala: entra na sala do link, não na guardada.
+  const pedida = params.get('sala');
+  if (salvo && (!(Date.now() - (salvo.em || 0) < VALIDADE) || (pedida && pedida !== salvo.codigo))) { salvo = null; try { GUARDA.removeItem(SESSAO); } catch {} }
   if (salvo) {
     uid = await b.identificar();
     if (await b.lerMembro(salvo.codigo, uid)) { meuNome = salvo.nome; conectar(salvo.codigo); return; }
@@ -80,10 +87,23 @@ $('entrar').onclick = async () => {
 
 function conectar(c) {
   codigo = c;
+  manterTelaAcesa();
   $('entrada').hidden = true; $('jogo').hidden = false;
   $('identidade').textContent = meuNome + ' · sala ' + c;
   b.observarSala(c, s => { sala = s; sincronizarPacotes(); render(); }, () => aviso($('status'), 'Conexão interrompida. Confira sua internet.', 'erro'));
 }
+
+// ---------- conexão: aviso quando cai e tela acesa durante a atividade ----------
+// O Firebase reconecta sozinho quando a internet volta; aqui só avisamos quem participa.
+const avisoRede = h('div', { class: 'aviso aviso-rede', 'data-tipo': 'alerta', role: 'status', hidden: navigator.onLine }, 'Sem internet. Suas respostas e seu grupo continuam guardados: assim que a conexão voltar, tudo se atualiza sozinho.');
+document.querySelector('main').prepend(avisoRede);
+addEventListener('offline', () => { avisoRede.hidden = false; });
+addEventListener('online', () => { avisoRede.hidden = true; if (codigo) aviso($('status'), 'Conectado de novo.', 'ok'); });
+let travaTela = null;
+async function manterTelaAcesa() {
+  try { if ('wakeLock' in navigator && document.visibilityState === 'visible' && !travaTela) { travaTela = await navigator.wakeLock.request('screen'); travaTela.addEventListener('release', () => { travaTela = null; }); } } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (codigo && document.visibilityState === 'visible') manterTelaAcesa(); });
 
 // ---------- quem sou eu na sala ----------
 const grupoDe = s => Object.entries(s?.composicao || {}).find(([, m]) => m.includes(uid))?.[0] || null;
@@ -112,7 +132,7 @@ function render() {
   if (arrastando()) return;          // não redesenha no meio de um arraste (redesenha ao soltar)
   if (!sala || sala.status !== 'open') {
     limpar($('status')); limpar($('tarefa'), h('div', { class: 'cartao' }, h('h2', {}, 'Sala encerrada'), h('p', {}, 'Obrigado por participar!')));
-    try { sessionStorage.removeItem(SESSAO); } catch {}
+    try { GUARDA.removeItem(SESSAO); } catch {}
     return;
   }
   renderStatus();

@@ -57,7 +57,15 @@ casos/             Modelos prontos (listados em js/casos.js; tests/casos.test.mj
 js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
 firestore.rules    Regras do Firestore
 tests/             Testes automáticos (critérios da seção 22)
+tests/e2e/         Aula completa de cada modelo, com celulares simulados (Playwright, modo ensaio)
+sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a internet oscilando
 ```
+
+## Testes e prévia
+
+- `node --test tests/*.test.mjs`: núcleo e modelos (rápido, sem navegador).
+- `node --test tests/e2e/aula.e2e.mjs`: conduz uma aula inteira de cada modelo pronto, do sorteio dos grupos ao resultado, com 6 celulares em piloto automático. Precisa do Playwright (`npm install --no-save playwright && npx playwright install chromium`).
+- Em cada pull request, o GitHub roda os dois e publica uma prévia no Firebase (o link aparece num comentário do PR e expira em 7 dias). Na prévia, o login Google só funciona se o domínio da prévia estiver autorizado no Authentication; o modo `?ensaio=1` funciona sempre.
 
 ## Segurança e dados
 
@@ -65,7 +73,8 @@ tests/             Testes automáticos (critérios da seção 22)
 - Cada grupo só consegue ler o próprio pacote (regras do Firestore).
 - Envios só podem ser criados, nunca sobrescritos.
 - Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas abandonadas são apagadas na próxima entrada de quem conduz.
-- Lista de mestres: e-mails fixos em `firestore.rules` e/ou documento `config/mestres` com o campo `emails` (lista).
+- Lista de mestres: e-mails fixos em `firestore.rules` (função `fixos()`, os mesmos de `ADMINS` em `js/mestres.js`) + o documento `config/mestres` com o campo `emails`. Os administradores editam essa lista na tela inicial do Planejamento (cartão “Professores autorizados”).
+- Relatório da aula: ao revelar o resultado (ou na aba Sala, antes de encerrar), quem conduz baixa uma planilha .csv com envios, avaliados e acertos por etapa e por grupo, sem nomes nem identificadores de participantes.
 
 ## Tipos de atividade disponíveis
 

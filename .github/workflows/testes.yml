@@ -13,4 +13,36 @@ jobs:
       - name: Testes do núcleo e dos modelos
         run: node --test tests/*.test.mjs
       - name: Sintaxe dos scripts
-        run: for f in js/*.js js/core/*.js; do node --check "$f"; done
+        run: for f in js/*.js js/core/*.js sw.js; do node --check "$f"; done
+
+  aula-completa:
+    # Conduz uma aula inteira de cada modelo pronto, com celulares simulados (modo ensaio, sem internet).
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar o navegador de teste
+        run: npm install --no-save --no-package-lock playwright@1.63.0 && npx playwright install --with-deps chromium
+      - name: Aula completa de cada modelo
+        run: node --test tests/e2e/aula.e2e.mjs
+
+  previa:
+    # Publica esta versão num endereço de prévia do Firebase (o link aparece num comentário do PR; expira em 7 dias).
+    # Só para PRs deste repositório, que têm acesso ao segredo.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA }}
+          projectId: mosaico-sala
+          expires: 7d

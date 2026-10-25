@@ -100,6 +100,10 @@ export const backend = {
   },
   apagarBiblioteca(id) { return deleteDoc(doc(db, 'biblioteca', id)); },
 
+  // ---------- lista de mestres (só administradores gravam; regras no firestore.rules) ----------
+  async lerMestres() { const s = await getDoc(doc(db, 'config', 'mestres')); return s.exists() ? (s.data().emails || []) : []; },
+  salvarMestres(emails) { return setDoc(doc(db, 'config', 'mestres'), { emails }); },
+
   /** Encerrar apaga tudo da sessão: envios, pacotes, membros e a sala. */
   async apagarSala(c) {
     for (const nome of ['envios', 'pacotes', 'members']) {
