@@ -6,7 +6,7 @@
 - Material colado ou extraído localmente de TXT, Markdown, PDF com texto selecionável e Word DOCX. Até 12 MB por arquivo, 60 páginas no PDF e 60 mil caracteres no material. A extração precisa ser conferida pelo professor; não há OCR automático.
 - Objetivo pedagógico, público, duração, organização e quantidade fixa de grupos. Formatos sugeridos pelo objetivo, com escolha manual opcional.
 - Proposta antes de abrir o editor. O caminho com IA externa inclui o material no pedido e aceita a resposta diretamente na mesma janela.
-- Firebase AI Logic configurado e habilitado em `js/ai-config.js`, com Gemini Developer API e App Check obrigatório. Não há chave privada Gemini no cliente. O titular ativou o plano Blaze e autorizou os termos dos serviços. A primeira geração retornou erro de cota; o AI Studio informa pré-pagamento obrigatório para esta conta. A geração completa permanece sem validação até a liberação de cota.
+- Firebase AI Logic configurado e habilitado em `js/ai-config.js`, com Gemini Developer API e App Check obrigatório. Não há chave privada Gemini no cliente. O titular ativou o plano Blaze e autorizou os termos dos serviços. Após um erro inicial de cota e os ajustes de faturamento feitos pelo titular, uma geração real foi concluída e aberta no editor com estrutura completa.
 - O professor pode pedir ajustes de linguagem, leitura, alternativas, duração e sustentação no material. A aplicação da proposta é explícita e pode ser desfeita no editor.
 
 ## Edição e revisão
@@ -43,11 +43,11 @@ As regras são uma alteração dirigida que precisa de revisão, não uma garant
 
 ## Estado da IA integrada em 25/10/2026
 
-Gemini Developer API ativada pelo console autenticado, com autorização expressa do titular para os termos Gemini e Google Cloud. App web registrado no App Check com reCAPTCHA Enterprise (Fraud Defense), chave pública limitada a mosaico-sala.web.app e mosaico-sala.firebaseapp.com, validade do token de uma hora e sem desafio visual. App Check básico obrigatório para AI Logic. Monitoramento opcional de IA desativado.
+Gemini Developer API ativada pelo console autenticado, com autorização expressa do titular para os termos Gemini e Google Cloud. App web registrado no App Check com reCAPTCHA Enterprise (Fraud Defense), chave pública limitada a mosaico-sala.web.app e mosaico-sala.firebaseapp.com, validade do token de uma hora e sem desafio visual. App Check básico obrigatório para AI Logic e modo de usuários autenticados aplicado no serviço. Monitoramento opcional de IA desativado.
 
 Modelo configurado: gemini-3.8-flash, conferido na documentação oficial. A integração exige login Google na interface; o texto só é enviado quando o professor solicita a geração. A configuração pública não contém chave privada da API Gemini. A atividade gerada continua sujeita à revisão humana.
 
-Teste real no endereço publicado: login Google concluído, material fictício informado, chamada de geração feita e falha de cota tratada com preservação do texto. O AI Studio da conta Pagamento do Firebase informa pré-pagamento obrigatório. Não foi realizado pagamento nem definida recarga. O titular precisa concluir essa etapa financeira; depois será necessário repetir a geração até a revisão e a abertura no editor. Não registrar o teste como geração bem-sucedida.
+Teste real no endereço publicado, em 25/10/2026: após o titular ajustar o faturamento, login Google, material fictício sobre retorno venoso pós-exercício, solicitação de 20 minutos e dois grupos, proposta recebida com três etapas (investigação, comparação e questão individual), estrutura validada e abertura no editor. Foram inspecionadas as respostas esperadas, justificativas e evidências de cada etapa. O editor preservou três pendências declaradas pela IA e não marcou a revisão docente como concluída. Esse teste confirma a integração de autoria; não equivale à validação científica automática nem à execução dessa nova atividade com turma real. Nenhum pagamento foi realizado pelo agente.
 
 As regras restritivas do Firestore foram publicadas manualmente pelo console; a conta de serviço do fluxo automático ainda não tem permissão de publicação de regras (403). O site foi publicado pelo fluxo automático. A tentativa anterior de provisionamento via fonte de credenciais de metadados foi abandonada; a configuração foi feita pela interface autorizada.
 

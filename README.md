@@ -98,7 +98,7 @@ sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a int
 
 ## IA para autoria docente
 
-Geração integrada com Firebase AI Logic e Gemini, protegida por App Check. O professor fornece material, recebe uma proposta e revisa antes de abrir no editor. Em 25/10/2026, APIs e proteção foram configuradas; a primeira chamada retornou erro de cota e a conta Gemini informa pré-pagamento obrigatório. A validação de uma geração completa aguarda essa liberação pelo titular. O caminho com IA externa continua disponível. Consulte [ERGONOMIA-DOCENTE.md](ERGONOMIA-DOCENTE.md).
+Geração integrada com Firebase AI Logic e Gemini, protegida por App Check. O professor fornece material, recebe uma proposta e revisa antes de abrir no editor. Em 25/10/2026, APIs e proteção foram configuradas e, após os ajustes de faturamento pelo titular, uma geração real foi validada: material → proposta com três etapas → revisão de respostas e evidências → abertura no editor. O caminho com IA externa continua disponível. Consulte [ERGONOMIA-DOCENTE.md](ERGONOMIA-DOCENTE.md).
 
 ## Publicação
 
