@@ -1,7 +1,7 @@
 /* Configuração pública. Nenhuma chave privada de Gemini pertence ao navegador.
-   Ativar somente após provisionar AI Logic e App Check no projeto Spark existente. */
+   AI Logic e App Check provisionados no projeto mosaico-sala. */
 export const aiConfig = {
-  enabled: false,
+  enabled: true,
   model: 'gemini-3.8-flash',
-  appCheckSiteKey: ''
+  appCheckSiteKey: '6LevEwAuAAAAAGkVH_pr2D8xNBHZdtFlpsTj7Kin'
 };
