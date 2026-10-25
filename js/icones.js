@@ -117,7 +117,51 @@ function svgEm(cls, svg, rotulo) {
    Quando existe a versão 3D de um ícone, ela é usada; os desenhos acima são só provisórios até a versão 3D chegar.
    Para trocar: gerar o 3D (prompts em ICONES-3D.md), salvar em assets/ilustracoes/<nome>.webp e acrescentar o nome aqui. */
 export const EM_3D = {
-  cadeado_grupo: 'assets/icons/locks/closed-blue.png'
+  cadeado_grupo: 'assets/icons/locks/closed-blue.png',
+  e_planejar: 'assets/ilustracoes/docente/preparar.png',
+  e_conduzir: 'assets/ilustracoes/docente/conduzir.png',
+  e_telao: 'assets/ilustracoes/docente/telao.png',
+  e_participar: 'assets/ilustracoes/docente/participar.png',
+  e_simulador: 'assets/ilustracoes/docente/simular.png',
+  e_material: 'assets/ilustracoes/docente/material.png',
+  e_ia: 'assets/ilustracoes/docente/ia.png',
+  e_revisar: 'assets/ilustracoes/docente/revisar.png',
+  investigacao_fragmentos: 'assets/ilustracoes/docente/investigar.png',
+  comparar_hipoteses: 'assets/ilustracoes/docente/comparar.png',
+  montagem_pecas: 'assets/ilustracoes/docente/montar.png',
+  quiz_grupos: 'assets/ilustracoes/docente/sala.png',
+  cartoes_arrastar: 'assets/ilustracoes/docente/cartoes.png',
+  pares: 'assets/ilustracoes/docente/pares.png',
+  corrida: 'assets/ilustracoes/docente/corrida.png',
+  cruzadas: 'assets/ilustracoes/docente/cruzadas.png',
+  sequencia: 'assets/ilustracoes/docente/simular.png',
+  quiz_pensar: 'assets/ilustracoes/docente/quiz.png',
+  analise_imagem: 'assets/ilustracoes/docente/imagem.png',
+  questao_individual: 'assets/ilustracoes/docente/sala.png',
+  escala_padronizada: 'assets/ilustracoes/docente/escala.png',
+  jogo_economico: 'assets/ilustracoes/docente/economia.png',
+  ui_planejar: 'assets/ilustracoes/docente/preparar.png',
+  ui_conduzir: 'assets/ilustracoes/docente/conduzir.png',
+  ui_telao: 'assets/ilustracoes/docente/telao.png',
+  ui_simulador: 'assets/ilustracoes/docente/simular.png',
+  ui_participar: 'assets/ilustracoes/docente/participar.png',
+  ui_sair: 'assets/ilustracoes/docente/participar.png',
+  ui_atividade: 'assets/ilustracoes/docente/atividade.png',
+  ui_sala: 'assets/ilustracoes/docente/sala.png',
+  ui_grupos: 'assets/ilustracoes/docente/grupos.png',
+  ui_etapas: 'assets/ilustracoes/docente/montar.png',
+  ui_ia: 'assets/ilustracoes/docente/ia.png',
+  ui_fontes: 'assets/ilustracoes/docente/material.png',
+  ui_revisao: 'assets/ilustracoes/docente/revisar.png',
+  ui_biblioteca: 'assets/ilustracoes/docente/biblioteca.png',
+  ui_abrir: 'assets/ilustracoes/docente/abrir.png',
+  ui_salvar: 'assets/ilustracoes/docente/revisar.png',
+  ui_meta: 'assets/ilustracoes/docente/meta.png',
+  ui_relogio: 'assets/ilustracoes/docente/relogio.png',
+  ui_trofeu: 'assets/ilustracoes/docente/trofeu.png',
+  ui_play: 'assets/ilustracoes/docente/play.png',
+  ui_parar: 'assets/ilustracoes/docente/parar.png',
+  ui_avancar: 'assets/ilustracoes/docente/avancar.png'
 };
 const url3d = nome => EM_3D[nome] === true ? `assets/ilustracoes/${nome}.webp` : EM_3D[nome];
 function img3d(cls, nome, tam, rotulo) {
@@ -141,7 +185,7 @@ export function ilustra(nome, tam = 56, rotulo) {
 /** Rótulos de botão → ícone (decoração automática, para todos os botões das telas). */
 const POR_ROTULO = [
   [/^(Iniciar etapa|Começar|Iniciar|Simular)\b/, 'play'], [/^Encerrar (etapa|a sala|sala)/, 'parar'], [/^Abrir (a )?sala/, 'sala'], [/^Abrir telão|^Abrir o telão|^Mostrar$/, 'telao'],
-  [/^Ver como fica/, 'previa'], [/^Planilha$|planilha-modelo/i, 'planilha'], [/^JSON$/, 'json'], [/^Imprimir/, 'imprimir'], [/^Salvar|^Salvo/, 'salvar'], [/^Fechar$/, 'fechar'],
+  [/^Gerar atividade com IA|^Propor ajustes com IA|^Inserir texto/, 'ia'], [/^Revisar conteúdo|^Abrir proposta/, 'revisao'], [/^Ver como fica/, 'previa'], [/^Planilha$|planilha-modelo/i, 'planilha'], [/^JSON$/, 'json'], [/^Imprimir/, 'imprimir'], [/^Salvar|^Salvo/, 'salvar'], [/^Fechar$/, 'fechar'],
   [/^Criar$/, 'mais'], [/^＋|^\+ /, null], [/^Abrir$/, 'abrir'], [/^Abrir o caso piloto|^Usar o caso piloto/, 'abrir'], [/^Gerar prompt/, 'ia'], [/^Baixar/, 'baixar'], [/^Copiar$/, 'copiar'],
   [/^Revelar/, 'revelar'], [/^Sortear/, 'sortear'], [/^Entrar com Google|^Entrar \(modo ensaio/, 'sair'], [/^Entrar$|^Entrar com código/, 'participar'], [/^Enviar|^Confirmar/, 'enviar'],
   [/^Próxima pergunta|^Passar para o grupo|^Ir para /, 'avancar'], [/^Recomeçar/, 'sortear'], [/^Área de condução/, 'conduzir'], [/^Planejar atividade/, 'planejar'], [/^Simulador/, 'simulador']

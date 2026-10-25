@@ -60,3 +60,12 @@ As regras restritivas do Firestore foram publicadas manualmente pelo console; a 
 - Tela de 390 × 844 para a posição da ação principal; não equivale a teste em iPhone/Android físicos.
 
 Leitores de arquivos carregados sob demanda: PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) e Mammoth 1.13.0 (BSD-2-Clause), preservadas as licenças dos respectivos projetos. Os documentos são processados no navegador; nenhuma extração executa código ou HTML do documento como interface.
+
+
+## Orientação visual e imagens — 25/10/2026
+
+A entrada do professor apresenta três passos: 1 inserir material, 2 revisar e experimentar, 3 aplicar em sala. A entrada dos alunos, o telão de apoio e o simulador ficam separados. O botão inicial abre o campo de material depois do login; um rascunho anterior é preservado ao iniciar uma nova proposta. No assistente, os três subpassos têm número, título e imagem; a geração permanece acessível na parte inferior. A condução identifica os quatro subpassos: atividade, sala, grupos e condução.
+
+Foram selecionadas 30 imagens da pasta fornecida pelo titular, otimizadas para 256 × 256, preservando a proporção e a transparência original. Elas atendem a 43 posições de ilustrações e ícones, mantendo símbolos de ações sem substituto visual adequado. A origem de cada arquivo está em assets/ilustracoes/docente/origens.json. Os rótulos de texto continuam visíveis e as imagens decorativas não duplicam a leitura por tecnologias assistivas.
+
+Validação: 113 testes do núcleo e sintaxe JavaScript; conferência da abertura direta do assistente, do botão de geração em tela de 390 × 844 e de imagens carregadas sem transbordamento horizontal. Não equivale a teste em aparelhos físicos.

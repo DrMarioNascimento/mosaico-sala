@@ -2,11 +2,15 @@
    Põe os ícones próprios (js/icones.js) em [data-ico] / [data-ilu] e nos botões, e marca a página atual na barra de fluxo. */
 import { aplicarIcones } from './icones.js';
 
-const pagina = location.pathname.split('/').pop().replace(/\.html$/, '') || 'index';
-for (const a of document.querySelectorAll('.fluxo a[href]')) {
-  const alvo = a.getAttribute('href').split('?')[0].replace(/\.html$/, '');
-  if (alvo === pagina) a.setAttribute('aria-current', 'page');
+function marcarNavegacao(){
+ const pagina=location.pathname.split('/').pop().replace(/\.html$/, '')||'index';
+ for(const a of document.querySelectorAll('.fluxo a[href]')){
+  const href=a.getAttribute('href'),alvo=href.split('#')[0].split('?')[0].replace(/\.html$/, '');
+  const ativo=alvo===pagina && (pagina!=='planejar'||href.includes('#revisao')===(location.hash==='#revisao'));
+  if(ativo)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+ }
 }
+marcarNavegacao();window.addEventListener('hashchange',marcarNavegacao);
 aplicarIcones(document);
 // A prévia abre em outra aba: “voltar” fecha esta aba e volta ao planejamento que a abriu.
 for (const a of document.querySelectorAll('a[data-fechar]')) a.addEventListener('click', ev => { if (window.opener && !window.opener.closed) { ev.preventDefault(); window.close(); } });

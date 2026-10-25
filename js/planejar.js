@@ -52,6 +52,8 @@ const IDEAL_PARA = {
 const ROT_PART = { grupos: 'Em grupos', individual: 'Individual', representante: 'Representante envia', desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos', representantes: 'Entre grupos (só representantes)', nenhum: 'Sem envio (vale o tempo)' };
 const avisoGeral = (t, tipo = 'info') => { aviso($('avisoGeral'), t, tipo); };
 
+let autoriaInicialAberta = false;
+window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao');});
 // ============================================================ entrada
 $('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio)' : 'Entrar com Google';
 $('entrarGoogle').onclick = () => {
@@ -65,7 +67,9 @@ async function iniciar(conta) {
   await carregarBiblioteca();
   if (souAdmin()) carregarMestres();
   try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; rascunhoId = r.rascunhoId; salvoEm = r.salvoEm; historico = criarHistorico(P.A); marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
+  if(location.hash==='#revisao' && P.A)P.secao='revisao';
   render();
+  if(!autoriaInicialAberta && new URLSearchParams(location.search).get('criar')==='texto'){autoriaInicialAberta=true;abrirIA();}
 }
 
 async function carregarBiblioteca() {
@@ -301,15 +305,19 @@ function telaInicio() {
     } catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
   };
   return h('div', {},
+    h('span',{class:'guia-selo'},'PASSO 1 · PREPARAR'),
     h('h1', { style: { marginTop: '12px' } }, 'Minhas atividades'),
-    h('div',{class:'inicio-docente cartao destaque'},h('h2',{},'Como você quer preparar sua aula?'),h('p',{},'Comece pelo conteúdo, adapte um exemplo ou retome seu trabalho.'),h('div',{class:'linha-botoes'},h('button',{class:'btn primario',onclick:()=>abrirIA()},'Criar a partir de um texto'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto'),h('button',{class:'btn',disabled:!rascunhosLocais().length,onclick:()=>document.getElementById('rascunhosLocais')?.scrollIntoView({behavior:'smooth',block:'start'})},'Continuar meu trabalho'))),
+    h('section',{class:'inicio-docente cartao destaque'},h('h2',{},'Por onde começar?'),h('p',{},'Escolha uma forma de preparar a aula. Se já tem um texto, comece pelo primeiro cartão.'),h('div',{class:'escolhas-autoria'},
+      h('article',{class:'escolha-autoria principal'},ilustra('e_material',76),h('span',{class:'guia-selo'},'COMECE AQUI'),h('h3',{},'Tenho um texto ou arquivo'),h('p',{},'Cole ou importe seu material. Depois informe a turma e peça à IA uma proposta.'),h('button',{class:'btn primario',onclick:()=>abrirIA()},ico('ia'),'Inserir texto e gerar com IA'),h('small',{},'1 Material → 2 Planejar e gerar → 3 Revisar proposta')),
+      h('article',{class:'escolha-autoria'},ilustra('e_planejar',64),h('h3',{},'Quero adaptar um modelo'),h('p',{},'Abra um exemplo e ajuste ao conteúdo da sua aula.'),h('button',{class:'btn',onclick:()=>document.getElementById('modelosProntos')?.scrollIntoView({behavior:'smooth',block:'start'})},'Usar um modelo pronto')),
+      h('article',{class:'escolha-autoria'},ilustra('e_revisar',64),h('h3',{},'Já comecei uma atividade'),h('p',{},'Retome um rascunho deste navegador ou uma atividade da biblioteca.'),h('button',{class:'btn',disabled:!rascunhosLocais().length && !P.bib?.length,onclick:()=>{const alvo=document.getElementById('rascunhosLocais')||document.getElementById('bibliotecaDocente');alvo?.scrollIntoView({behavior:'smooth',block:'start'});}},'Continuar meu trabalho')))),
     antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
     rascunhosLocais().length>0 && h('section',{class:'cartao',id:'rascunhosLocais'},h('h2',{},'Rascunhos neste navegador'),h('p',{class:'sutil'},'Disponíveis nesta conta e neste navegador. Salve na biblioteca para continuar em outro aparelho.'),h('ul',{class:'lista-bib'},rascunhosLocais().map(r=>h('li',{},h('div',{class:'tit'},h('strong',{},r.A.titulo),h('small',{},new Date(r.salvoEm).toLocaleString('pt-BR'))),h('button',{class:'btn pequeno',onclick:()=>{abrir(r.A,r.origem,r.rascunhoId);P.sujo=!!r.sujo;salvarRascunho();render();}},'Continuar'))))),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
       ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
       : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
     h('div', { class: 'plan-inicio' },
-      h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Nova atividade'),
+      h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Criar manualmente'),
         h('label', { for: 'novoTitulo' }, 'Título'), titulo,
         h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
         h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
@@ -318,7 +326,7 @@ function telaInicio() {
         h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
           h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))),
-      temBiblioteca() && h('div', { class: 'cartao' }, h('h2', {}, ico('biblioteca'), 'Biblioteca'),
+      temBiblioteca() && h('div', { class: 'cartao', id:'bibliotecaDocente' }, h('h2', {}, ico('biblioteca'), 'Biblioteca'),
         P.bib.length ? h('ul', { class: 'lista-bib' }, P.bib.map(item => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
           item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
@@ -457,7 +465,7 @@ function continuarNoCelular() {
   const d=h('dialog',{class:'explica'},h('h2',{},'Continuar no celular'),h('p',{},'Leia este QR Code e entre com a mesma conta Google. O material será recuperado da sua biblioteca.'),qr,h('p',{class:'sutil'},'Este é o acesso docente. O QR dos alunos será criado ao abrir a sala.'),h('button',{class:'btn',onclick:()=>{d.close();d.remove();}},'Fechar'));
   document.body.append(d); d.showModal();
 }
-function abrirIA(atual=null) { abrirAutoria({contaId:P.conta?.uid || 'local',atual,aplicar:a=>{if(P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
+function abrirIA(atual=null) { if(!atual && P.A)salvarRascunho(); abrirAutoria({contaId:P.conta?.uid || 'local',atual,aplicar:a=>{if(atual && P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
 function conduzirAgora() {
   try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a Condução.', 'erro'); }
   const url = new URL('conduzir.html', location.href); if (EM_ENSAIO) url.search = '?ensaio=1';
