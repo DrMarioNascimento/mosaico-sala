@@ -664,3 +664,16 @@ img.ilu.em-3d { width: min(calc(var(--tam, 56px) * 1.35), 140px) !important; hei
 .sala-escolhida strong { font: 800 1.6rem var(--fonte-titulo); letter-spacing: .12em; }
 .sala-escolhida .btn { margin-left: auto; }
 .entrada-privacidade { font-size: .92rem; margin: 4px 0 0; }
+
+/* ---------- Imagem ampliada (celular): tela cheia, zoom por botões e arraste ---------- */
+.analise-midia { display: grid; gap: 8px; justify-items: center; }
+.analise-img.ampliavel { cursor: zoom-in; }
+.ampliar-botao { justify-self: center; min-height: 44px; }
+dialog.ampliar-imagem { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #000; color: var(--texto); display: grid; grid-template-rows: auto 1fr; }
+dialog.ampliar-imagem::backdrop { background: #000c; }
+.ampliar-barra { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); background: var(--fundo-2); }
+.ampliar-zoom { display: flex; gap: 6px; }
+.ampliar-zoom .btn[aria-pressed=true] { background: var(--acento-2); color: #04121a; }
+.ampliar-barra .btn { min-height: 44px; min-width: 52px; font-size: 1rem; }
+.ampliar-area { overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom; display: block; }
+.ampliar-area img { width: 100%; height: auto; max-width: none; display: block; margin: auto; background: #fff; }

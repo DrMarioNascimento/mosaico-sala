@@ -107,3 +107,26 @@ export function escalaVisual(n) {
     h('div', { class: 'escala-barras' }, [0, 1, 2, 3].map(i => h('span', { class: i < (n ?? 0) ? 'cheia' : '' }))),
     h('small', {}, rotulos[n ?? 0]));
 }
+
+/** Imagem em tela cheia para ler detalhes no celular: zoom em 1×, 2× e 3× e arraste para percorrer (rolagem nativa).
+ *  Fecha no botão, no Esc ou no voltar do aparelho (é um <dialog>). */
+export function ampliarImagem(src, alt = '') {
+  if (!src) return;
+  let zoom = 1;
+  const img = h('img', { src, alt, draggable: 'false' });
+  const area = h('div', { class: 'ampliar-area' }, img);
+  const botoes = [1, 2, 3].map(z => h('button', { type: 'button', class: 'btn pequeno', 'data-sem-ico': '', 'aria-pressed': String(z === 1), onclick: () => definir(z) }, z + '×'));
+  const fechar = h('button', { type: 'button', class: 'btn primario pequeno', 'data-sem-ico': '', onclick: () => d.close() }, 'Fechar');
+  const d = h('dialog', { class: 'ampliar-imagem', 'aria-label': alt || 'Imagem ampliada' }, h('div', { class: 'ampliar-barra' }, h('span', { class: 'ampliar-zoom' }, botoes), fechar), area);
+  function definir(z) {
+    const cx = (area.scrollLeft + area.clientWidth / 2) / (area.scrollWidth || 1), cy = (area.scrollTop + area.clientHeight / 2) / (area.scrollHeight || 1);
+    zoom = z; img.style.width = (100 * z) + '%';
+    botoes.forEach((b, i) => b.setAttribute('aria-pressed', String(i + 1 === z)));
+    requestAnimationFrame(() => { area.scrollLeft = cx * area.scrollWidth - area.clientWidth / 2; area.scrollTop = cy * area.scrollHeight - area.clientHeight / 2; });   // mantém o centro
+  }
+  img.addEventListener('dblclick', () => definir(zoom === 3 ? 1 : zoom + 1));
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
+}
+/** Botão "Ampliar imagem" para quem não pode tocar na própria imagem (ali o toque já marca um ponto). */
+export const botaoAmpliar = (src, alt) => h('button', { type: 'button', class: 'btn pequeno ampliar-botao', 'data-sem-ico': '', onclick: () => ampliarImagem(src, alt) }, '🔍 Ampliar imagem');

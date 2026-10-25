@@ -2,7 +2,7 @@
    Pares na memória · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem (mídia, perguntas e observar)
    O celular só manda a jogada; quem conduz confere e devolve o resultado. */
 
-import { h, corDoGrupo, iconeGrupo } from './ui.js';
+import { h, corDoGrupo, iconeGrupo, ampliarImagem, botaoAmpliar } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { VELOCIDADES, duracaoTom, frequencias, TOM_ERRO, sortearPainel, proximoBotao, conferirToque, MAX_PASSOS } from './core/sequencia.js';
 import { INSTRUMENTOS, OPCOES_RESPOSTA, pontuar } from './core/escalas.js';
@@ -51,7 +51,9 @@ export function criarTelas(ctx) {
       mv.className = 'modelo-3d';
       return h('div', {}, mv, h('small', { class: 'sutil' }, 'Gire com um dedo e amplie com dois.'));
     }
-    return h('img', { class: 'analise-img', src: m.imagem?.dados, alt: m.enunciado || 'Imagem para analisar' });
+    const alt = m.enunciado || 'Imagem para analisar';
+    const img = h('img', { class: 'analise-img ampliavel', src: m.imagem?.dados, alt, title: 'Toque para ampliar', onclick: () => ampliarImagem(m.imagem?.dados, alt) });
+    return h('div', { class: 'analise-midia' }, img, botaoAmpliar(m.imagem?.dados, alt));
   }
   const temMidia = info => info.typeId === 'analise_imagem';
 

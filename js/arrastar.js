@@ -4,7 +4,7 @@
    toque no cartão e depois toque no lugar (acessibilidade e quem tem dificuldade de arrastar).
    touch-action: none só nos cartões que a pessoa pode mover: o resto da página continua rolando. */
 
-import { h } from './ui.js';
+import { h, botaoAmpliar } from './ui.js';
 
 let arraste = null;                 // arraste em andamento (não redesenhar no meio)
 let selecionado = null;             // {chave, id}: cartão escolhido no modo "toque, depois toque"
@@ -102,7 +102,7 @@ export function quadroCartoes(o) {
           h('span', { class: 'n' }, k + 1), texto[id], dono && dono !== uid && h('small', {}, ' com ' + (nomes[dono] || 'colega')));
         b.onclick = () => { selecionado = { chave, id }; aoSoltar(); };
         return b;
-      })), foto);
+      })), foto, o.imagemDados && botaoAmpliar(o.imagemDados, pk.enunciado || 'Imagem para marcar'));
     return raiz;
   }
 
