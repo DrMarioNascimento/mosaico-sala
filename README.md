@@ -29,8 +29,8 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 
 ## Fluxo da aula
 
-1. **Atividade:** caso piloto, arquivo importado ou montagem por IA externa (prompt gerado na própria tela). Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
-2. **Sala:** abrir sala → QR Code e código → abrir o telão.
+1. **Atividade:** modelo pronto, arquivo importado (botão ou arrastar e soltar) ou montagem por IA externa (prompt gerado na própria tela). No Planejamento, o botão **Dar esta aula** leva a atividade aberta direto para a Condução, já na aba Sala. O Planejamento mostra os 3 passos (Sobre a turma → Etapas → Revisar) com as pendências de cada um, e **Ver esta etapa** abre a turma simulada já naquela etapa. Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
+2. **Sala:** abrir sala → QR Code e código → abrir o telão (no PC da sala, digitar os 6 números já abre o telão).
 3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
 4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
 5. **Resultado:** revelar a meta e as explicações; encerrar a sala apaga tudo.
@@ -53,11 +53,19 @@ js/imprimir.js     Versão para imprimir (material docente em folha separada)
 js/backend.js      Escolhe Firebase ou ensaio local
 js/cloud-*.js      Firebase (Firestore + Auth) / ensaio (localStorage)
 js/qr.js           Gerador de QR Code próprio (mesmo do Eita!)
-casos/             Atividades prontas
+casos/             Modelos prontos (listados em js/casos.js; tests/casos.test.mjs confere cada um)
 js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
 firestore.rules    Regras do Firestore
 tests/             Testes automáticos (critérios da seção 22)
+tests/e2e/         Aula completa de cada modelo, com celulares simulados (Playwright, modo ensaio)
+sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a internet oscilando
 ```
+
+## Testes e prévia
+
+- `node --test tests/*.test.mjs`: núcleo e modelos (rápido, sem navegador).
+- `node --test tests/e2e/aula.e2e.mjs`: conduz uma aula inteira de cada modelo pronto, do sorteio dos grupos ao resultado, com 6 celulares em piloto automático. Precisa do Playwright (`npm install --no-save playwright && npx playwright install chromium`).
+- Em cada pull request, o GitHub roda os dois e publica uma prévia no Firebase (o link aparece num comentário do PR e expira em 7 dias). Na prévia, o login Google só funciona se o domínio da prévia estiver autorizado no Authentication; o modo `?ensaio=1` funciona sempre.
 
 ## Segurança e dados
 
@@ -65,7 +73,8 @@ tests/             Testes automáticos (critérios da seção 22)
 - Cada grupo só consegue ler o próprio pacote (regras do Firestore).
 - Envios só podem ser criados, nunca sobrescritos.
 - Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas abandonadas são apagadas na próxima entrada de quem conduz.
-- Lista de mestres: e-mails fixos em `firestore.rules` e/ou documento `config/mestres` com o campo `emails` (lista).
+- Lista de mestres: e-mails fixos em `firestore.rules` (função `fixos()`, os mesmos de `ADMINS` em `js/mestres.js`) + o documento `config/mestres` com o campo `emails`. Os administradores editam essa lista na tela inicial do Planejamento (cartão “Professores autorizados”).
+- Relatório da aula: ao revelar o resultado (ou na aba Sala, antes de encerrar), quem conduz baixa uma planilha .csv com envios, avaliados e acertos por etapa e por grupo, sem nomes nem identificadores de participantes.
 
 ## Tipos de atividade disponíveis
 

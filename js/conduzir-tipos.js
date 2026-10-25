@@ -262,7 +262,7 @@ export function criarTipos(ctx) {
         caixa.append(h('p', { class: 'sutil' }, `${est.ranking.length} de ${Object.keys(est.jogadores).length} já jogaram · ${est.partidas} partida(s). Placar${e.config.placar === 'media' ? ' (média dos recordes)' : ' (soma dos recordes)'}: ` + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ')),
           h('details', {}, h('summary', {}, 'Recorde de cada aluno'), h('ul', { class: 'diag' }, Object.entries(est.jogadores).sort((x, y) => y[1].recorde - x[1].recorde).map(([id, S]) =>
             h('li', { class: S.partidas ? 'info' : 'aviso' }, ctx.chip(S.grupo), ' ', ctx.nomeDe(id) + ': ', S.partidas ? `recorde ${S.recorde} · ${S.partidas} partida(s) · última ${S.ultima.pontos}` : 'ainda não jogou')))),
-          dr.length && h('p', { class: 'sutil' }, 'Termos que mais derrubaram: ' + dr.map(x => `${x.termo} (${x.vezes})`).join(' · ')));
+          dr.length > 0 && h('p', { class: 'sutil' }, 'Termos que mais derrubaram: ' + dr.map(x => `${x.termo} (${x.vezes})`).join(' · ')));
       }
       if (t === 'equipe') return painelEquipe(e, caixa);
       caixa.append(h('button', { class: 'btn primario bloco', onclick: ctx.encerrarEtapa }, 'Encerrar etapa'));

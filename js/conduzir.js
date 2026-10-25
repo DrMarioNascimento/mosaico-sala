@@ -3,10 +3,12 @@
    Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
 
 import { backend, link, EM_ENSAIO } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
+import { CASOS, carregarCaso } from './casos.js';
+import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
+import { relatorioAula, relatorioCSV } from './core/relatorio.js';
 import { etapasOrdenadas, projecaoGrupo, prontidaoEtapa, calcularMeta, escalaDesempenho, montarResultado, registrarContingencia } from './core/motor.js';
 import { obterTipo } from './core/tipos.js';
 import { gerarPrompt } from './core/prompt.js';
@@ -31,6 +33,18 @@ let inscricoes = [], relogio = null;
 // ---------------- persistência local ----------------
 function salvar() {
   try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias, jogo: E.jogo })); } catch {}
+}
+/** Atividade enviada pelo botão “Dar esta aula” do Planejamento. Fica guardada até poder entrar (sem sala aberta). */
+const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
+function doPlanejamento() { if (PREVIA) return null; try { return JSON.parse(localStorage.getItem(PARA_CONDUZIR) || 'null'); } catch { return null; } }
+/** Carrega a atividade vinda do Planejamento, se houver e não houver sala aberta. Devolve se carregou. */
+function receberDoPlanejamento() {
+  const a = doPlanejamento(); if (!a || E.codigo) return false;
+  try { localStorage.removeItem(PARA_CONDUZIR); } catch {}
+  if (!aceitar(a, 'do Planejamento')) return false;   // com erros: aparecem na aba Atividade
+  mostrarAba('sala'); renderTudo();
+  avisoGeral(`“${a.titulo}” veio do Planejamento. Abra a sala quando a turma estiver pronta.`, 'ok');
+  return true;
 }
 function lerGuardado() { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch { return null; } }
 function pendentes() { try { return JSON.parse(localStorage.getItem(PENDENTES) || '[]'); } catch { return []; } }
@@ -62,6 +76,25 @@ async function iniciarPrevia() {
   if (!aceitar(a, 'pré-visualização')) return avisoGeral('A atividade tem erros. Corrija na Revisão do Planejamento.', 'erro');
   await abrirSala();
   mostrarAba('sala');
+  const alvo = new URLSearchParams(location.search).get('etapa');
+  if (alvo && etapa(alvo)) irDiretoParaEtapa(alvo);
+}
+
+/** “Ver esta etapa”: espera a turma simulada entrar, sorteia os grupos e começa a etapa pedida. */
+async function irDiretoParaEtapa(etapaId) {
+  const espera = ms => new Promise(r => setTimeout(r, ms));
+  let antes = -1;
+  for (let i = 0; i < 60; i++) {   // até a quantidade de participantes parar de crescer
+    await espera(800);
+    const n = Object.keys(E.sala?.nomes || {}).length;
+    if (n > 0 && n === antes) break;
+    antes = n;
+  }
+  if (!Object.keys(E.sala?.nomes || {}).length) return;
+  await formarGrupos();
+  await espera(600);
+  mostrarAba('conducao');
+  await iniciarEtapa(etapa(etapaId));
 }
 
 async function iniciar(conta) {
@@ -76,8 +109,10 @@ async function iniciar(conta) {
       else { E.codigo = null; salvar(); }
     } catch { E.codigo = null; }
   }
+  if (receberDoPlanejamento()) return faxina();
   mostrarAba(E.codigo ? 'conducao' : 'atividade');
   renderTudo();
+  if (E.codigo && doPlanejamento()) avisoGeral('Há uma sala aberta. A atividade que veio do Planejamento entra assim que você encerrar esta sala.', 'alerta');
   faxina();
 }
 
@@ -156,26 +191,26 @@ function renderAtividade() {
   const sugestoes = sugerirEquilibrio(a, { dispensadas: E.dispensadas });
   const gram = avisoGramatica(a);
 
+  const ORG = { grupos: 'em grupos', individual: 'individual', representantes: 'entre grupos (representantes)' };
+  const COMP = { desligada: 'sem competição', meta: 'conta para a meta', entre_grupos: 'entre grupos' };
+  const avisos = naoErros.length + (gram ? 1 : 0);
   limpar(alvo,
     h('div', { class: 'cartao' },
       h('h1', {}, a.titulo),
-      h('p', { class: 'sutil' }, [a.publico, a.duracaoMin && a.duracaoMin + ' min', `${a.grupos.length} grupos`, `${a.etapas.length} etapas`].filter(Boolean).join(' · ')),
-      a.perguntaCentral && h('p', {}, h('strong', {}, 'Pergunta central: '), a.perguntaCentral),
+      h('p', { class: 'sutil' }, [a.duracaoMin && a.duracaoMin + ' min', `${a.grupos.length} grupos`, `${a.etapas.length} etapas`, a.meta?.ativa !== false && a.meta?.limiar ? `meta de ${Math.round(a.meta.limiar * 100)}%` : 'sem meta'].filter(Boolean).join(' · ')),
+      h('ol', { class: 'roteiro' }, etapasOrdenadas(a).map(e => h('li', {},
+        h('strong', {}, e.titulo), ' ',
+        h('small', { class: 'sutil' }, [e.tempoMin && e.tempoMin + ' min', ORG[e.participacao.organizacao] || e.participacao.organizacao, COMP[e.participacao.competicao]].filter(Boolean).join(' · '))))),
+      salaAberta
+        ? h('button', { class: 'btn primario bloco', onclick: () => mostrarAba('sala') }, 'Ir para a sala aberta')
+        : h('button', { class: 'btn primario bloco', disabled: temErros(E.diags), onclick: async () => { await abrirSala(); if (E.codigo) mostrarAba('sala'); } }, 'Abrir sala'),
       h('div', { class: 'linha-botoes' },
-        h('button', { class: 'btn', onclick: () => abrirImpressao(a) }, 'Versão para imprimir'),
-        h('button', { class: 'btn', onclick: () => baixar(a) }, 'Baixar arquivo'),
-        h('button', { class: 'btn discreto', disabled: salaAberta, title: salaAberta ? 'Encerre a sala para trocar' : null, onclick: () => { E.atividade = null; E.diags = []; salvar(); renderTudo(); } }, 'Trocar atividade'))),
+        h('button', { class: 'btn pequeno', onclick: () => abrirImpressao(a) }, 'Imprimir'),
+        h('button', { class: 'btn pequeno', onclick: () => baixar(a) }, 'Baixar arquivo'),
+        h('button', { class: 'btn pequeno discreto', disabled: salaAberta, title: salaAberta ? 'Encerre a sala para trocar' : null, onclick: () => { E.atividade = null; E.diags = []; salvar(); renderTudo(); } }, 'Trocar atividade'))),
 
-    (naoErros.length || gram) && h('div', { class: 'cartao' }, h('h2', {}, 'Revisão'),
-      gram && h('p', { class: 'aviso' }, gram.mensagem),
-      listaDiag(naoErros)),
-
-    sugestoes.length && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
-      h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
-      h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
-        h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar'))))),
-
-    h('div', { class: 'cartao' }, h('h2', {}, 'Etapas'),
+    h('details', { class: 'cartao', open: !!E.ajustesAbertos, ontoggle: ev => { E.ajustesAbertos = ev.target.open; } }, h('summary', {}, h('strong', {}, 'Ajustar tempo, competição, nomes dos grupos e meta')),
+      h('h3', {}, 'Etapas'),
       etapasOrdenadas(a).map(e => {
         const t = obterTipo(e.typeId, e.typeVersion);
         return h('div', { class: 'cartao', style: { margin: '10px 0', padding: '14px' } },
@@ -187,9 +222,8 @@ function renderAtividade() {
             h('div', {}, h('label', { for: 'comp-' + e.id }, 'Competição'),
               h('select', { id: 'comp-' + e.id, onchange: ev => ajustar(x => { x.etapas.find(y => y.id === e.id).participacao.competicao = ev.target.value; }) },
                 (t?.participacao.competicao || []).map(c => h('option', { value: c, selected: e.participacao.competicao === c }, { desligada: 'Desligada', meta: 'Contra a meta', entre_grupos: 'Entre grupos' }[c] || c))))));
-      })),
-
-    h('div', { class: 'cartao' }, h('h2', {}, 'Grupos e meta'),
+      }),
+      h('h3', {}, 'Grupos e meta'),
       a.grupos.slice().sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).map(g => h('div', {},
         h('label', { for: 'gn-' + g.id }, chipGrupo(a, g.id, `Posição ${g.ordemAlocacao}`)),
         h('input', { id: 'gn-' + g.id, maxlength: 40, value: g.nome, onchange: ev => { const v = ev.target.value.trim(); if (v) ajustar(x => { x.grupos.find(y => y.id === g.id).nome = v; }); } }))),
@@ -200,8 +234,17 @@ function renderAtividade() {
           [0.4, 0.5, 0.6, 0.8].map(v => h('option', { value: v, selected: a.meta.ativa !== false && a.meta.limiar === v }, `${v * 100}% de acertos`))),
         h('p', { class: 'sutil' }, a.meta.descricao || ''))),
 
+    avisos > 0 && h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, `Avisos da revisão (${avisos})`)),
+      gram && h('p', { class: 'aviso' }, gram.mensagem),
+      listaDiag(naoErros)),
+
+    sugestoes.length > 0 && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
+      h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
+      h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
+        h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar'))))),
+
     h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Material de quem conduz')),
-      (a.docente?.guia || []).length && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
+      (a.docente?.guia || []).length > 0 && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
       h('h3', {}, 'Respostas esperadas'),
       etapasOrdenadas(a).filter(e => a.docente?.respostas?.[e.id]).map(e => {
         const r = a.docente.respostas[e.id];
@@ -212,7 +255,7 @@ function renderAtividade() {
         const op = (e.config?.alternativas || e.config?.hipotesesCandidatas || []).find(o => o.id === r.corretaId);
         return h('div', { style: { marginBottom: '12px' } }, h('strong', {}, e.titulo + ': '), op?.texto || r.corretaId, h('p', { class: 'sutil' }, r.explicacao || ''));
       }),
-      (a.pendencias || []).length && h('div', {}, h('h3', {}, 'Pendências'), h('ul', {}, a.pendencias.map(x => h('li', {}, x))))));
+      (a.pendencias || []).length > 0 && h('div', {}, h('h3', {}, 'Pendências'), h('ul', {}, a.pendencias.map(x => h('li', {}, x))))));
 }
 
 function listaDiag(ds) {
@@ -235,12 +278,13 @@ function cartaoCarregar() {
   return h('div', {},
     minhas,
     h('div', { class: 'cartao' }, h('h1', {}, 'Escolha a atividade'),
-      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: usarPiloto }, 'Usar o caso piloto: a ciclista que voltou da altitude'))),
+      h('p', { class: 'sutil' }, 'Modelos prontos:'),
+      h('div', { class: 'linha-botoes' }, CASOS.map((c, i) => h('button', { class: 'btn bloco' + (i === 0 ? ' primario' : ''), onclick: () => usarModelo(c) }, c.titulo)))),
     h('div', { class: 'cartao' }, h('h2', {}, 'Importar atividade'),
-      h('label', { for: 'arquivoJson' }, 'Planilha (.xlsx) ou arquivo .json'), arquivo,
+      h('label', { for: 'arquivoJson' }, 'Planilha (.xlsx) ou arquivo .json'), campoArquivo(arquivo),
       h('label', { for: 'jsonColado' }, 'Texto colado'), colado,
       h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => importarTexto(colado.value, 'texto colado') }, 'Importar texto colado')),
-      E.importacao.length && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
+      E.importacao.length > 0 && h('div', {}, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'O arquivo não foi aceito. Corrija os pontos abaixo (ou peça à IA para corrigir) e importe de novo. Nada foi alterado automaticamente.'), listaDiag(E.importacao))),
     h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Montar com uma IA externa')),
       h('p', { class: 'sutil' }, 'Gere o prompt, cole na IA de sua preferência junto com o seu material e importe o JSON que ela devolver.'),
       h('label', { for: 'pPublico' }, 'Público'), h('input', { id: 'pPublico', placeholder: 'Ex.: Graduação em Fisioterapia, 3º período', oninput: e => cfg.publico = e.target.value }),
@@ -276,15 +320,24 @@ async function carregarMinhas(alvo) {
     h('p', { class: 'sutil' }, 'Para criar ou editar: ', h('a', { href: link('planejar.html'), target: '_blank' }, 'Planejamento')));
 }
 
-async function usarPiloto() {
-  try { aceitar(await (await fetch('casos/ciclista-altitude.json', { cache: 'no-cache' })).json(), 'caso piloto'); }
-  catch (e) { avisoGeral('Não foi possível carregar o caso piloto: ' + e.message, 'erro'); }
+async function usarModelo(c) {
+  try { aceitar(await carregarCaso(c.id), 'modelo pronto'); }
+  catch (e) { avisoGeral('Não foi possível carregar o modelo: ' + e.message, 'erro'); }
 }
 function importarTexto(texto, origem) {
   const r = lerJsonImportado(texto);
   if (!r.atividade) { E.importacao = r.diagnosticos; return renderAtividade(); }
   aceitar(r.atividade, origem);
 }
+/** Relatório da aula: acertos por etapa e por grupo, sem nomes (planilha .csv). */
+function baixarRelatorio() {
+  const csv = relatorioCSV(relatorioAula(A(), resultados()));
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const data = new Date().toISOString().slice(0, 10);
+  const l = h('a', { href: url, download: `relatorio-${A().id || 'aula'}-${data}.csv` }); document.body.append(l); l.click(); l.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30e3);
+}
+
 function baixar(a) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
   const l = h('a', { href: url, download: (a.id || 'atividade') + '.json' }); document.body.append(l); l.click(); l.remove();
@@ -320,7 +373,7 @@ function renderSala() {
       h('div', { class: 'linha-botoes' },
         h('button', { class: 'btn', onclick: async () => { try { await navigator.clipboard.writeText(urlP); avisoGeral('Link copiado.', 'ok'); } catch { avisoGeral(urlP); } } }, 'Copiar link de entrada'),
         h('a', { class: 'btn', href: urlT, target: '_blank', rel: 'noopener' }, 'Abrir telão')),
-      h('p', { class: 'sutil' }, 'No PC da sala, abra o telão e digite o código, ou use o botão acima.'),
+      h('p', { class: 'sutil' }, 'No PC da sala, abra ', h('strong', {}, link('telao.html').replace(/^https?:\/\//, '').replace(/\.html(?=\?|$)/, '')), ' e digite o código: o telão abre sozinho.'),
       h('details', {}, h('summary', {}, 'Testar sem participantes (simulador no PC)'),
         h('p', { class: 'sutil' }, 'Abra no PC o endereço abaixo: ele mostra o telão e vários celulares simulados entrando nesta sala. Você conduz por aqui normalmente.'),
         h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo }).replace('simulador.html', 'simulador').replace(/^https?:\/\//, '')))),
@@ -334,7 +387,9 @@ function renderSala() {
         h('button', { class: 'btn', onclick: () => simularEntradas(5) }, '+5 simulados'),
         h('button', { class: 'btn', onclick: () => simularEntradas(1) }, '+1 simulado'),
         h('a', { class: 'btn', href: urlP, target: '_blank' }, 'Abrir aba de participante'))),
-    h('div', { class: 'cartao' }, btnEncerrar, h('p', { class: 'sutil' }, 'Encerrar apaga participantes, envios e a sala. Os resultados não ficam guardados.')));
+    h('div', { class: 'cartao' },
+      (s.encerradas || []).length > 0 && h('button', { class: 'btn bloco', style: { marginBottom: '10px' }, onclick: baixarRelatorio }, 'Baixar relatório da aula (planilha)'),
+      btnEncerrar, h('p', { class: 'sutil' }, 'Encerrar apaga participantes, envios e a sala. Os resultados não ficam guardados: baixe o relatório antes.')));
 }
 
 async function abrirSala() {
@@ -400,6 +455,7 @@ async function encerrarSala() {
   }
   E.codigo = null; E.sala = null; E.envios = []; E.membros = []; E.contingencias = []; E.jogo = {};
   salvar(); renderTudo();
+  receberDoPlanejamento();   // “Dar esta aula” enquanto havia sala aberta: agora entra
 }
 
 /** Salas que ficaram abertas (aba fechada, internet caiu) são apagadas quando a mesma pessoa volta. */
@@ -544,6 +600,8 @@ function renderConducao() {
       h('button', { class: 'btn primario bloco', onclick: revelarFinal }, 'Revelar resultado final')),
     s.fase === 'final' && h('div', { class: 'cartao destaque' }, h('h2', {}, 'Resultado revelado'),
       s.final?.meta && h('p', {}, `${s.final.meta.acertos} de ${s.final.meta.total} acertos · meta ${Math.round(s.final.meta.limiar * 100)}% · ${s.final.meta.atingida ? 'atingida' : 'não atingida'}`),
+      h('button', { class: 'btn bloco', onclick: baixarRelatorio }, 'Baixar relatório da aula (planilha)'),
+      h('p', { class: 'sutil' }, 'Acertos por etapa e por grupo, sem nomes. Baixe antes de encerrar: ao encerrar a sala, tudo é apagado.'),
       h('p', { class: 'sutil' }, 'Quando terminar a discussão, encerre a sala na aba Sala.')),
     EM_ENSAIO && s.fase === 'etapa' && h('div', { class: 'cartao' }, h('h3', {}, 'Ensaio'), h('button', { class: 'btn', onclick: pilotoAutomatico }, 'Simulados enviam agora')));
 }

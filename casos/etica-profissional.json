@@ -1,0 +1,281 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "etica-profissional",
+  "titulo": "Onde fica a linha?",
+  "publico": "Ensino superior — Ética e Deontologia (cursos da saúde)",
+  "duracaoMin": 40,
+  "regime": "simulacao",
+  "perguntaCentral": "Como distinguir o que é infração, o que é dever e o que é direito na prática profissional?",
+  "introducao": "Situações do dia a dia de uma clínica. Algumas são claramente erradas, outras nem tanto. Cada grupo recebe uma parte dos cartões: só juntando a turma chega ao quadro completo.",
+  "objetivos": [
+    "Diferenciar infração ética, dever e direito profissional.",
+    "Relacionar situações práticas aos princípios da bioética.",
+    "Argumentar sobre casos limítrofes."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g_sigilo",
+      "nome": "Sigilo",
+      "ordemAlocacao": 1,
+      "funcao": "Privacidade e dados do paciente"
+    },
+    {
+      "id": "g_relacao",
+      "nome": "Relação com o paciente",
+      "ordemAlocacao": 2,
+      "funcao": "Presentes, limites e comunicação"
+    },
+    {
+      "id": "g_condicoes",
+      "nome": "Condições de trabalho",
+      "ordemAlocacao": 3,
+      "funcao": "Segurança e honorários"
+    },
+    {
+      "id": "g_ciencia",
+      "nome": "Ciência e prática",
+      "ordemAlocacao": 4,
+      "funcao": "Atualização e procedimentos"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_termometro",
+      "ordem": 1,
+      "titulo": "Termômetro ético",
+      "typeId": "cartoes_arrastar",
+      "typeVersion": "1.0.0",
+      "tempoMin": 10,
+      "instrucao": "Posicionem cada caso na linha, do totalmente antiético ao totalmente ético. Depois vamos discutir as diferenças entre os grupos.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "desligada"
+      },
+      "config": {
+        "formato": "termometro",
+        "enunciado": "Onde fica cada caso?",
+        "polos": {
+          "esquerda": "Totalmente antiético",
+          "direita": "Totalmente ético"
+        },
+        "cartoes": [
+          {
+            "id": "t_foto",
+            "texto": "Divulgar foto de paciente sem autorização"
+          },
+          {
+            "id": "t_presente",
+            "texto": "Aceitar um presente caro de um paciente"
+          },
+          {
+            "id": "t_epi",
+            "texto": "Recusar atendimento sem equipamento de proteção"
+          },
+          {
+            "id": "t_linguagem",
+            "texto": "Explicar o diagnóstico em linguagem simples"
+          }
+        ],
+        "distribuicao": "todos",
+        "tentativas": "uma",
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_classificar",
+      "ordem": 2,
+      "titulo": "Infração, dever ou direito?",
+      "typeId": "cartoes_arrastar",
+      "typeVersion": "1.0.0",
+      "tempoMin": 8,
+      "instrucao": "Cada celular tem alguns cartões. Coloquem cada um na coluna certa e o líder confirma o quadro.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "formato": "classificar",
+        "enunciado": "Arrastem cada cartão para a coluna certa.",
+        "colunas": [
+          {
+            "id": "infracao",
+            "titulo": "Infração"
+          },
+          {
+            "id": "dever",
+            "titulo": "Dever"
+          },
+          {
+            "id": "direito",
+            "titulo": "Direito"
+          }
+        ],
+        "cartoes": [
+          {
+            "id": "c_sigilo",
+            "texto": "Guardar sigilo profissional"
+          },
+          {
+            "id": "c_inseguro",
+            "texto": "Recusar trabalho em condições inseguras"
+          },
+          {
+            "id": "c_prescrever",
+            "texto": "Prescrever sem examinar o paciente"
+          },
+          {
+            "id": "c_atualizar",
+            "texto": "Atualizar-se cientificamente"
+          },
+          {
+            "id": "c_honorarios",
+            "texto": "Receber honorários justos"
+          },
+          {
+            "id": "c_cobrar",
+            "texto": "Cobrar por procedimento não realizado"
+          }
+        ],
+        "distribuicao": "fracionado",
+        "tentativas": "repetir",
+        "espera": 30,
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_principios",
+      "ordem": 3,
+      "titulo": "Princípios da bioética",
+      "typeId": "pares",
+      "typeVersion": "1.0.0",
+      "tempoMin": 6,
+      "instrucao": "Liguem cada princípio ao seu significado.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "formato": "ligar",
+        "enunciado": "Liguem cada princípio ao seu significado.",
+        "pares": [
+          {
+            "id": "pr_benef",
+            "a": "Beneficência",
+            "b": "Agir em favor do paciente"
+          },
+          {
+            "id": "pr_naomal",
+            "a": "Não maleficência",
+            "b": "Não causar dano"
+          },
+          {
+            "id": "pr_auto",
+            "a": "Autonomia",
+            "b": "Respeitar a decisão do paciente"
+          },
+          {
+            "id": "pr_just",
+            "a": "Justiça",
+            "b": "Distribuir recursos de forma justa"
+          }
+        ],
+        "distribuicao": "fracionado",
+        "tentativas": "repetir",
+        "espera": 15,
+        "revelarAoEncerrar": true
+      }
+    },
+    {
+      "id": "e_voce",
+      "ordem": 4,
+      "titulo": "E você?",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 3,
+      "instrucao": "Responda sozinho. Esta resposta conta para a meta da turma.",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "enunciado": "Um colega publica nas redes sociais o prontuário de um paciente famoso. Qual dever foi violado primeiro?",
+        "alternativas": [
+          {
+            "id": "a",
+            "texto": "O sigilo profissional, que protege a autonomia do paciente sobre os próprios dados."
+          },
+          {
+            "id": "b",
+            "texto": "A justiça na distribuição de recursos."
+          },
+          {
+            "id": "c",
+            "texto": "A atualização científica."
+          },
+          {
+            "id": "d",
+            "texto": "Nenhum: o paciente é uma pessoa pública."
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [],
+  "conexoes": [],
+  "pendencias": [
+    "Ajustar as situações ao código de ética da sua profissão."
+  ],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se acertar pelo menos 70% na classificação, nos princípios e na questão individual.",
+    "etapas": [
+      "e_classificar",
+      "e_principios",
+      "e_voce"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_termometro": {
+        "posicao": {
+          "t_foto": 5,
+          "t_presente": 30,
+          "t_epi": 70,
+          "t_linguagem": 95
+        },
+        "margem": 20
+      },
+      "e_classificar": {
+        "colunaDe": {
+          "c_sigilo": "dever",
+          "c_inseguro": "direito",
+          "c_prescrever": "infracao",
+          "c_atualizar": "dever",
+          "c_honorarios": "direito",
+          "c_cobrar": "infracao"
+        }
+      },
+      "e_voce": {
+        "corretaId": "a",
+        "explicacao": "Publicar o prontuário quebra o sigilo profissional, independentemente da fama do paciente."
+      }
+    },
+    "guia": [
+      "Termômetro (10 min): não há nota. Use o telão para comparar onde cada grupo pôs cada caso.",
+      "Classificação (8 min): cada celular segura alguns cartões; o grupo precisa conversar.",
+      "Princípios (6 min): ligar os quatro princípios.",
+      "Questão individual (3 min): conta para a meta.",
+      "Fechamento: volte aos casos do termômetro em que os grupos mais discordaram."
+    ],
+    "pontosDeDiscussao": [
+      "Por que aceitar um presente caro fica numa zona cinzenta?",
+      "Recusar atendimento sem proteção é direito ou omissão?"
+    ]
+  }
+}

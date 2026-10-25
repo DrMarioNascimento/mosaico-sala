@@ -12,3 +12,5 @@ aplicarIcones(document);
 for (const a of document.querySelectorAll('a[data-fechar]')) a.addEventListener('click', ev => { if (window.opener && !window.opener.closed) { ev.preventDefault(); window.close(); } });
 // Dentro do “Ver como fica” e do Simulador as páginas rodam embutidas: sem barra de navegação (um toque não tira o celular simulado da sala).
 if (window.top !== window) document.documentElement.classList.add('embutida');
+// App instalável (manifest + service worker). Só na janela principal (não dentro da prévia ou do simulador).
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && window.top === window) navigator.serviceWorker.register('sw.js').catch(() => {});

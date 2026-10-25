@@ -2,7 +2,7 @@
    Pares · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem
    Como nos outros tipos, a resposta certa vai para docente.respostas (só quem conduz vê). */
 
-import { h, limpar } from './ui.js';
+import { h, limpar, campoArquivo } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { montarGrade } from './core/cruzadas.js';
 import { problemasRamos } from './core/pensar.js';
@@ -279,8 +279,8 @@ export function criarEditores(ctx) {
           seletor('Tipo de mídia', c.midia, [['foto', 'Foto (lâmina, peça, documento…)'], ['grafico', 'Gráfico ou infográfico'], ['modelo3d', 'Modelo 3D (.glb)']], v => { c.midia = v; if (v === 'modelo3d') { delete c.imagem; c.modelo ||= { url: '' }; if (c.tarefa === 'marcar') trocarTarefa('perguntas'); } else delete c.modelo; }, { redesenhar: true }),
           seletor('Tarefa', c.tarefa, tarefas, v => trocarTarefa(v), { redesenhar: true })),
         c.midia === 'modelo3d'
-          ? h('div', {}, campo('Endereço do modelo (.glb)', c.modelo?.url || '', v => { c.modelo = { url: v.trim() }; }, { ajuda: 'Ex.: https://drmarionascimento.github.io/lab-ra/modelos/celula.glb. Ou envie um .glb pequeno:' }), arquivo, c.modelo?.dados && h('p', { class: 'sutil' }, `Modelo enviado (${Math.round(c.modelo.dados.length / 1024)} KB).`))
-          : h('div', {}, h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), arquivo),
+          ? h('div', {}, campo('Endereço do modelo (.glb)', c.modelo?.url || '', v => { c.modelo = { url: v.trim() }; }, { ajuda: 'Ex.: https://drmarionascimento.github.io/lab-ra/modelos/celula.glb. Ou envie um .glb pequeno:' }), campoArquivo(arquivo), c.modelo?.dados && h('p', { class: 'sutil' }, `Modelo enviado (${Math.round(c.modelo.dados.length / 1024)} KB).`))
+          : h('div', {}, h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), campoArquivo(arquivo)),
         campo('O que fazer com a imagem', c.enunciado || '', v => { c.enunciado = v; }, { area: true, linhas: 2, max: 500 }),
         ajudaOrg(e, c.tarefa === 'observar' ? 'o grupo observa junto e o líder escreve; o texto vai para o telão.' : 'o grupo trabalha junto.', 'os representantes marcam num quadro só.')),
       c.tarefa === 'marcar' && marcadores(e),
