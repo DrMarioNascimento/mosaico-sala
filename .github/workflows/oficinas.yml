@@ -1,12 +1,5 @@
 name: Auditoria das oficinas completas
 on:
-  push:
-    branches: [main, codex/oficinas-completas]
-    paths:
-      - 'casos/*completa.json'
-      - 'js/**'
-      - 'tests/e2e/**'
-      - '.github/workflows/oficinas.yml'
   workflow_dispatch:
 jobs:
   oficinas:
