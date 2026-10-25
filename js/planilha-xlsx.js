@@ -34,6 +34,7 @@ const INSTRUCOES = [
   ['Opcoes: hipóteses e alternativas de cada etapa. Marque com x a correta (só nas etapas com gabarito).'],
   ['Pecas: grupos separados por ponto e vírgula. natureza = citacao | parafrase | inferencia | sintetico.'],
   ['Fontes: referências usadas pelas peças.'],
+  ['Docente: cópia privada do material-base e dos roteiros por etapa. Preserve as partes desta aba ao transferir a atividade. A revisão do conteúdo precisa ser confirmada novamente após importar.'],
   ['Etapas de montagem: montagem_texto usa | ou − entre espaços para marcar os cortes. As imagens ficam na aba oculta Imagens (não edite).'],
   [''],
   ['ATENÇÃO: esta planilha contém o gabarito (coluna correta e explicacao). Não distribua aos participantes.'],
@@ -48,7 +49,7 @@ export async function lerArquivoAtividade(arquivo) {
   const abas = {};
   for (const nome of wb.SheetNames) if (nome !== 'Instrucoes') abas[nome] = X.utils.sheet_to_json(wb.Sheets[nome], { defval: '', raw: false });
   const { atividade, problemas } = abasParaAtividade(abas);
-  return { atividade, diagnosticos: problemas.map(m => ({ severidade: 'erro', local: 'planilha', mensagem: m })) };
+  return { ...(problemas.some(p=>p.startsWith('Complemento docente'))?{}:{atividade}), diagnosticos: problemas.map(m => ({ severidade: 'erro', local: 'planilha', mensagem: m })) };
 }
 
 /** Gera e baixa a planilha .xlsx da atividade. */

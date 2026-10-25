@@ -1,3 +1,6 @@
 # Cópias de segurança locais (o histórico do Git já guarda as versões anteriores)
 *_SUBSTITUIDO_*
 node_modules/
+
+firebase-debug*.log
+node_modules/

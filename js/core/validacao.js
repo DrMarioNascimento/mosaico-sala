@@ -30,6 +30,10 @@ export function validarAtividade(a) {
     if (!Array.isArray(a[lista])) d.push(erro(lista, `${lista} deve ser uma lista.`));
   if (d.some(x => x.severidade === 'erro')) return d;
 
+  if(typeof a.titulo!=='string'||!a.titulo.trim()) d.push(erro('titulo','Informe um título para a atividade.'));
+  if(!a.etapas.length) d.push(erro('etapas','Inclua ao menos uma etapa para preparar a aula.'));
+  if(!a.grupos.length) d.push(erro('grupos','Inclua pelo menos um grupo para organizar a sala, mesmo com respostas individuais.'));
+
   // IDs únicos e bem formados por coleção
   const mapas = {};
   for (const lista of ['fontes', 'grupos', 'etapas', 'pecas', 'conexoes']) {

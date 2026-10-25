@@ -9,7 +9,11 @@
       "tests/**",
       "package.json",
       "README.md",
-      "**/*_SUBSTITUIDO_*"
+      "**/*_SUBSTITUIDO_*",
+      "firebase-debug*.log",
+      "**/*.test.mjs",
+      "ERGONOMIA-DOCENTE.md",
+      "AUDITORIA-FIREBASE-2026-10-25.json"
     ],
     "headers": [
       {
@@ -26,5 +30,11 @@
   },
   "firestore": {
     "rules": "firestore.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "singleProjectMode": true
   }
 }

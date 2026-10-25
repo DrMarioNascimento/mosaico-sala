@@ -129,7 +129,7 @@ function progresso() {
 
 function atualizarRelogio() {
   const r = document.getElementById('relogio');
-  if (r && sala?.fase === 'etapa') r.textContent = contagemRegressiva(sala.etapaInfo?.inicio, sala.etapaInfo?.tempoMin);
+  if (r && sala?.fase === 'etapa') r.textContent = contagemRegressiva(sala.etapaInfo?.inicio, sala.etapaInfo?.tempoMin, sala.etapaInfo?.pausadoEm);
   const q = document.getElementById('relogioQuiz'), j = sala?.jogo;
   if (q && q.dataset.ate) { const s = Math.max(0, Math.ceil((Number(q.dataset.ate) - Date.now()) / 1000)); q.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; q.classList.toggle('acabando', s <= 10); }
   else if (q && j?.inicio) { const s = Math.max(0, Math.ceil((j.inicio + j.segundos * 1000 - Date.now()) / 1000)); q.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; q.classList.toggle('acabando', s <= 10); }

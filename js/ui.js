@@ -74,7 +74,7 @@ export function chipGrupo(g, id, nome, tam = 26) {
 
 export function aviso(alvo, texto, tipo = 'info') {
   alvo.textContent = texto || '';
-  alvo.dataset.tipo = tipo;
+  alvo.dataset.tipo = tipo; alvo.setAttribute('role',tipo==='erro'?'alert':'status'); alvo.setAttribute('aria-live',tipo==='erro'?'assertive':'polite');
   alvo.hidden = !texto;
 }
 
@@ -94,11 +94,11 @@ export function explicar(chave, titulo, texto) {
   try { sessionStorage.setItem('mosaico-explicado:' + chave, '1'); } catch {}
 }
 
-export function contagemRegressiva(inicioMs, minutos) {
+export function contagemRegressiva(inicioMs, minutos, pausadoEm = null) {
   if (!inicioMs || !minutos) return '';
-  const resta = Math.round((inicioMs + minutos * 60e3 - Date.now()) / 1000);
+  const resta = Math.round((inicioMs + minutos * 60e3 - (pausadoEm || Date.now())) / 1000);
   if (resta <= 0) return 'Tempo sugerido esgotado';
-  return `${Math.floor(resta / 60)}:${String(resta % 60).padStart(2, '0')}`;
+  return `${Math.floor(resta / 60)}:${String(resta % 60).padStart(2, '0')}` + (pausadoEm ? ' · pausado' : '');
 }
 
 export function escalaVisual(n) {
