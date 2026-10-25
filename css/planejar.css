@@ -214,3 +214,5 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
 .autoria-dialog .percurso-docente { margin:10px 0; }
 .autoria-passos .numero-fluxo { margin:0; }
 @media(max-width:900px) { .finalizar-grade { grid-template-columns:1fr; }.alternativa-fluxo { font-size:.65rem; right:12px; top:12px; } }
+
+.anexo-docente{margin:12px 0;padding:14px;border:1px solid var(--linha);border-radius:14px;display:grid;grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:16px;align-items:start}.anexo-docente img{display:block;max-width:100%;max-height:220px;object-fit:contain;border-radius:8px}.anexo-docente figcaption{overflow-wrap:anywhere}.anexo-docente p{margin:8px 0}@media(max-width:560px){.anexo-docente{grid-template-columns:1fr}.anexo-docente img{max-height:180px}}

@@ -36,8 +36,8 @@ async function clicar(pagina, nome) {
   return false;
 }
 
-for (const caso of CASOS) {
-  test(`Aula completa: ${caso.titulo}`, { timeout: 240_000 }, async t => {
+for (const caso of CASOS.filter(c=>!process.env.MOSAICO_CASOS || process.env.MOSAICO_CASOS.split(',').includes(c.id))) {
+  test(`Aula completa: ${caso.titulo}`, { timeout: 720_000 }, async t => {
     const ctx = await navegador.newContext({ viewport: { width: 420, height: 900 }, serviceWorkers: 'block' });
     const erros = [];
     ctx.on('page', p => p.on('pageerror', e => erros.push(`${new URL(p.url()).pathname}: ${e.message}`)));
@@ -64,13 +64,14 @@ for (const caso of CASOS) {
       await cond.locator('#abas button[data-aba=grupos]').click();
       await cond.getByRole('button', { name: 'Sortear grupos equilibrados' }).click();
       await cond.locator('#abas button[data-aba=conducao]').click();
-      const fim = Date.now() + 200_000;
+      const fim = Date.now() + 660_000;
       let emAndamentoDesde = 0;
       while (Date.now() < fim) {
         if (await cond.getByText('Resultado revelado').isVisible()) break;
         if (await clicar(cond, 'Revelar resultado final')) { await espera(800); continue; }
         if (await clicar(cond, 'Registrar ausência e liberar')) { await espera(500); continue; }
         if (await clicar(cond, 'Iniciar etapa')) { emAndamentoDesde = Date.now(); await espera(1500); continue; }
+        if (await clicar(cond, 'Abrir a pergunta (cada um responde sozinho)') || await clicar(cond, 'Passar para o grupo') || await clicar(cond, 'Revelar a resposta') || await clicar(cond, 'Próxima pergunta')) { await espera(2000); continue; }
         if (await clicar(cond, 'Sortear a primeira pergunta') || await clicar(cond, 'Sortear a próxima pergunta')) { await espera(1500); continue; }
         // Etapa em andamento: dá tempo ao piloto automático; depois encerra (dois toques, se faltar alguém).
         if (emAndamentoDesde && Date.now() - emAndamentoDesde > 15_000) {

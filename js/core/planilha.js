@@ -63,7 +63,7 @@ export const ABAS = {
   Docente: ['campo', 'parte', 'valor']
 };
 /** Aba oculta com as imagens da montagem, em texto (cada célula até 30.000 caracteres). */
-export const ABA_IMAGENS = ['etapa', 'parte', 'largura', 'altura', 'dados'];
+export const ABA_IMAGENS = ['etapa', 'parte', 'largura', 'altura', 'dados', 'nome'];
 const PEDACO = 30000;
 
 const LISTAS = ['objetivos', 'pendencias', 'guia', 'pontos_de_discussao', 'meta_etapas'];
@@ -195,10 +195,10 @@ export function atividadeParaAbas(a) {
   for (const e of a.etapas) {
     const img = (e.typeId === 'montagem_pecas' || e.typeId === 'analise_imagem') && (e.config?.imagem || (e.config?.modelo?.dados ? { dados: e.config.modelo.dados } : null));
     if (!img?.dados) continue;
-    for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO) });
+    for (let i = 0, parte = 1; i < img.dados.length; i += PEDACO, parte++) imagens.push({ etapa: e.id, parte, largura: img.largura || '', altura: img.altura || '', dados: img.dados.slice(i, i + PEDACO), nome: img.nome || '' });
   }
   const docente = [];
-  const privado = Object.fromEntries(['materialBase','roteiro'].filter(k=>a.docente?.[k]!==undefined).map(k=>[k,a.docente[k]]));
+  const privado = Object.fromEntries(['materialBase','roteiro','arquivoMaterial'].filter(k=>a.docente?.[k]!==undefined).map(k=>[k,a.docente[k]]));
   if(Object.keys(privado).length) {
     const texto=JSON.stringify(privado);
     for(let i=0,parte=1;i<texto.length;parte++) {
@@ -237,7 +237,7 @@ export function abasParaAtividade(abas) {
     return { id: pid, enunciado: txt(q.enunciado), alternativas };
   });
   const nao = v => /^(nao|não|n|false|0)$/i.test(txt(v));
-  const imagemDe = id => { const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte)); return partes.length ? { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) } : null; };
+  const imagemDe = id => { const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte)); return partes.length ? { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura), ...(txt(partes[0].nome)?{nome:txt(partes[0].nome)}:{}) } : null; };
   const opcoesL = tab.opcoes || [];
   const respostas = {};
   const etapas = etapasL.map((l, i) => {
@@ -258,7 +258,7 @@ export function abasParaAtividade(abas) {
       if (config.modo === 'texto') config.texto = txt(l.montagem_texto);
       else {
         const partes = (tab.imagens || []).filter(x => txt(x.etapa) === id).sort((x, y) => num(x.parte) - num(y.parte));
-        if (partes.length) config.imagem = { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura) };
+        if (partes.length) config.imagem = { dados: partes.map(x => txt(x.dados)).join(''), largura: num(partes[0].largura), altura: num(partes[0].altura), ...(txt(partes[0].nome)?{nome:txt(partes[0].nome)}:{}) };
         config.corte = { tipo: txt(l.montagem_corte) || 'colunas', n: num(l.montagem_pecas) ?? 4, ...(num(l.montagem_colunas) ? { colunas: num(l.montagem_colunas) } : {}) };
       }
       config.quantidade = txt(l.montagem_quantidade) || 'fixa';
@@ -446,6 +446,7 @@ export function abasParaAtividade(abas) {
       if(!dado||typeof dado!=='object'||Array.isArray(dado)||Object.keys(dado).some(k=>!['materialBase','roteiro'].includes(k)))throw new Error('formato desconhecido');
       if(dado.materialBase!==undefined&&typeof dado.materialBase!=='string')throw new Error('material-base inválido');
       if(dado.roteiro!==undefined&&(!dado.roteiro||typeof dado.roteiro!=='object'||Array.isArray(dado.roteiro)||Object.values(dado.roteiro).some(v=>typeof v!=='string')))throw new Error('roteiro inválido');
+      if(dado.arquivoMaterial!==undefined&&dado.arquivoMaterial!==null&&(typeof dado.arquivoMaterial.nome!=='string'||!Number.isFinite(dado.arquivoMaterial.tamanho)))throw new Error('arquivo do material inválido');
       complementoDocente=dado;
     }catch(e){problemas.push('Complemento docente não recuperado: '+e.message+'. Confira o arquivo original antes de continuar.');}
   }

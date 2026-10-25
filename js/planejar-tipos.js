@@ -1,3 +1,4 @@
+import { painelImagem } from './midia-docente.js';
 /* MOSAICO · Editores do Planejamento para os tipos novos (junto com planejar.js)
    Pares · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem
    Como nos outros tipos, a resposta certa vai para docente.respostas (só quem conduz vê). */
@@ -282,7 +283,7 @@ export function criarEditores(ctx) {
           seletor('Tarefa', c.tarefa, tarefas, v => trocarTarefa(v), { redesenhar: true })),
         c.midia === 'modelo3d'
           ? h('div', {}, campo('Endereço do modelo (.glb)', c.modelo?.url || '', v => { c.modelo = { url: v.trim() }; }, { ajuda: 'Ex.: https://drmarionascimento.github.io/lab-ra/modelos/celula.glb. Ou envie um .glb pequeno:' }), campoArquivo(arquivo), c.modelo?.dados && h('p', { class: 'sutil' }, `Modelo enviado (${Math.round(c.modelo.dados.length / 1024)} KB).`))
-          : h('div', {}, h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), campoArquivo(arquivo)),
+          : h('div', {}, painelImagem(c.imagem,()=>mudar(()=>{delete c.imagem; delete r.posicoes;})), h('label', {}, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (é reduzida e comprimida automaticamente)'), campoArquivo(arquivo)),
         campo('O que fazer com a imagem', c.enunciado || '', v => { c.enunciado = v; }, { area: true, linhas: 2, max: 500 }),
         ajudaOrg(e, c.tarefa === 'observar' ? 'o grupo observa junto e o líder escreve; o texto vai para o telão.' : 'o grupo trabalha junto.', 'os representantes marcam num quadro só.')),
       c.tarefa === 'marcar' && marcadores(e),

@@ -146,7 +146,7 @@ export function gerarImpressao(a) {
   const individuais = ordem(a).filter(e => e.typeId === 'questao_individual');
   if (individuais.length) partes.push(`<section class="folha"><p class="cab">Individual · uma folha por participante</p><h2>Questões individuais</h2>
     <p>Nome: ______________________________</p>
-    ${individuais.map((e, i) => `<div class="questao"><h3>${i + 1}. ${esc(e.config.enunciado)}</h3>
+    ${individuais.map((e, i) => `<div class="questao"><h3>${i + 1}. ${esc(e.titulo)}: ${esc(e.config.enunciado)}</h3>
       <ul class="caixas">${e.config.alternativas.map(al => `<li>☐ ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</section>`);
 
   // Material de quem conduz (separado)
@@ -167,6 +167,7 @@ export function gerarImpressao(a) {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(a.titulo)} · impressão</title>
 <style>
+ img{max-width:100%;max-height:18cm;object-fit:contain}
  body{font:12pt/1.45 Georgia,serif;color:#111;margin:0;background:#eee}
  .folha{background:#fff;max-width:19cm;margin:1cm auto;padding:1.5cm;box-shadow:0 1px 4px rgba(0,0,0,.2);page-break-after:always}
  h1{font:800 22pt Arial,sans-serif;margin:.2em 0}h2{font:800 16pt Arial,sans-serif;margin:.2em 0 .4em}h3{font:700 12pt Arial,sans-serif;margin:1em 0 .4em}

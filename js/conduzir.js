@@ -79,11 +79,12 @@ async function iniciarPrevia() {
   await abrirSala();
   mostrarAba('sala');
   const alvo = new URLSearchParams(location.search).get('etapa');
-  if (alvo && etapa(alvo)) irDiretoParaEtapa(alvo);
+  if (E.codigo) irDiretoParaEtapa(alvo && etapa(alvo) ? alvo : etapasOrdenadas(A())[0]?.id).catch(falha);
 }
 
 /** “Ver esta etapa”: espera a turma simulada entrar, sorteia os grupos e começa a etapa pedida. */
 async function irDiretoParaEtapa(etapaId) {
+  if (!etapaId) return;
   const espera = ms => new Promise(r => setTimeout(r, ms));
   let antes = -1;
   for (let i = 0; i < 60; i++) {   // até a quantidade de participantes parar de crescer
@@ -190,6 +191,7 @@ function ajustar(fn) {
 }
 
 function falha(e) {
+  if(PREVIA&&window.parent!==window)window.parent.postMessage({tipo:'mosaico-previa-erro',mensagem:e?.message||'Confira a revisão da atividade.'},location.origin);
   console.error(e);
   const negado = e?.code === 'permission-denied' || /permission/i.test(e?.message || '');
   avisoGeral(negado ? 'O servidor recusou a operação. Confira se sua conta está na lista de quem conduz e se as regras do Firestore foram publicadas.' : 'Falha de conexão: ' + (e?.message || e), 'erro');

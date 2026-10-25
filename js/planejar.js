@@ -1,3 +1,4 @@
+import { painelImagem } from './midia-docente.js';
 import { cadeadoIcone } from './lock-icons.js';
 import { criarHistorico, recortarPrevia } from './core/ergonomia.js';
 import { abrirAutoria } from './autoria-docente.js';
@@ -30,7 +31,7 @@ const RASCUNHO_BASE = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '')
 let RASCUNHO = RASCUNHO_BASE, RASCUNHOS = '', historico = null, salvoEm = null, falhaRascunho = false, rascunhoId = null;
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
 const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
-const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Montagem em peças', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
+const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Quebra-cabeça: texto ou imagem', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
   editorPerguntas: (e, o) => editorPerguntas(e, o), avisoGeral: (t, k) => avisoGeral(t, k), comprimirImagem: f => comprimirImagem(f), A: () => P.A });
@@ -211,7 +212,7 @@ function renderAcoes() {
     h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
     h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
     h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, numeroPasso(P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags)?8:5),P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
-    h('button', { class:'btn', disabled:temErros(diags), title:temErros(diags)?'Complete os itens da Revisão para ensaiar a aula inteira':'Experimentar a aula com turma simulada', onclick:()=>previa() },numeroPasso(6), 'Ver como fica'),
+    h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Experimentar a aula com turma simulada', onclick:()=>previa() },numeroPasso(6), 'Ver como fica'),
     
     h('details',{class:'acoes-mais'},h('summary',{class:'btn'},'Guardar e exportar'),
       h('div',{class:'acoes-menu'},
@@ -432,7 +433,7 @@ function painelFinalizarAtividade(erros) {
  const revisada=!!P.A.docente?.revisadoEm,liberada=!erros.length;
  const cartao=(n,t,descricao,botao)=>h('article',{class:'finalizar-passo'},h('h3',{},numeroPasso(n),t),h('p',{},descricao),botao);
  return h('section',{class:'cartao finalizar-atividade','aria-label':'Concluir a preparação da atividade'},h('h2',{},'Depois da revisão, conclua nesta ordem'),h('div',{class:'finalizar-grade'},
-  cartao(6,'Experimente a atividade','Abra a simulação e confira o que professor e alunos verão. Depois volte a esta aba.',h('button',{class:'btn',disabled:!liberada,onclick:()=>previa()},numeroPasso(6),'Ver como fica')),
+  cartao(6,'Experimente a atividade',liberada?'Abra a simulação e confira o que professor e alunos verão. Depois volte a esta aba.':'Complete os itens de estrutura acima para simular.',h('button',{class:'btn',onclick:()=>previa()},numeroPasso(6),'Ver como fica')),
   cartao(7,'Salve sua atividade',temBiblioteca()?'Guarde na biblioteca para recuperar em outro aparelho.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
   cartao(8,'Leve para a sala',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A atividade está pronta para abrir a sala e receber os alunos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},numeroPasso(8),'Abrir sala e conduzir'))));
 }
@@ -463,9 +464,13 @@ function baixarJSON(a) {
 
 // ============================================================ pré-visualização
 function previa(etapaId) {
+  const copia=typeof etapaId==='string'?recortarPrevia(P.A,etapaId):P.A;
+  const erros=validarAtividade(copia).filter(x=>x.severidade==='erro');
+  if(erros.length){irPara('revisao');avisoGeral('Faltam '+erros.length+' itens para simular. Complete os itens indicados na revisão.','alerta');return;}
   try { localStorage.setItem('mosaico-previa', JSON.stringify(typeof etapaId==='string' ? recortarPrevia(P.A,etapaId) : P.A)); } catch { return avisoGeral('O navegador não permitiu guardar a prévia.', 'erro'); }
   const url = new URL('previa.html', location.href); url.search = '?ensaio=1' + (typeof etapaId === 'string' ? '&etapa=' + encodeURIComponent(etapaId) : '');
-  window.open(url.href, '_blank');
+  const janela=window.open(url.href, '_blank');
+  if(!janela) avisoGeral('O navegador bloqueou a simulação. ', 'alerta'), $('avisoGeral').append(h('a',{href:url.href,class:'btn'},'Abrir simulação nesta aba'));
 }
 
 /** Leva a atividade aberta direto para a Condução (sem escolher de novo lá). */
@@ -606,6 +611,7 @@ function editorEtapa(e) {
           h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(recortarPrevia(a,e.id))), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
           h('button', { class: 'btn', title: 'Duplicar etapa', onclick: () => duplicarEtapa(e) }, '⧉'),
           h('button', { class: 'btn perigo', 'aria-label': 'Remover etapa', onclick: () => removerEtapa(e) }, '✕'))),
+      h('p',{class:'aviso'},'Tipo desta etapa: '+(TIPOS[e.typeId]?.nome || e.typeId)+'. O título é livre; para mudar o jogo, use Tipo abaixo.'),
       campo('Título', e.titulo, v => { e.titulo = v; }, { max: 120 }),
       h('div', { class: 'campos-3' },
         seletor('Tipo', e.typeId, Object.values(TIPOS).map(x => [x.typeId, x.nome]), v => trocarTipo(e, v), { redesenhar: true }),
@@ -779,9 +785,11 @@ function blocoMontagem(e) {
   };
   setTimeout(atualizar, 0);
   return h('div', {},
-    h('div', { class: 'cartao' }, h('h3', {}, 'O que vira peças'),
+    h('div', { class: 'cartao' }, h('h3', {}, 'Quebra-cabeça: o que vira peças'),
+      h('p',{},'Escolha Texto ou Imagem. Cada celular recebe uma peça; o grupo aproxima os aparelhos para reconstruir o todo. Para arrastar cartões na tela, escolha Cartões de arrastar.'),
+      h('div',{class:'linha-botoes'},...['texto','imagem'].map(m=>h('button',{class:'btn '+(c.modo===m?'primario':''),'aria-pressed':String(c.modo===m),onclick:()=>mudar(()=>{c.modo=m;if(m==='imagem')c.corte||={tipo:'grade',n:6,colunas:3};})},m==='imagem'?'Quebra-cabeça de imagem':'Montar texto ou conta'))),
       h('div', { class: 'campos-2' },
-        seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; }, { redesenhar: true }),
+        seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; if(v==='imagem')c.corte||={tipo:'grade',n:6,colunas:3}; }, { redesenhar: true }),
         seletor('Quantidade de peças', c.quantidade || 'fixa', [['fixa', 'As que eu definir'], ['celulares', 'Uma por celular presente']], v => { c.quantidade = v; }, { redesenhar: true })),
       c.modo === 'texto' ? h('div', {},
         h('label', { for: 'mtTexto' }, 'Texto (marque os cortes com | ou com − entre espaços; use hífen "-" para subtração dentro de uma peça)'), areaTexto,
@@ -791,6 +799,7 @@ function blocoMontagem(e) {
           h('button', { class: 'btn pequeno discreto', onclick: () => aplicarCorte('limpar') }, 'Tirar todos os cortes')),
         c.quantidade === 'celulares' && h('p', { class: 'sutil' }, 'Com "uma por celular", os trechos marcados são agrupados em tantas peças quantos forem os celulares, sempre na ordem.'))
       : h('div', {},
+        painelImagem(c.imagem,()=>mudar(()=>{delete c.imagem;})),
         h('label', { for: 'mtImg' }, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (ela é reduzida e comprimida automaticamente)'), campoArquivo(arquivo),
         h('div', { class: 'campos-3' },
           seletor('Como cortar', c.corte?.tipo || 'colunas', [['colunas', 'Faixas lado a lado'], ['linhas', 'Faixas empilhadas'], ['grade', 'Grade']], v => { c.corte = { ...(c.corte || {}), tipo: v }; }, { redesenhar: true }),

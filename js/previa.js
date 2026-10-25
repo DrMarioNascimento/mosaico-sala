@@ -5,17 +5,12 @@ import { link, EM_ENSAIO } from './backend.js';
 
 if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio', '1'); location.replace(u.href); }
 const $ = id => document.getElementById(id);
-let codigo = null;
+let codigo = null, esperaSala = null;
 const ETAPA = new URLSearchParams(location.search).get('etapa');   // “Ver esta etapa”: a condução já começa nela
 
-function limparEnsaio() {
-  // começa limpo: apaga salas de ensaio antigas deste navegador
-  for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('mosaico-ensaio:rooms/')) localStorage.removeItem(k); }
-  Object.keys(sessionStorage).filter(k => k.startsWith('mosaico-participante') || k.startsWith('mosaico-ensaio')).forEach(k => sessionStorage.removeItem(k));
-}
 
 function iniciar() {
-  limparEnsaio(); codigo = null;
+  codigo = null;
   $('telao').innerHTML = ''; $('turma').innerHTML = '<p class="sutil">Os participantes aparecem assim que a sala abrir.</p>';
   $('conducao').src = link('conduzir.html', { previa: '1', t: Date.now(), ...(ETAPA ? { etapa: ETAPA } : {}) });
   $('info').textContent = 'Abrindo a sala de ensaio…';
@@ -25,7 +20,10 @@ function ajustarTelao() { const f = $('telao').querySelector('iframe'); if (f) f
 addEventListener('resize', ajustarTelao);
 
 addEventListener('message', async e => {
-  if (e.origin !== location.origin || e.data?.tipo !== 'mosaico-previa-sala' || codigo) return;
+  if(e.origin!==location.origin || e.source!==$('conducao').contentWindow) return;
+  if(e.data?.tipo==='mosaico-previa-erro'){clearTimeout(esperaSala);$('info').textContent='Não foi possível abrir o ensaio: '+e.data.mensagem;return;}
+  if(e.data?.tipo!=='mosaico-previa-sala'||codigo)return;
+  clearTimeout(esperaSala);
   codigo = e.data.codigo;
   const t = document.createElement('iframe'); t.src = link('telao.html', { sala: codigo }); t.title = 'Telão';
   $('telao').replaceChildren(t); ajustarTelao();
@@ -40,7 +38,7 @@ addEventListener('message', async e => {
   }
   $('info').textContent = ETAPA
     ? `Sala ${codigo} com ${n} participantes simulados. Os grupos são sorteados e a etapa começa sozinha.`
-    : `Sala ${codigo} com ${n} participantes simulados. No celular da esquerda: Grupos → Sortear, depois Condução → Iniciar etapa.`;
+    : `Sala ${codigo} com ${n} participantes simulados. A primeira etapa começa automaticamente. Use Condução no painel do professor para encerrar a etapa e avançar.`;
 });
 
 $('auto').onchange = e => { for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} } };
