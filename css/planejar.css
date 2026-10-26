@@ -267,3 +267,12 @@ html{scroll-padding-top:var(--topo-docente,160px)} .plan-migalhas button,.plan-n
   #modelosProntos .lista-bib li .mini { justify-content: flex-end; }
   #modelosProntos .lista-bib li .mini .btn { flex: 0 0 auto; padding: 0 22px; }
 }
+
+/* ---------- Aviso de etapas parecidas muito perto ---------- */
+.plan-nav .selo.alerta { background: #3b2f0a; color: var(--alerta); }
+.aviso-semelhanca { border-color: var(--alerta); }
+.aviso-semelhanca h3 { margin-top: 0; }
+.item-semelhanca + .item-semelhanca { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linha); }
+.item-semelhanca .linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.item-semelhanca .btn { white-space: normal; text-align: left; min-height: 44px; }
+.aviso-semelhanca p { text-align: left; hyphens: auto; }

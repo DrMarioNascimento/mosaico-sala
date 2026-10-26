@@ -11,7 +11,7 @@ import { painelRevisaoDocente } from './revisao-docente.js';
 import { backend, EM_ENSAIO, link } from './backend.js';
 import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
 import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js';
-import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
+import { sugerirEquilibrio, avisoGramatica, alertasSemelhanca } from './core/equilibrio.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
@@ -128,7 +128,34 @@ let tempo = null;
 /** Mudança de texto: guarda sem redesenhar (não perde o foco); atualiza navegação/revisão logo depois. */
 function tocar() { P.sujo = true; if(P.A.docente) { delete P.A.docente.revisadoEm; if(P.secao.startsWith('etapa:')) delete P.A.docente.revisoes?.[P.secao.slice(6)]; else delete P.A.docente.revisoes; } salvarRascunho(); clearTimeout(tempo); tempo = setTimeout(() => { historico?.registrar(P.A); renderNav(); renderAcoes(); atualizarRevEtapa(); }, 350); }
 /** Mudança de estrutura: guarda e redesenha. */
-function mudar(fn) { clearTimeout(tempo); historico?.registrar(P.A); const antes=JSON.stringify(P.A); fn(P.A); if(JSON.stringify(P.A)!==antes) { P.sujo = true; if(P.A.docente) { delete P.A.docente.revisadoEm; if(P.secao.startsWith('etapa:')) delete P.A.docente.revisoes?.[P.secao.slice(6)]; else delete P.A.docente.revisoes; } historico?.registrar(P.A); salvarRascunho(); } render(); }
+function mudar(fn) { clearTimeout(tempo); historico?.registrar(P.A); const antes=JSON.stringify(P.A); const parecidasAntes = new Set(semelhancasAtivas().map(x => x.id)); fn(P.A); avisarSemelhancaNova(parecidasAntes); if(JSON.stringify(P.A)!==antes) { P.sujo = true; if(P.A.docente) { delete P.A.docente.revisadoEm; if(P.secao.startsWith('etapa:')) delete P.A.docente.revisoes?.[P.secao.slice(6)]; else delete P.A.docente.revisoes; } historico?.registrar(P.A); salvarRascunho(); } render(); }
+
+/** Etapas muito parecidas e próximas que o professor ainda não dispensou. */
+function semelhancasAtivas() { try { return P.A ? alertasSemelhanca(P.A).filter(x => !P.dispensadas.has(x.id)) : []; } catch { return []; } }
+/** Ao montar ou reordenar a sequência, avisa na hora se dois formatos muito parecidos ficaram juntos. */
+function avisarSemelhancaNova(antes) {
+  if (P.semAvisoSemelhanca) { P.semAvisoSemelhanca = false; return; }
+  const nova = semelhancasAtivas().find(x => !antes.has(x.id));
+  if (nova) avisoGeral('Atenção à sequência: ' + nova.mensagem, 'alerta');
+}
+/** Troca de lugar duas etapas (a sugestão do aviso de semelhança). */
+function trocarOrdem(idA, idB) {
+  mudar(a => { const x = a.etapas.find(e => e.id === idA), y = a.etapas.find(e => e.id === idB); if (!x || !y) return; const o = x.ordem; x.ordem = y.ordem; y.ordem = o; });
+  avisoGeral('Ordem trocada. Se preferir como estava, use Desfazer.', 'ok');
+}
+function avisosSemelhancaEtapa(e) {
+  const lista = semelhancasAtivas().filter(x => x.etapas.includes(e.id));
+  if (!lista.length) return null;
+  const nome = id => P.A.etapas.find(x => x.id === id)?.titulo || '(sem título)';
+  return h('div', { class: 'cartao aviso-semelhanca', role: 'status' },
+    h('h3', {}, 'Etapas parecidas muito perto'),
+    lista.map(x => h('div', { class: 'item-semelhanca' },
+      h('p', { class: 'aviso', 'data-tipo': 'alerta' }, x.mensagem),
+      h('div', { class: 'linha-botoes' },
+        x.troca && h('button', { class: 'btn pequeno primario', onclick: () => trocarOrdem(x.troca.etapa, x.troca.com) }, `Trocar “${nome(x.troca.etapa)}” com “${nome(x.troca.com)}”`),
+        h('button', { class: 'btn pequeno discreto', onclick: () => { P.dispensadas.add(x.id); render(); } }, 'Manter assim')))),
+    h('p', { class: 'sutil' }, 'Formatos iguais em sequência cansam a turma e baixam o ritmo da aula. É só um aviso: a decisão é sua.'));
+}
 
 const slug = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'atividade';
 function novoId(prefixo, usados) { let i = 1; while (usados.has(`${prefixo}${i}`)) i++; return `${prefixo}${i}`; }
@@ -250,12 +277,13 @@ function renderNav() {
   const diags = validarAtividade(P.A), nErros = diags.filter(d => d.severidade === 'erro').length;
   const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => irPara(secao), ...extra }, conteudo);
   const errosEtapa = new Map(P.A.etapas.map(e => [e.id, diagsDaEtapa(e, diags).filter(d => d.severidade === 'erro').length]));
+  const parecidas = new Set(semelhancasAtivas().flatMap(x => x.etapas));
   renderPassos3(nErros, [...errosEtapa.values()].reduce((x, y) => x + y, 0));
   limpar(nav,
     item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
     item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n)], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId }); }),
+    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n), parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima', 'aria-hidden': 'true' }, '≈')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId }); }),
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
@@ -714,6 +742,7 @@ function editorEtapa(e) {
         seletor('Quem envia', e.participacao.envio, t.participacao.envio.map(c => [c, ROT_PART[c] || c]), v => { e.participacao.envio = v; })),
       campo('Instrução para os participantes', e.instrucao, v => { e.instrucao = v; }, { area: true, linhas: 2 }),
       campo('Roteiro do professor nesta etapa (opcional)', a.docente.roteiro?.[e.id] || '', v => { a.docente.roteiro = {...a.docente.roteiro,[e.id]:v}; }, {area:true,linhas:2,ajuda:'Orientação privada para você consultar durante a condução.'})),
+    avisosSemelhancaEtapa(e),
     e.typeId === 'investigacao_fragmentos' && blocoInvestigacao(e),
     e.typeId === 'comparar_hipoteses' && blocoComparacao(e),
     e.typeId === 'questao_individual' && blocoQuestao(e),
@@ -765,6 +794,7 @@ function removerEtapa(e) {
   });
 }
 function duplicarEtapa(e) {
+  P.semAvisoSemelhanca = true;
   mudar(a => {
     const id = novoId('e', idsDe(a.etapas));
     etapasOrdenadas(a).filter(x => x.ordem > e.ordem).forEach(x => { x.ordem++; });
