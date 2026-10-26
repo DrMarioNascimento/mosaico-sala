@@ -276,3 +276,32 @@ html{scroll-padding-top:var(--topo-docente,160px)} .plan-migalhas button,.plan-n
 .item-semelhanca .linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
 .item-semelhanca .btn { white-space: normal; text-align: left; min-height: 44px; }
 .aviso-semelhanca p { text-align: left; hyphens: auto; }
+
+/* ---------- Arrastar etapas na lista para mudar a ordem ---------- */
+.plan-nav .etapa-nav { display: flex; align-items: center; gap: 2px; min-width: 0; border-radius: 12px; }
+.plan-nav .etapa-nav > button { flex: 1; min-width: 0; }
+.plan-nav .pega { flex: none; display: grid; place-items: center; width: 30px; min-height: 44px; margin-left: 4px; border-radius: 8px;
+  color: var(--texto-2); font-size: 1.05rem; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.plan-nav .pega:hover { background: var(--fundo-2); color: var(--texto); }
+.plan-nav .etapa-nav.arrastando { position: relative; z-index: 4; background: var(--cartao-2, #26324f); box-shadow: 0 10px 24px #0008; outline: 2px solid var(--acento); }
+.plan-nav .etapa-nav.arrastando .pega { cursor: grabbing; color: var(--acento); }
+.plan-nav.reordenando { user-select: none; -webkit-user-select: none; }
+.plan-nav.reordenando .etapa-nav:not(.arrastando) { transition: transform .12s; }
+.plan-nav .etapa-nav > button.sub { padding-left: 8px; }
+@media (max-width: 860px) {
+  .plan-nav .etapa-nav { flex: none; }
+  .plan-nav .etapa-nav > button { flex: none; }
+  .plan-nav .pega { width: 34px; margin-left: 0; }
+}
+.ordem-dialog { max-height: 90dvh; overflow: auto; }
+.lista-ordem { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 6px; }
+.lista-ordem .etapa-nav { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; background: var(--fundo-2); border: 1px solid var(--linha); border-radius: 12px; min-width: 0; }
+.lista-ordem .pega { flex: none; display: grid; place-items: center; width: 40px; min-height: 48px; border-radius: 8px; color: var(--texto-2); font-size: 1.2rem; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.lista-ordem .num { font-family: var(--fonte-titulo); font-weight: 800; color: var(--acento); min-width: 1.4em; }
+.lista-ordem .rot { flex: 1; min-width: 0; font-weight: 700; line-height: 1.25; }
+.lista-ordem .rot small { display: block; font-weight: 400; color: var(--texto-2); }
+.lista-ordem .selo.alerta { flex: none; font-size: .72rem; font-weight: 800; border-radius: 999px; padding: 1px 8px; background: #3b2f0a; color: var(--alerta); }
+.lista-ordem .etapa-nav.arrastando { position: relative; z-index: 4; box-shadow: 0 10px 24px #0008; outline: 2px solid var(--acento); }
+.lista-ordem .etapa-nav.arrastando .pega { color: var(--acento); cursor: grabbing; }
+.lista-ordem.reordenando { user-select: none; -webkit-user-select: none; }
+.ordem-dialog p { text-align: left; }

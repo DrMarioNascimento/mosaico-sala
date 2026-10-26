@@ -12,6 +12,7 @@ import { backend, EM_ENSAIO, link } from './backend.js';
 import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
 import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica, alertasSemelhanca } from './core/equilibrio.js';
+import { ligarReordenacao } from './ordenar-etapas.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
@@ -137,6 +138,48 @@ function avisarSemelhancaNova(antes) {
   if (P.semAvisoSemelhanca) { P.semAvisoSemelhanca = false; return; }
   const nova = semelhancasAtivas().find(x => !antes.has(x.id));
   if (nova) avisoGeral('Atenção à sequência: ' + nova.mensagem, 'alerta');
+}
+/** Nova ordem vinda do arraste na lista de etapas. Recusa se uma etapa ficar antes da que a alimenta. */
+function reordenarEtapas(ids) {
+  const erro = aplicarOrdem(ids);
+  if (erro) { renderNav(); avisoGeral(erro, 'erro'); }
+}
+/** Aplica a nova ordem; devolve a explicação quando recusa (etapa antes da que a alimenta). */
+function aplicarOrdem(ids) {
+  const pos = new Map(ids.map((id, i) => [id, i]));
+  const quebra = (P.A.conexoes || []).find(c => pos.get(c.de?.etapaId) > pos.get(c.para?.etapaId));
+  if (quebra) {
+    const nome = id => `“${P.A.etapas.find(e => e.id === id)?.titulo || '(sem título)'}”`;
+    return `${nome(quebra.para.etapaId)} recebe o resultado de ${nome(quebra.de.etapaId)} e precisa vir depois dela. A ordem não foi alterada.`;
+  }
+  mudar(a => { for (const e of a.etapas) if (pos.has(e.id)) e.ordem = pos.get(e.id) + 1; });
+  return null;
+}
+/** Janela com a lista vertical das etapas para arrastar (prática no celular, onde a lista lateral vira faixa). */
+function dialogoOrdem() {
+  const lista = h('ul', { class: 'lista-ordem' }), nota = h('div', { 'aria-live': 'polite' });
+  const montar = () => {
+    const parecidas = new Set(semelhancasAtivas().flatMap(x => x.etapas));
+    limpar(lista, etapasOrdenadas(P.A).map((e, i) => h('li', { class: 'etapa-nav', 'data-id': e.id },
+      h('span', { class: 'pega', title: 'Arraste para mudar a ordem', 'aria-hidden': 'true' }, '⠿'),
+      h('span', { class: 'num' }, i + 1), ilustra(e.typeId, 26),
+      h('span', { class: 'rot' }, e.titulo || '(sem título)', h('small', {}, NOMES_TIPO[e.typeId] || e.typeId)),
+      parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima' }, '≈'))));
+    ligarReordenacao(lista, { item: '.etapa-nav', rolavel: () => lista.closest('dialog'), aoSoltar: (ids, movido) => {
+      const erro = aplicarOrdem(ids); montar();
+      const parecida = !erro && semelhancasAtivas().find(x => x.etapas.includes(movido));
+      limpar(nota, erro ? h('p', { class: 'aviso', 'data-tipo': 'erro' }, erro)
+        : parecida ? h('p', { class: 'aviso', 'data-tipo': 'alerta' }, parecida.mensagem)
+        : h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Ordem atualizada. Se preferir como estava, use Desfazer.'));
+    } });
+  };
+  montar();
+  const d = h('dialog', { class: 'explica ordem-dialog' },
+    h('h2', {}, 'Ordem das etapas'),
+    h('p', { class: 'sutil' }, 'Segure ⠿ e arraste a etapa para cima ou para baixo. Uma etapa que recebe o resultado de outra precisa continuar depois dela.'),
+    lista, nota,
+    h('button', { class: 'btn primario', onclick: () => { d.close(); d.remove(); } }, 'Pronto'));
+  document.body.append(d); d.showModal();
 }
 /** Troca de lugar duas etapas (a sugestão do aviso de semelhança). */
 function trocarOrdem(idA, idB) {
@@ -278,16 +321,18 @@ function renderNav() {
   const item = (secao, conteudo, extra = {}) => h('button', { 'aria-current': String(P.secao === secao), onclick: () => irPara(secao), ...extra }, conteudo);
   const errosEtapa = new Map(P.A.etapas.map(e => [e.id, diagsDaEtapa(e, diags).filter(d => d.severidade === 'erro').length]));
   const parecidas = new Set(semelhancasAtivas().flatMap(x => x.etapas));
+  const multi = P.A.etapas.length > 1;
   renderPassos3(nErros, [...errosEtapa.values()].reduce((x, y) => x + y, 0));
   limpar(nav,
     item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
     item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n), parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima', 'aria-hidden': 'true' }, '≈')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId }); }),
+    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return h('div', { class: 'etapa-nav', 'data-id': e.id }, multi && h('span', { class: 'pega', title: 'Arraste para mudar a ordem', 'aria-hidden': 'true' }, '⠿'), item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n), parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima', 'aria-hidden': 'true' }, '≈')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })); }),
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
     item('revisao', [ico('revisao'), h('span', { class: 'rot' }, 'Revisão'), h('span', { class: 'selo ' + (nErros ? 'erro' : 'ok') }, nErros ? nErros + ' a completar' : 'ok')]));
+  if (P.A.etapas.length > 1) ligarReordenacao(nav, { item: '.etapa-nav', aoSoltar: reordenarEtapas });
 }
 
 /** Os 3 passos do planejamento (Sobre a turma → Etapas → Revisar), com as pendências de cada um. */
@@ -728,6 +773,7 @@ function editorEtapa(e) {
         h('div', { class: 'mini' },
           h('button', { class: 'btn', disabled: pos === 0, 'aria-label': 'Mover para antes', onclick: () => mover(-1) }, '↑'),
           h('button', { class: 'btn', disabled: pos === seq.length - 1, 'aria-label': 'Mover para depois', onclick: () => mover(1) }, '↓'),
+          seq.length > 1 && h('button', { class: 'btn', title: 'Arrastar as etapas para mudar a ordem', onclick: dialogoOrdem }, '⇅ Ordem'),
           h('button', { class: 'btn', title: temErros(validarAtividade(a)) ? 'Corrija os erros (veja Revisão)' : 'Abrir a turma simulada já nesta etapa', disabled: temErros(validarAtividade(recortarPrevia(a,e.id))), onclick: () => previa(e.id) }, ico('previa'), 'Ver esta etapa'),
           h('button', { class: 'btn', title: 'Duplicar etapa', onclick: () => duplicarEtapa(e) }, '⧉'),
           h('button', { class: 'btn perigo', 'aria-label': 'Remover etapa', onclick: () => removerEtapa(e) }, '✕'))),
