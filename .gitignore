@@ -4,3 +4,6 @@ node_modules/
 
 firebase-debug*.log
 node_modules/
+
+# arquivos baixados pelos testes de ponta a ponta
+tests/.downloads/
