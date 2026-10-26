@@ -248,3 +248,22 @@ html{scroll-padding-top:var(--topo-docente,160px)} .plan-migalhas button,.plan-n
 .manual-atalho:hover { border-color: var(--acento-2); }
 .manual-atalho strong { display: block; font: 800 1.15rem var(--fonte-titulo); }
 .manual-atalho span { color: var(--texto-2); }
+
+/* ---------- Celular: cartões da biblioteca (título em cima, ações embaixo) ----------
+   Antes, a fileira de botões não encolhia e espremia o título até uma letra por linha,
+   empurrando a página para além da largura da tela. */
+.lista-bib li { min-width: 0; }
+@media (max-width: 640px) {
+  .lista-bib li { flex-wrap: wrap; align-items: flex-start; gap: 8px 10px; padding: 12px; }
+  .lista-bib li .tit { flex: 1 1 100%; }
+  .lista-bib li .tit strong { overflow-wrap: break-word; line-height: 1.25; }
+  .lista-bib li .tit small { display: block; margin-top: 2px; }
+  .lista-bib li > .etiqueta { align-self: center; }
+  .lista-bib li .mini { flex: 1 1 100%; display: flex; gap: 8px; }
+  .lista-bib li .mini .btn { min-height: 46px; justify-content: center; }
+  .lista-bib li .mini .btn:not(.discreto) { flex: 1 1 0; min-width: 0; }
+  .lista-bib li .mini .btn.discreto { flex: none; width: 48px; padding: 0; }
+  /* Modelos prontos: só um botão — fica à direita, sem roubar largura do texto */
+  #modelosProntos .lista-bib li .mini { justify-content: flex-end; }
+  #modelosProntos .lista-bib li .mini .btn { flex: 0 0 auto; padding: 0 22px; }
+}
