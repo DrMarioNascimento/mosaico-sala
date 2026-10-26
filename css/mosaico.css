@@ -224,7 +224,7 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 
 /* Montagem em peças: peça de quebra-cabeça em tela cheia no celular */
 .peca-qc { display: block; width: 100%; height: auto; max-height: 68vh; overflow: visible; filter: drop-shadow(0 8px 14px rgba(0,0,0,.35)); }
-.peca-qc-texto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: #1b1b1b; font-family: 'Archivo', system-ui, sans-serif; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; padding: 2px; }
+.peca-qc-texto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; color: #1b1b1b; font-family: 'Archivo', system-ui, sans-serif; font-weight: 800; line-height: 1.15; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; padding: 2px; }
 .pecas-carrossel { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 18px 6px 8px; }
 .pecas-carrossel > div { flex: 0 0 92%; scroll-snap-align: center; }
 .pecas-fila { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
@@ -351,8 +351,8 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 .direcao-botoes { display: flex; gap: 6px; }
 .direcao { width: 54px; height: 54px; border-radius: 12px; border: 2px solid var(--linha); background: var(--fundo-2); color: var(--texto); font: 900 1.4rem var(--fonte-titulo); }
 .direcao.ativo { border-color: var(--acento); background: #2a1d12; }
-.memoria { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 8px; margin: 10px 0; }
-.carta { aspect-ratio: 3 / 4; border-radius: 12px; border: 2px solid var(--linha); background: linear-gradient(135deg, #2b3a5c, #1b2439); color: var(--texto); font: 700 .9rem var(--fonte); padding: 4px; overflow-wrap: anywhere; display: grid; place-items: center; box-shadow: 0 4px 0 #0c111d; }
+.memoria { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 8px; margin: 10px 0; }   /* minmax(0): texto longo não alarga o tabuleiro além do cartão */
+.carta { min-width: 0; hyphens: auto; -webkit-hyphens: auto; aspect-ratio: 3 / 4; border-radius: 12px; border: 2px solid var(--linha); background: linear-gradient(135deg, #2b3a5c, #1b2439); color: var(--texto); font: 700 .9rem var(--fonte); padding: 4px; overflow-wrap: anywhere; display: grid; place-items: center; box-shadow: 0 4px 0 #0c111d; }
 .carta .verso { font-family: var(--fonte-titulo); font-weight: 900; opacity: .5; }
 .carta.aberta { background: linear-gradient(180deg, #fffaf0, #efe4cf); color: #1b1b1b; }
 .carta.achada { border-color: var(--cor, #3ddc84); box-shadow: 0 0 0 3px var(--cor, #3ddc84) inset; }

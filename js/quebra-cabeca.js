@@ -51,7 +51,9 @@ export function svgPeca(peca, { cor = '#ff8a3d' } = {}) {
     div.className = 'peca-qc-texto';
     div.textContent = peca.texto || '';
     const n = (peca.texto || '').length;
-    div.style.fontSize = (n <= 4 ? 24 : n <= 8 ? 17 : n <= 14 ? 12 : n <= 24 ? 9.5 : n <= 45 ? 7.5 : 6) + 'px';
+    // Pelo total de letras e também pela palavra mais longa (cabem ~85 px de letra por linha): "Ribossomos" não parte ao meio.
+    const maior = Math.max(1, ...(peca.texto || '').split(/\s+/).map(p => p.length));
+    div.style.fontSize = Math.min(n <= 4 ? 24 : n <= 8 ? 17 : n <= 14 ? 12 : n <= 24 ? 9.5 : n <= 45 ? 7.5 : 6, 85 / maior) + 'px';
     fo.append(div); svg.append(fo);
   }
   svg.append(el('path', { d, fill: 'none', stroke: cor, 'stroke-width': 1.6, 'stroke-linejoin': 'round' }));
