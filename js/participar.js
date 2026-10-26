@@ -556,7 +556,7 @@ function tarefaGrupo(pk, g, possoEnviar) {
   const s = sala, r = rascunho(pk.etapaId + '__' + g), cfg = pk.config || {};
   const jaFoi = !!s.progresso?.porGrupo?.[g];
   const caixa = h('div', { class: 'cartao' });
-  caixa.append(h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== pk.titulo && h('p', {}, pk.instrucao));
+  caixa.append(h('h2', {}, pk.titulo), pk.instrucao && pk.instrucao !== pk.titulo ? h('p', {}, pk.instrucao) : '');   // append nativo escreveria "false"
 
   if (pk.typeId === 'investigacao_fragmentos') {
     caixa.append(h('h3', {}, 'Peças do grupo'));

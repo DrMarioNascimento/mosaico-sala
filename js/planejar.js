@@ -572,7 +572,7 @@ function continuarNoCelular() {
   const d=h('dialog',{class:'explica'},h('h2',{},'Continuar no celular'),h('p',{},'Leia este QR Code e entre com a mesma conta Google. O material será recuperado da sua biblioteca.'),qr,h('p',{class:'sutil'},'Este é o acesso docente. O QR dos alunos será criado ao abrir a sala.'),h('button',{class:'btn',onclick:()=>{d.close();d.remove();}},'Fechar'));
   document.body.append(d); d.showModal();
 }
-function abrirIA(atual=null) { if(!atual && P.A)salvarRascunho(); abrirAutoria({contaId:P.conta?.uid || 'local',atual,aplicar:a=>{if(atual && P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
+function abrirIA(atual=null) { if(!atual && P.A)salvarRascunho(); abrirAutoria({contaId:P.conta?.uid || 'local',atual,podeIA:temBiblioteca()||souAdmin(),aplicar:a=>{if(atual && P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
 function conduzirAgora() {
   try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a Condução.', 'erro'); }
   const url = new URL('conduzir.html', location.href); if (EM_ENSAIO) url.search = '?ensaio=1';

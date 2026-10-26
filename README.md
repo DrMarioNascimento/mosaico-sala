@@ -1,124 +1,130 @@
 # MOSAICO · Sala
 
-## Disponibilidade e novidades — 24 de outubro de 2026
+Plataforma de atividades em grupo para a sala de aula: **cada grupo tem uma parte, ninguém tem o quadro completo, a turma junta as peças e supera a meta.** Quem conduz abre a sala; os alunos entram pelo celular, com um código ou QR, sem cadastro e sem instalar nada; o telão acompanha a aula.
 
-**Planejamento público com conta Google; condução de salas restrita.** Qualquer conta Google pode montar e exportar atividades em [Planejamento](https://mosaico-sala.web.app/planejar.html). A biblioteca compartilhada e a criação de salas on-line exigem uma conta autorizada; participantes entram por código ou QR. O ensaio local serve para pré-visualização e não concede autorização de hospedagem de uma sala on-line.
+- **Site:** https://mosaico-sala.web.app
+- **Manual completo:** https://mosaico-sala.web.app/manual (também em [`manual.html`](manual.html))
+- **Licença:** [LICENSE.md](LICENSE.md), publicada em https://mosaico-sala.web.app/licenca
 
-A descrição “modo aberto (planilha)” refere-se à montagem e exportação, não à liberação da condução. Os termos de uso estão na [licença](LICENSE.md), também publicada em https://mosaico-sala.web.app/licenca.
+## Estado em 25 de outubro de 2026
 
-[Ver todos os recursos públicos](https://www.drmarionascimento.com.br/#acesso-publico). O acesso respeita [LICENSE.md](LICENSE.md).
+- **Entrada em três portas:** *Entrar em uma sala* (o aluno digita o código no próprio cartão), *Sou professor* e *Quer conhecer antes?* (turma simulada, sem cadastro).
+- **Área do professor:** três ações (Criar com IA, Aplicar em sala, Usar um modelo), *Minhas atividades* com Aplicar, Abrir, duplicar e apagar, modelos prontos e o resto em *Mais opções*.
+- **Criação com IA:** o professor envia o material (texto, PDF, Word), define turma, tempo e objetivo, e recebe uma proposta para revisar. A geração integrada (Gemini, via Firebase AI Logic) é só para professores autorizados; os demais usam o caminho com IA externa.
+- **Administração** (administradores fixos): todas as atividades de todos os professores (abrir cópia, apagar), salas abertas e vencidas (encerrar) e a lista de professores autorizados.
+- **Alternativas sorteadas por aluno:** a ordem do autor nunca entrega a resposta. Onde o telão mostra a lista com letras (quiz entre grupos, equipe), a ordem é a mesma para a sala toda.
+- **Salas apagadas sozinhas:** prazo de 24 h, faxina das vencidas ao abrir *Aplicar em sala* e política de TTL do Firestore como garantia. Ver [OPERACAO-SALAS.md](OPERACAO-SALAS.md).
+- **Ícones 3D** num estilo só, com o mesmo tamanho óptico, em `assets/ilustracoes/3d/` (ver [ICONES-3D.md](ICONES-3D.md)).
 
-Plataforma de aplicação de atividades MOSAICO em sala: quem conduz importa uma atividade, abre a sala por QR Code, os participantes entram sem cadastro e são distribuídos entre os grupos planejados. Cada grupo recebe só uma parte das evidências; as hipóteses circulam entre grupos; a turma compete para superar a meta.
+## Acesso
 
-Especificação de referência: *MOSAICO — Autoria automática e aplicação de atividades em sala*, versão 2.0 (23/10/2026), com a seção 7.1–7.5 (Gramática MOSAICO e autonomia docente).
+| Quem | O que pode |
+| --- | --- |
+| Qualquer conta Google | Planejar, revisar, imprimir e exportar atividades; rascunhos no próprio navegador; pedido para IA externa |
+| Professor autorizado (lista de mestres) | Tudo acima + biblioteca em nuvem, salas on-line e geração integrada com IA |
+| Administrador (e-mails fixos) | Tudo acima + área de administração |
+| Aluno | Entrar numa sala aberta por código ou QR, sem cadastro |
+
+Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem internet, para ensaiar a aula sozinho (com participantes simulados).
 
 ## Páginas
 
 | Página | Quem usa | Onde |
 | --- | --- | --- |
-| `index.html` | todos | entrada |
-| `conduzir.html` | quem conduz (login Google, lista de mestres) | celular |
-| `telao.html` | telão da sala | TV / PC da sala |
-| `participar.html` | participantes (sem cadastro) | celular |
-| `planejar.html` | quem planeja (login Google) | PC |
-| `previa.html` | pré-visualização aberta pelo Planejamento (ensaio local) | PC |
-| `simulador.html` | simulador de aula na sala real | PC |
-| `licenca.html` | licença de uso (mesmo texto do `LICENSE.md`), ligada no rodapé de todas as páginas | todos |
+| `index.html` | todos (as três portas) | qualquer aparelho |
+| `participar.html` | alunos (sem cadastro) | celular |
+| `planejar.html` | professor: criar, revisar, salvar; administração | PC ou celular |
+| `conduzir.html` | professor: abrir sala, grupos, conduzir, encerrar | celular ou PC |
+| `telao.html` | telão da sala (digitar o código já abre) | TV / projetor |
+| `previa.html` | “Ver como fica”: professor, telão e turma simulada lado a lado | PC |
+| `simulador.html` | simulador da aula na sala real | PC |
+| `manual.html` | manual completo, com versão para imprimir | todos |
+| `licenca.html` | licença de uso (mesmo texto do `LICENSE.md`) | todos |
 
-Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem internet, para ensaiar a aula sozinho (com participantes simulados).
+## Os 8 passos do professor
 
-## Fluxo da aula
+1. **Entrar** com a conta Google.
+2. **Inserir material:** colar texto ou enviar PDF, Word, texto ou Markdown (lidos no navegador), ou abrir um modelo.
+3. **Planejar:** turma, tempo, objetivo, organização e número de grupos.
+4. **Gerar ou adaptar:** proposta da IA (integrada ou externa) ou ajuste do modelo.
+5. **Revisar conteúdo:** respostas esperadas e justificativas em linguagem de professor, fontes por peça e pendências declaradas pela IA. A validação de estrutura não verifica a ciência: a revisão é do professor.
+6. **Experimentar:** “Ver como fica” com uma turma simulada.
+7. **Salvar** na biblioteca ou exportar a planilha.
+8. **Aplicar em sala:** abrir a sala (código e QR), formar os grupos, conduzir as etapas, revelar o resultado, baixar o relatório e encerrar.
 
-1. **Atividade:** modelo pronto, arquivo importado (botão ou arrastar e soltar) ou montagem por IA externa (prompt gerado na própria tela). No Planejamento, o botão **Dar esta aula** leva a atividade aberta direto para a Condução, já na aba Sala. O Planejamento mostra os 3 passos (Sobre a turma → Etapas → Revisar) com as pendências de cada um, e **Ver esta etapa** abre a turma simulada já naquela etapa. Revisão, sugestões de equilíbrio, ajustes de tempo, competição, nomes dos grupos e meta.
-2. **Sala:** abrir sala → QR Code e código → abrir o telão (no PC da sala, digitar os 6 números já abre o telão).
-3. **Grupos:** sorteio equilibrado (seção 9). Excedentes pela ordem de alocação; mover pessoas; trocar representante; entrada tardia vai para o grupo menor.
-4. **Condução:** iniciar e encerrar etapas; acompanhar envios; contingências para grupo vazio ou pendente (outro grupo cobre / registro pela condução / ausência registrada).
-5. **Resultado:** discutir a meta e as explicações, exportar o relatório e encerrar a sala pelo fechamento guiado. Encerrar apaga os dados da sessão.
+## Tipos de atividade
 
-## Planejamento e dois modos de uso
+| typeId | Atividade | Em resumo |
+| --- | --- | --- |
+| `investigacao_fragmentos` | Investigação por fragmentos | Cada grupo recebe parte das evidências e escolhe a hipótese que elas sustentam |
+| `comparar_hipoteses` | Comparação entre grupos | Os grupos veem as conclusões dos outros e decidem a explicação que integra tudo |
+| `montagem_pecas` | Quebra-cabeça de texto ou imagem | Cada celular é uma peça; o todo só aparece com os celulares na ordem |
+| `cadeado_grupo` | Cadeado do grupo | Escape room: cada um responde a sua pergunta e o grupo destrava junto |
+| `quiz_grupos` | Quiz entre grupos | O sistema sorteia o grupo da vez; o telão mostra a vez e o placar |
+| `cartoes_arrastar` | Cartões de arrastar | Ordenar, classificar em colunas ou posicionar num termômetro entre dois polos |
+| `pares` | Pares | Ligar cada cartão ao seu par ou jogo da memória |
+| `corrida` | Corrida | No próprio ritmo: quiz, corrente de causa e efeito ou direção (↑ ↓ =) |
+| `cruzadas` | Palavras cruzadas | A grade se monta sozinha; as dicas ficam divididas entre os celulares |
+| `sequencia` | Sequência (Genius) | Luz e som; a sequência de termos cresce a cada acerto |
+| `quiz_pensar` | Quiz que faz pensar | Em equipe (TBL), decisão com três finais ou resposta com grau de certeza |
+| `analise_imagem` | Análise de imagem | Foto, gráfico ou modelo 3D: marcar, responder ou descrever; amplia em tela cheia no celular |
+| `escala_padronizada` | Escala padronizada | Mini-IPIP6 (Big Five + Honestidade-Humildade); o aluno vê o próprio perfil, o telão só a média |
+| `jogo_economico` | Jogo econômico | Ditador, ultimato, confiança e bens públicos, com pares sorteados |
+| `questao_individual` | Questão individual | Múltipla escolha de transferência, pode contar para a meta |
 
-- **Fechado (biblioteca):** contas da lista de mestres guardam atividades no Firestore (`biblioteca/`). Cada conta lê e edita as suas; pode compartilhar com os outros mestres (leitura e cópia). Nenhum dado de participante fica na biblioteca.
-- **Aberto (planilha):** qualquer conta Google pode montar e exportar a planilha `.xlsx`. Rascunhos são locais, por conta e navegador, com indicação de salvamento; a biblioteca em nuvem é restrita. A criação de uma sala on-line a partir da planilha continua exigindo uma conta de mestre autorizada.
-- Formato da planilha: abas Atividade, Grupos, Etapas, Opcoes, Pecas e Fontes (ver `js/core/planilha.js`). A planilha contém o gabarito: não distribuir aos participantes.
-- LGPD: nomes dos participantes só durante a sessão (apagados ao encerrar); a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Casos devem ser fictícios.
+O manual explica cada uma e por que é um recurso pedagógico importante.
+
+## Segurança e dados
+
+- As respostas esperadas **nunca** vão ao servidor durante a aula: ficam no aparelho de quem conduz. Só vai ao telão e aos celulares o que quem conduz revela.
+- Cada grupo lê só o próprio pacote; envios são criados e nunca sobrescritos; o prazo gravado por um aluno tem de ser o da sala.
+- A introdução da atividade é pública (telão e celulares); a validação avisa quando ela parece falar com quem conduz.
+- Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas vencidas são apagadas na volta de quem conduz e pelo TTL do Firestore.
+- Lista de mestres: e-mails fixos em `firestore.rules` (função `fixos()`, os mesmos de `ADMINS` em `js/mestres.js`) + o documento `config/mestres`. Os administradores editam a lista em Planejamento → Administração.
+- Relatório da aula: planilha .csv com envios e acertos por etapa e por grupo, sem nomes nem identificadores.
+- Material enviado à geração integrada vai ao Gemini (Google); nenhum dado de participante é enviado.
 
 ## Estrutura
 
 ```
-js/core/           Núcleo puro, testado (distribuição, tipos, validação, equilíbrio, motor, prompt)
-js/conduzir.js     Painel de quem conduz ("cérebro" da sala)
+js/core/           Núcleo puro e testado (distribuição, tipos, validação, equilíbrio, motor, prompt, embaralhar…)
+js/planejar.js     Planejamento, área do professor e administração
+js/autoria-docente.js  Criação a partir do material (IA integrada ou externa)
+js/revisao-docente.js  Revisão do professor em linguagem legível
+js/conduzir.js     Condução (o “cérebro” da sala) e faxina das salas vencidas
 js/telao.js        Telão
-js/participar.js   Participante
-js/imprimir.js     Versão para imprimir (material docente em folha separada)
+js/participar.js   Celular do aluno
+js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos de atividade
+js/icones.js       Ícones 3D (assets/ilustracoes/3d) e de linha
 js/backend.js      Escolhe Firebase ou ensaio local
 js/cloud-*.js      Firebase (Firestore + Auth) / ensaio (localStorage)
-js/qr.js           Gerador de QR Code próprio (mesmo do Eita!)
-casos/             Modelos prontos (listados em js/casos.js; tests/casos.test.mjs confere cada um)
-js/*-tipos.js      Condução, celular, telão e Planejamento dos tipos novos (pares, corrida, cruzadas, sequência/Genius, quiz que faz pensar, análise de imagem)
-firestore.rules    Regras do Firestore
-tests/             Testes automáticos (critérios da seção 22)
-tests/e2e/         Aula completa de cada modelo, com celulares simulados (Playwright, modo ensaio)
+casos/             Modelos prontos (listados em js/casos.js)
+firestore.rules    Regras do Firestore (publicadas à mão no console)
+tests/             Testes do núcleo e dos modelos
+tests/rules/       Testes das regras no emulador do Firestore
+tests/e2e/         Aula completa de cada modelo, com celulares simulados (Playwright)
 sw.js, manifest.webmanifest   App instalável; as páginas abrem mesmo com a internet oscilando
 ```
 
-## Testes e prévia
+## Testes
 
-- `node --test tests/*.test.mjs`: núcleo e modelos (rápido, sem navegador).
-- `node --test tests/e2e/aula.e2e.mjs`: conduz uma aula inteira de cada modelo pronto, do sorteio dos grupos ao resultado, com 6 celulares em piloto automático. Precisa do Playwright (`npm install --no-save playwright && npx playwright install chromium`).
-- Em cada pull request, o GitHub roda os dois e publica uma prévia no Firebase (o link aparece num comentário do PR e expira em 7 dias). Na prévia, o login Google só funciona se o domínio da prévia estiver autorizado no Authentication; o modo `?ensaio=1` funciona sempre.
-
-## Segurança e dados
-
-- O material docente (respostas esperadas, guia) **nunca** vai ao servidor durante a atividade: fica só no aparelho de quem conduz. Só é publicado o que quem conduz revela no fim.
-- Cada grupo só consegue ler o próprio pacote (regras do Firestore).
-- Envios só podem ser criados, nunca sobrescritos.
-- Encerrar a sala apaga participantes, pacotes, envios e a sala. Salas abandonadas são apagadas na próxima entrada de quem conduz.
-- Lista de mestres: e-mails fixos em `firestore.rules` (função `fixos()`, os mesmos de `ADMINS` em `js/mestres.js`) + o documento `config/mestres` com o campo `emails`. Os administradores editam essa lista na tela inicial do Planejamento (cartão “Professores autorizados”).
-- Relatório da aula: ao revelar o resultado (ou na aba Sala, antes de encerrar), quem conduz baixa uma planilha .csv com envios, avaliados e acertos por etapa e por grupo, sem nomes nem identificadores de participantes.
-
-## Tipos de atividade disponíveis
-
-| typeId | Versão | Uso |
-| --- | --- | --- |
-| `investigacao_fragmentos` | 1.0.0 | Cada grupo recebe parte das evidências e escolhe uma hipótese |
-| `comparar_hipoteses` | 1.0.0 | Grupos veem as hipóteses e evidências dos outros e decidem |
-| `questao_individual` | 1.0.0 | Múltipla escolha individual, pode contar para a meta |
-| `montagem_pecas` | 1.0.0 | Reconstrução com peças |
-| `cadeado_grupo` | 1.0.0 | Desafio de cadeado por grupo |
-| `quiz_grupos` | 1.0.0 | Quiz entre grupos |
-| `cartoes_arrastar` | 1.0.0 | Cartões de arrastar em quadro compartilhado: ordenar (a cadeia inteira ou por trechos, entre grupos), classificar ou termômetro (entre dois polos) |
-| `escala_padronizada` | 1.0.0 | Escala de autorrelato de domínio público (Mini-IPIP6: Big Five + Honestidade-Humildade, o fator do HEXACO). O aluno vê o próprio perfil; o telão, só a média da turma (com 5 ou mais respostas) |
-| `jogo_economico` | 1.0.0 | Jogos padronizados da economia comportamental: ditador, ultimato, confiança e bens públicos. Pares sorteados, ganho de cada um no próprio celular, distribuição da turma no telão e, opcionalmente, a relação com a Honestidade-Humildade |
-| `pares` | 1.0.0 | Pares de conteúdo: ligar (arrastar até o par) ou jogo da memória (por grupo, ou no telão com a vez de cada grupo) |
-| `corrida` | 1.0.0 | No próprio ritmo, pontos somam para o grupo: quiz, corrente de causa e efeito ou escolher a direção (↑ ↓ =), com power-ups opcionais |
-| `cruzadas` | 1.0.0 | Palavras cruzadas montadas sozinhas; dicas divididas entre os celulares; grade por grupo ou da turma |
-| `sequencia` | 1.0.0 | Sequência (Genius): o painel acende termos sorteados de um banco, com luz e som (Web Audio, notas do Genius original); a sequência cresce a cada acerto; vale o recorde de cada aluno, que soma para o grupo; ranking no telão |
-| `quiz_pensar` | 1.0.0 | Quiz que faz pensar: em equipe (TBL), tomada de decisão com ramos, ou metacognição (resposta + certeza) |
-| `analise_imagem` | 1.0.0 | Foto, gráfico ou modelo 3D (.glb): marcar na imagem, perguntas sobre ela ou observar e descrever (vai para o telão) |
-
-## IA para autoria docente
-
-Geração integrada com Firebase AI Logic e Gemini, protegida por App Check. O professor fornece material, recebe uma proposta e revisa antes de abrir no editor. Em 25/10/2026, APIs e proteção foram configuradas e, após os ajustes de faturamento pelo titular, uma geração real foi validada: material → proposta com três etapas → revisão de respostas e evidências → abertura no editor. O caminho com IA externa continua disponível. Consulte [ERGONOMIA-DOCENTE.md](ERGONOMIA-DOCENTE.md).
+- `node --test tests/*.test.mjs` — núcleo e modelos (Node 20+), sem navegador.
+- `npx firebase-tools@13 emulators:exec --only firestore --project demo-mosaico-sala "node --test tests/rules/firestore.test.mjs"` — regras no emulador (precisa de Java 11+ e de `@firebase/rules-unit-testing` e `firebase` instalados).
+- `node --test tests/e2e/aula.e2e.mjs` — uma aula inteira de cada modelo (precisa do Playwright).
+- Em cada pull request, o GitHub roda os testes e publica uma prévia no Firebase.
 
 ## Publicação
 
-- Firebase Hosting, projeto `mosaico-sala` (plano Blaze, ativado pelo titular). Endereço: https://mosaico-sala.web.app
-- Publicação automática a cada push (`.github/workflows/firebase-hosting.yml`), com o segredo `FIREBASE_SERVICE_ACCOUNT_MOSAICO_SALA`.
-- As regras (`firestore.rules`) são coladas em Firestore → Regras no console.
-
-## Testes
-
-Requer Node 20 ou superior:
-
-```
-node --test tests/nucleo.test.mjs
-```
+- Firebase Hosting, projeto `mosaico-sala`, publicado a cada push na `main` (`.github/workflows/firebase-hosting.yml`).
+- **Regras do Firestore:** a conta de serviço do fluxo automático não tem permissão para publicá-las (HTTP 403). Cole o `firestore.rules` em Firestore → Regras no console, ou dê a ela o papel *Firebase Rules Admin*.
+- **IA integrada:** os créditos da API Gemini são pré-pagos no AI Studio (projeto mosaico-sala → Faturamento). Sem saldo, a geração para e o professor vê “Os créditos de IA do projeto acabaram”.
+- **TTL:** quatro políticas no campo `expiresAt` (`rooms`, `members`, `envios`, `pacotes`), ver [OPERACAO-SALAS.md](OPERACAO-SALAS.md).
 
 ## Licença e uso
 
-Uso gratuito pelo endereço oficial, dentro do acesso descrito acima, em aulas, cursos, palestras, treinamentos e eventos. Repositório público não é licença aberta: código, interfaces, tipos de atividade, casos, banco de termos e demais componentes não podem ser copiados, modificados, hospedados em outro endereço nem usados para treinar IA sem autorização. As atividades criadas por cada docente pertencem a quem as criou. Ver [LICENSE.md](LICENSE.md).
+Uso gratuito pelo endereço oficial, dentro do acesso descrito acima, em aulas, cursos, palestras, treinamentos e eventos. Repositório público não é licença aberta: código, interfaces, tipos de atividade, casos, ícones e demais componentes não podem ser copiados, modificados, hospedados em outro endereço nem usados para treinar IA sem autorização. As atividades criadas por cada docente pertencem a quem as criou. Ver [LICENSE.md](LICENSE.md).
 
 Ao mudar o `LICENSE.md`, atualize também o `licenca.html`, que é a versão publicada no site.
 
-**Autor e titular:** Mário César Nascimento, PhD.  
+**Autor e titular:** Mário César Nascimento, PhD.
 Copyright © 2026. Todos os direitos reservados.

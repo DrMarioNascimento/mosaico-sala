@@ -847,3 +847,10 @@ test('Revisão avisa quando a resposta certa é sempre a mesma letra', async () 
   a.docente.respostas.e1.perguntas.p2.corretaId = 'b';
   assert.ok(!msg(validarAtividade(a)));
 });
+
+// append() nativo escreve "false"/"null" na tela; condicionais ali precisam de ternário (h() e cartao() já filtram).
+test('Nenhum caixa.append nativo recebe condicional com &&', () => {
+  const fonte = readFileSync(new URL('../js/participar.js', import.meta.url), 'utf8');
+  const ruins = fonte.split('\n').filter(l => /^\s*caixa\.append\(/.test(l) && /&& h\(/.test(l) && !/\? h\(/.test(l) && !/filter\(Boolean\)/.test(l));
+  assert.deepEqual(ruins, []);
+});
