@@ -373,7 +373,9 @@ function telaInicio() {
         h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulador'),
           h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados no projetor. O simulador testa a aula com uma turma fictícia.'),
           h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: link('simulador.html'), 'data-ico': 'simulador' }, 'Simulador'))),
-        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()))));
+        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()))),
+    h('a', { class: 'cartao manual-atalho', href: 'manual.html', target: '_blank', rel: 'noopener' }, ilustra('e_material', 56),
+      h('div', {}, h('strong', {}, 'Manual do MOSAICO'), h('span', {}, 'Passo a passo, as 15 atividades e por que funcionam. Abre em outra aba.'))));
 }
 
 /** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
