@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MOSAICO · Ver como fica</title>
+<title>MOSAICO · Simular</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
@@ -28,15 +28,16 @@
 </head>
 <body>
 <div class="pv-topo">
-  <a class="voltar-link" data-fechar href="planejar.html#revisao" data-ico="voltar" title="Voltar para salvar a atividade"><span class="numero-fluxo" aria-hidden="true">7</span> Voltar para salvar a atividade</a>
-  <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40"><span class="numero-fluxo" aria-hidden="true">6</span> Ver como fica</span>
+  <a class="voltar-link" id="voltar" data-fechar href="planejar.html#revisao" data-ico="voltar" title="Voltar ao planejamento">Voltar</a>
+  <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Simular · só no PC</span>
   <label for="qtd" style="margin:0">Participantes</label><input id="qtd" type="number" min="1" max="20" value="8">
   <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="auto" checked> Piloto automático</label>
   <button class="btn" id="recomecar">Recomeçar</button>
-  <span class="sutil" id="info">Ensaio local: nada sai deste computador.</span>
+  <a class="btn" id="comCelular" href="simulador.html#celular" data-ico="conduzir" title="Ensaio geral com uma sala de verdade, conduzida pelo seu celular">Testar com meu celular</a>
+  <span class="sutil" id="info">Simulação neste computador: nada vai para a internet.</span>
 </div>
 <div class="pv-grade">
-  <section class="pv-col pv-conducao"><h2>Seu celular (condução)</h2><div class="pv-cel"><iframe id="conducao" title="Condução"></iframe></div></section>
+  <section class="pv-col pv-conducao"><h2>Seu celular (condução) · toque aqui para conduzir</h2><div class="pv-cel"><iframe id="conducao" title="Condução"></iframe></div></section>
   <section class="pv-col">
     <h2>Telão</h2><div class="pv-telao" id="telao"></div>
     <h2 style="margin-top:14px">Turma simulada</h2><div class="pv-turma" id="turma"><p class="sutil">Os participantes aparecem assim que a sala abrir.</p></div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MOSAICO · Simulador de aula</title>
+<title>MOSAICO · Simular</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,11 +14,26 @@
 <link rel="stylesheet" href="css/mosaico.css">
 <style>
   body { overflow-x: hidden; }
+  /* ---------- escolha: só no PC ou com meu celular ---------- */
+  .sim-escolha h1 { margin: 10px 0 4px; }
+  .sim-modos { display: grid; gap: 16px; margin-top: 16px; }
+  @media (min-width: 900px) { .sim-modos { grid-template-columns: 3fr 2fr; align-items: start; } }
+  .sim-modo { display: grid; gap: 10px; }
+  .sim-modo.principal { border: 2px solid var(--acento); }
+  .sim-modo h2 { display: flex; align-items: center; gap: 10px; margin: 0; }
+  .sim-modo ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; }
+  .sim-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .sim-lista li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--fundo-2); border: 1px solid var(--linha); }
+  .sim-lista .tit { flex: 1; min-width: 0; } .sim-lista .tit strong { display: block; overflow-wrap: anywhere; } .sim-lista .tit small { color: var(--texto-2); }
+  .sim-lista .btn { flex: none; min-height: 44px; }
+  .sim-modo h3 { margin: 8px 0 0; font-size: 1rem; color: var(--texto-2); letter-spacing: .04em; }
+  /* ---------- com meu celular: telão em cima, turma embaixo ---------- */
   .sim-topo { position: sticky; top: 0; z-index: 5; background: rgba(11,15,23,.96); border-bottom: 1px solid var(--linha); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .sim-topo input { width: 120px; min-height: 44px; }
   .sim-topo input[type=checkbox] { width: 22px; height: 22px; min-height: 0; }
   .sim-topo .btn { min-height: 44px; }
   .sim-palco { padding: 16px; display: grid; gap: 16px; }
+  .sim-passos { max-width: 900px; margin: 0 auto; }
   .sim-telao { width: 100%; max-width: 1500px; margin: 0 auto; aspect-ratio: 16 / 9; border: 2px solid var(--linha); border-radius: 12px; overflow: hidden; background: #000; }
   .sim-telao iframe { width: 1280px; height: 720px; border: 0; transform-origin: 0 0; }
   .sim-celulares { display: flex; flex-wrap: wrap; gap: 14px; }
@@ -29,23 +44,63 @@
 </style>
 </head>
 <body>
-<div class="sim-topo">
-  <a class="voltar-link" href="conduzir.html" data-ico="voltar" title="Voltar à condução">Condução</a>
-  <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Simulador</span>
-  <label for="codigo" style="margin:0">Sala</label><input id="codigo" inputmode="numeric" maxlength="6" placeholder="código">
-  <label for="qtd" style="margin:0">Participantes</label><input id="qtd" type="number" min="1" max="30" value="12">
-  <button class="btn primario" id="iniciar">Simular</button>
-  <button class="btn" id="mais">+1</button>
-  <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="autoTodos" checked> Piloto automático em todos</label>
-  <label for="escala" style="margin:0">Tamanho</label>
-  <select id="escala" style="width:auto;min-height:44px"><option value=".45">Pequeno</option><option value=".62" selected>Médio</option><option value=".8">Grande</option></select>
-  <span class="sutil" id="info">Abra a sala no celular, digite o código aqui e clique em Simular.</span>
+<!-- 1 · Escolha do modo -->
+<main class="pagina sim-escolha" id="escolha" hidden>
+  <nav class="fluxo" data-fluxo-docente aria-label="Navegação do professor"></nav>
+  <h1>Simular uma aula</h1>
+  <p class="sutil">Veja a dinâmica antes de levar para a turma. Nada do que acontece numa simulação conta como aula.</p>
+  <div class="sim-modos">
+    <section class="cartao sim-modo principal" aria-labelledby="tSoPc">
+      <h2 id="tSoPc"><span data-ilu="e_simulador" data-tam="48"></span>Só no PC <span class="etiqueta">mais usado</span></h2>
+      <p>Abre, lado a lado, o seu celular de condução, o telão e uma turma fictícia em piloto automático. É instantâneo e tudo fica neste computador: nada vai para a internet.</p>
+      <p class="aviso" id="avisoPc" hidden></p>
+      <div id="listaMinhas"></div>
+      <h3>Modelos prontos</h3>
+      <ul class="sim-lista" id="listaModelos"></ul>
+    </section>
+    <section class="cartao sim-modo" aria-labelledby="tCelular">
+      <h2 id="tCelular"><span data-ilu="e_conduzir" data-tam="48"></span>Com meu celular</h2>
+      <p>Ensaio geral, com uma sala de verdade: você conduz pelo celular e o PC mostra o telão em cima e a turma fictícia embaixo. Serve para conferir internet, celular e TV antes da aula.</p>
+      <ol>
+        <li>No celular, entre no MOSAICO, toque em <strong>Aplicar em sala</strong>, escolha a atividade e toque em <strong>Abrir sala</strong>.</li>
+        <li>Aqui no PC, digite o código da sala e clique em <strong>Simular</strong>.</li>
+        <li>Conduza pelo celular. Ao terminar, encerre a sala no celular.</li>
+      </ol>
+      <p class="aviso" id="avisoEnsaioCelular" data-tipo="alerta" hidden>No modo de demonstração não há sala de verdade. Para o ensaio geral, entre pela versão on-line com sua conta.</p>
+      <button class="btn primario bloco" id="irCelular" data-ico="conduzir">Já abri a sala no celular</button>
+    </section>
+  </div>
+  <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
+</main>
+
+<!-- 2 · Com meu celular -->
+<div id="celular" hidden>
+  <div class="sim-topo">
+    <a class="voltar-link" id="voltarEscolha" href="simulador.html" data-ico="voltar" title="Voltar à escolha">Simular</a>
+    <span class="marca"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Com meu celular</span>
+    <label for="codigo" style="margin:0">Sala</label><input id="codigo" inputmode="numeric" maxlength="6" placeholder="código">
+    <label for="qtd" style="margin:0">Participantes</label><input id="qtd" type="number" min="1" max="30" value="12">
+    <button class="btn primario" id="iniciar">Simular</button>
+    <button class="btn" id="mais">+1</button>
+    <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" id="autoTodos" checked> Piloto automático em todos</label>
+    <label for="escala" style="margin:0">Tamanho</label>
+    <select id="escala" style="width:auto;min-height:44px"><option value=".45">Pequeno</option><option value=".62" selected>Médio</option><option value=".8">Grande</option></select>
+    <span class="sutil" id="info">Abra a sala no celular, digite o código aqui e clique em Simular.</span>
+  </div>
+  <div class="sim-palco">
+    <div class="cartao sim-passos" id="passosCelular">
+      <h2>Ensaio geral com o seu celular</h2>
+      <ol>
+        <li>No celular: <strong>Aplicar em sala</strong> → escolha a atividade → <strong>Abrir sala</strong>.</li>
+        <li>Digite o código de 6 números no campo <strong>Sala</strong>, lá em cima, e clique em <strong>Simular</strong>.</li>
+        <li>O telão aparece em cima e a turma fictícia embaixo. No celular, toque em <strong>Formar grupos e começar</strong> e conduza as etapas.</li>
+      </ol>
+    </div>
+    <div class="sim-telao" id="telao" hidden></div>
+    <div class="sim-celulares" id="celulares"></div>
+  </div>
+  <footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 </div>
-<div class="sim-palco">
-  <div class="sim-telao" id="telao" hidden></div>
-  <div class="sim-celulares" id="celulares"></div>
-</div>
-<footer class="rodape-licenca">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></footer>
 <script type="module" src="js/simulador.js"></script>
 <script type="module" src="js/nav.js"></script>
 </body>

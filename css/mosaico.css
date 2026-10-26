@@ -144,16 +144,22 @@ dialog.explica .btn { width: 100%; margin-top: 8px; }
 .codigo { font-family: var(--fonte-titulo); font-weight: 900; letter-spacing: .12em; font-size: 2rem; }
 
 /* Telão (TV) */
-body.telao { font-size: clamp(15px, min(1.55vw, 2.75vh), 72px); overflow: hidden; }
+/* --ajuste: encolhe tudo junto quando o conteúdo não cabe (js/telao.js, caber()) — o telão nunca corta. */
+body.telao { font-size: calc(clamp(15px, min(1.55vw, 2.75vh), 72px) * var(--ajuste, 1)); overflow: hidden; }
 .btn-tela-cheia { min-height: 0; width: 2.2em; height: 2.2em; padding: 0; font-size: .8em; }
 body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .35; }
-.telao-palco { height: 100vh; padding: 3vh 4vw; display: grid; grid-template-rows: auto 1fr auto; gap: 2vh; }
-.telao-palco header { display: flex; justify-content: space-between; align-items: center; }
+.telao-palco { height: 100vh; height: 100dvh; width: 100%; padding: 3vh 4vw; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); gap: 2vh; }
+:fullscreen .telao-palco, .telao-palco:fullscreen { height: 100vh; }
+.telao-palco header { display: flex; justify-content: space-between; align-items: center; gap: 1em; min-width: 0; }
+.telao-palco header #cabecalho { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.telao-palco header > span:last-child { min-width: 0; }
 .telao-palco h1 { font-size: 2.4em; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; max-width: 100%; }
 .telao-palco .marca { font-size: 1.3em; }
-.telao-centro { display: flex; flex-direction: column; justify-content: center; gap: 2vh; min-height: 0; overflow: hidden; }
-.telao-entrada { display: grid; grid-template-columns: auto 1fr; gap: 4vw; align-items: center; }
-.telao-entrada .qr { width: min(34vh, 34vw); }
+.telao-centro { display: flex; flex-direction: column; justify-content: center; justify-content: safe center; gap: 2vh; min-height: 0; min-width: 0; overflow: hidden; }
+.telao-entrada { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4vw; align-items: center; }
+.telao-entrada .qr { width: calc(min(34vh, 34vw) * var(--ajuste, 1)); }
+.telao-entrada p { overflow-wrap: anywhere; }
+.telao .faixa-simulacao { font-size: .8em; margin: 0; }
 .telao-entrada .codigo { font-size: 3.2em; }
 .telao .grade-grupos { grid-template-columns: repeat(auto-fit, minmax(14em, 1fr)); }
 .telao .grupo { font-size: .9em; }
@@ -682,3 +688,11 @@ dialog.ampliar-imagem::backdrop { background: #000c; }
 .cartao-arr, .rotulo-par, .fragmento div, .seq-btn { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 7 3 3; }
 /* Telão: o tabuleiro da memória cabe na altura da TV (cartas 5:3; a grade ocupa no máximo ~36% da altura) */
 .telao .telao-memoria { width: min(70vw, calc(36vh * var(--n, 4) * 5 / (3 * var(--l, 3)))); }
+
+/* ---------- Aplicar em sala: conferência e começar ---------- */
+.btn.grande { min-height: 60px; font-size: 1.15rem; }
+.conferencia-grupos { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.comecar-aula h2 { margin: 0 0 10px; }
+.salas-abertas { border: 2px solid var(--alerta, #f5b14c); }
+.salas-abertas h2 { display: flex; align-items: center; gap: 8px; }
+.sim-modo .etiqueta { font: 700 .72rem var(--fonte); letter-spacing: .06em; text-transform: uppercase; background: var(--acento); color: #1a0d00; border-radius: 999px; padding: 2px 10px; }

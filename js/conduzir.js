@@ -44,8 +44,8 @@ function receberDoPlanejamento() {
   const a = doPlanejamento(); if (!a || E.codigo) return false;
   try { localStorage.removeItem(PARA_CONDUZIR); } catch {}
   if (!aceitar(a, 'do Planejamento')) return false;   // com erros: aparecem na aba Atividade
-  mostrarAba('sala'); renderTudo();
-  avisoGeral(`“${a.titulo}” veio do Planejamento. Abra a sala quando a turma estiver pronta.`, 'ok');
+  mostrarAba('atividade'); renderTudo();
+  avisoGeral(`“${a.titulo}” está pronta. Confira e abra a sala.`, 'ok');
   return true;
 }
 function lerGuardado() { try { return JSON.parse(localStorage.getItem(GUARDA) || 'null'); } catch { return null; } }
@@ -67,7 +67,7 @@ $('entrarGoogle').onclick = () => {
 };
 (async () => {
   if (PREVIA) { try { localStorage.removeItem(GUARDA); } catch {} return iniciarPrevia(); }
-  const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO && doPlanejamento()) iniciar(await b.entrarGoogle());
+  const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO) iniciar(await b.entrarGoogle()); else $('login').hidden = false;
 })();
 
 /** Pré-visualização: entra sozinho, carrega a atividade do Planejamento, abre a sala e avisa a página-mãe. */
@@ -122,7 +122,7 @@ async function iniciar(conta) {
     try {
       if(!/^[a-zA-Z0-9_-]{1,128}$/.test(idBiblioteca)) throw new Error('Identificador de atividade inválido.');
       const doc=await b.lerBiblioteca(idBiblioteca); if(!doc)throw new Error('Atividade não encontrada na sua biblioteca.');
-      if(aceitar(JSON.parse(doc.conteudo),'da sua biblioteca')){mostrarAba('sala');renderTudo();avisoGeral('Atividade recuperada. Este aparelho conduzirá a aula.','ok');return faxina();}
+      if(aceitar(JSON.parse(doc.conteudo),'da sua biblioteca')){mostrarAba('atividade');renderTudo();avisoGeral('Atividade pronta. Confira e abra a sala: este aparelho conduzirá a aula.','ok');return faxina();}
     } catch(e){avisoGeral('Não foi possível recuperar a atividade. Entre com a mesma conta Google que a salvou.','erro');}
   }
   if (receberDoPlanejamento()) return faxina();
@@ -143,7 +143,7 @@ function mostrarAba(nome) {
   window.scrollTo({ top: 0 });
 }
 /** Anterior / próximo passo da condução (Atividade → Sala → Grupos → Condução), embaixo de cada aba. */
-const ABAS = [['atividade', 'Atividade'], ['sala', 'Sala'], ['grupos', 'Grupos'], ['conducao', 'Condução']];
+const ABAS = [['atividade', 'Conferir'], ['sala', 'Sala'], ['grupos', 'Grupos'], ['conducao', 'Condução']];
 function renderPassos() {
   const alvo = $('passosNav'); if (!alvo) return;
   const i = ABAS.findIndex(x => x[0] === E.aba), ant = ABAS[i - 1], prox = ABAS[i + 1];
@@ -213,22 +213,26 @@ function renderAtividade() {
   const naMeta = new Set(a.meta?.ativa !== false ? a.meta?.etapas || [] : []);
   const comp = e => naMeta.has(e.id) ? 'conta para a meta' : e.participacao.competicao === 'entre_grupos' ? 'entre grupos' : 'sem competição';
   const avisos = naoErros.length + (gram ? 1 : 0);
+  const gruposOrd = [...a.grupos].sort((x, y) => x.ordemAlocacao - y.ordemAlocacao);
   limpar(alvo,
-    h('div', { class: 'cartao' },
+    h('div', { class: 'cartao conferencia' },
+      h('span', { class: 'guia-selo' }, salaAberta ? 'SALA ABERTA' : 'CONFERIR E ABRIR A SALA'),
       h('h1', {}, a.titulo),
       h('p', { class: 'sutil' }, [a.duracaoMin && a.duracaoMin + ' min', `${a.grupos.length} grupos`, `${a.etapas.length} etapas`, a.meta?.ativa !== false && a.meta?.limiar ? `meta de ${Math.round(a.meta.limiar * 100)}%` : 'sem meta'].filter(Boolean).join(' · ')),
       h('ol', { class: 'roteiro' }, etapasOrdenadas(a).map(e => h('li', {},
         h('strong', {}, e.titulo), ' ',
         h('small', { class: 'sutil' }, [e.tempoMin && e.tempoMin + ' min', ORG[e.participacao.organizacao] || e.participacao.organizacao, comp(e)].filter(Boolean).join(' · '))))),
+      h('div', { class: 'conferencia-grupos', 'aria-label': 'Grupos planejados' }, gruposOrd.map(g => chipGrupo(a, g.id, g.nome))),
       salaAberta
         ? h('button', { class: 'btn primario bloco', onclick: () => mostrarAba('sala') }, 'Ir para a sala aberta')
-        : h('button', { class: 'btn primario bloco', disabled: temErros(E.diags), onclick: async () => { await abrirSala(); if (E.codigo) mostrarAba('sala'); } }, 'Abrir sala'),
+        : h('button', { class: 'btn primario bloco grande', disabled: temErros(E.diags), onclick: async () => { await abrirSala(); if (E.codigo) mostrarAba('sala'); } }, 'Abrir sala'),
+      !salaAberta && h('p', { class: 'sutil' }, 'Tudo certo? Abra a sala: o QR aparece aqui e no telão. Precisa mudar algo? Use “Ajustar” logo abaixo, sem sair desta tela.'),
       h('div', { class: 'linha-botoes' },
         h('button', { class: 'btn pequeno', onclick: () => abrirImpressao(a) }, 'Imprimir'),
         h('button', { class: 'btn pequeno', onclick: () => baixar(a) }, 'Baixar arquivo'),
         h('button', { class: 'btn pequeno discreto', disabled: salaAberta, title: salaAberta ? 'Encerre a sala para trocar' : null, onclick: () => { E.atividade = null; E.diags = []; salvar(); renderTudo(); } }, 'Trocar atividade'))),
 
-    h('details', { class: 'cartao', open: !!E.ajustesAbertos, ontoggle: ev => { E.ajustesAbertos = ev.target.open; } }, h('summary', {}, h('strong', {}, 'Ajustar tempo, competição, nomes dos grupos e meta')),
+    h('details', { class: 'cartao', open: !!E.ajustesAbertos, ontoggle: ev => { E.ajustesAbertos = ev.target.open; } }, h('summary', {}, h('strong', {}, 'Ajustar: tempo, competição, nomes dos grupos e meta')),
       h('h3', {}, 'Etapas'),
       etapasOrdenadas(a).map(e => {
         const t = obterTipo(e.typeId, e.typeVersion);
@@ -253,14 +257,14 @@ function renderAtividade() {
           [0.4, 0.5, 0.6, 0.8].map(v => h('option', { value: v, selected: a.meta.ativa !== false && a.meta.limiar === v }, `${v * 100}% de acertos`))),
         h('p', { class: 'sutil' }, a.meta.descricao || ''))),
 
-    avisos > 0 && h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, `Avisos da revisão (${avisos})`)),
+    // Avisos e sugestões são do planejamento: na hora de aplicar ficam recolhidos, para não atrasar a abertura da sala.
+    avisos + sugestoes.length > 0 && h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, `Avisos e sugestões do planejamento (${avisos + sugestoes.length})`)),
       gram && h('p', { class: 'aviso' }, gram.mensagem),
-      listaDiag(naoErros)),
-
-    sugestoes.length > 0 && h('div', { class: 'cartao' }, h('h2', {}, 'Sugestões de equilíbrio'),
-      h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
-      h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
-        h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar'))))),
+      naoErros.length > 0 && listaDiag(naoErros),
+      sugestoes.length > 0 && h('div', {}, h('h3', {}, 'Sugestões de equilíbrio'),
+        h('p', { class: 'sutil' }, 'São só propostas. A decisão é sua.'),
+        h('ul', { class: 'diag' }, sugestoes.map(s => h('li', { class: 'info' }, s.mensagem, ' ',
+          h('button', { class: 'btn pequeno discreto', onclick: () => { E.dispensadas.add(s.id); salvar(); renderAtividade(); } }, 'Dispensar')))))),
 
     h('details', { class: 'cartao' }, h('summary', {}, h('strong', {}, 'Material de quem conduz')),
       (a.docente?.guia || []).length > 0 && h('div', {}, h('h3', {}, 'Guia'), h('ol', {}, a.docente.guia.map(x => h('li', {}, x)))),
@@ -387,6 +391,10 @@ function renderSala() {
   } }, 'Encerrar sala');
 
   limpar(alvo,
+    s.fase === 'lobby' && h('div', { class: 'cartao destaque comecar-aula' },
+      h('h2', {}, nomes.length ? `${pl(nomes.length, 'pessoa')} na sala` : 'Aguardando a turma entrar…'),
+      h('button', { class: 'btn primario bloco grande', disabled: !nomes.length, onclick: async ev => { ev.currentTarget.disabled = true; await formarGrupos(true); } }, 'Formar grupos e começar'),
+      h('p', { class: 'sutil' }, 'Os grupos são sorteados de forma equilibrada; quem chegar depois entra no grupo com menos pessoas. Para conferir ou mover alguém, use a aba Grupos.')),
     h('div', { class: 'cartao' },
       h('p', { class: 'sutil' }, 'Código da sala'), h('div', { class: 'codigo' }, E.codigo),
       h('div', { style: { margin: '14px 0' } }, qr),
@@ -394,8 +402,8 @@ function renderSala() {
         h('button', { class: 'btn', onclick: async () => { try { await navigator.clipboard.writeText(urlP); avisoGeral('Link copiado.', 'ok'); } catch { avisoGeral(urlP); } } }, 'Copiar link de entrada'),
         h('a', { class: 'btn', href: urlT, target: '_blank', rel: 'noopener' }, 'Abrir telão')),
       h('p', { class: 'sutil' }, 'No PC da sala, abra ', h('strong', {}, link('telao.html').replace(/^https?:\/\//, '').replace(/\.html(?=\?|$)/, '')), ' e digite o código: o telão abre sozinho.'),
-      h('details', {}, h('summary', {}, 'Testar sem participantes (simulador no PC)'),
-        h('p', { class: 'sutil' }, 'Abra no PC o endereço abaixo: ele mostra o telão e vários celulares simulados entrando nesta sala. Você conduz por aqui normalmente.'),
+      !EM_ENSAIO && h('details', {}, h('summary', {}, 'Testar com meu celular (turma fictícia no PC)'),
+        h('p', { class: 'sutil' }, 'Ensaio geral com esta sala de verdade: abra no PC o endereço abaixo. Ele mostra o telão em cima e a turma fictícia embaixo, e você conduz por aqui normalmente. Ao terminar, encerre a sala.'),
         h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo }).replace('simulador.html', 'simulador').replace(/^https?:\/\//, '')))),
       h('button', { class: 'btn bloco', onclick: () => b.atualizarSala(E.codigo, { entradaAberta: !s.entradaAberta }).catch(falha) }, s.entradaAberta ? 'Fechar a entrada' : 'Reabrir a entrada'),
       h('p', { class: 'sutil' }, s.entradaAberta ? 'Entrada aberta: novos participantes podem entrar. Depois da formação dos grupos, quem chega vai para o grupo com menos pessoas.' : 'Entrada fechada.')),
@@ -535,14 +543,15 @@ function renderGrupos() {
     comecou && h('p', { class: 'sutil' }, 'A atividade já começou: o sorteio não pode ser refeito, mas você pode mover pessoas.'));
 }
 
-async function formarGrupos() {
+async function formarGrupos(eComecar = false) {
   const uids = Object.keys(E.sala.nomes || {});
   if (!uids.length) return avisoGeral('Ninguém entrou ainda.', 'alerta');
   const r = distribuir(A().grupos, uids);
   const reps = {};
   for (const g of A().grupos) if (r.composicao[g.id].length) reps[g.id] = r.composicao[g.id][0];
   await b.atualizarSala(E.codigo, { composicao: r.composicao, representantes: reps, executores: {}, leitoresExtra: {}, fase: 'grupos' }).catch(falha);
-  mostrarAba('grupos');
+  mostrarAba(eComecar === true ? 'conducao' : 'grupos');
+  if (eComecar === true) avisoGeral('Grupos formados: o telão mostra “Encontre seu grupo”. Com a turma reunida, inicie a primeira etapa.', 'ok');
 }
 
 async function mover(uid, destino) {

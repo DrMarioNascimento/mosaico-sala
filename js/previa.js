@@ -1,10 +1,17 @@
-/* MOSAICO · Ver como fica (aberta pelo Planejamento)
+/* MOSAICO · Simular · só no PC (aberta pelo Planejamento, pela lista de atividades ou pela tela Simular)
    Tudo em modo ensaio, neste navegador: a condução (celular), o telão e uma turma
-   simulada entram na mesma sala, já com a atividade que está sendo editada. */
+   simulada entram na mesma sala, já com a atividade escolhida. */
 import { link, EM_ENSAIO } from './backend.js';
 
 if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio', '1'); location.replace(u.href); }
 const $ = id => document.getElementById(id);
+// Volta para onde veio: a tela Simular (escolher outra atividade) ou o planejamento (que abriu esta aba).
+const DEMO = new URLSearchParams(location.search).has('demonstracao');   // veio da demonstração pública (sem conta)
+if (new URLSearchParams(location.search).get('de') === 'simulador') {
+  const v = $('voltar'); v.href = DEMO ? 'simulador.html?ensaio=1&demonstracao=1' : 'simulador.html'; v.lastChild.textContent = 'Escolher outra atividade';
+}
+// “Testar com meu celular” é o ensaio geral, com sala de verdade (fora do modo ensaio). Na demonstração não existe.
+if (DEMO) $('comCelular').hidden = true;
 let codigo = null, esperaSala = null;
 const ETAPA = new URLSearchParams(location.search).get('etapa');   // “Ver esta etapa”: a condução já começa nela
 // Os iframes focam campos e o navegador rola a página até eles; enquanto a turma entra, a página fica no topo.
@@ -31,7 +38,7 @@ addEventListener('message', async e => {
   if(e.data?.tipo!=='mosaico-previa-sala'||codigo)return;
   clearTimeout(esperaSala);
   codigo = e.data.codigo;
-  const t = document.createElement('iframe'); t.src = link('telao.html', { sala: codigo }); t.title = 'Telão';
+  const t = document.createElement('iframe'); t.src = link('telao.html', { sala: codigo }); t.title = 'Telão'; t.allow = 'fullscreen'; t.allowFullscreen = true;
   $('telao').replaceChildren(t); ajustarTelao();
   $('turma').replaceChildren();
   const n = Math.min(20, Math.max(1, Number($('qtd').value) || 8));

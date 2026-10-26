@@ -17,21 +17,14 @@
 <body>
 <header class="topo">
   <div class="barra plan-barra">
-    <a class="marca marca-link" href="index.html" title="Início"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Planejamento</a>
+    <a class="marca marca-link" href="planejar.html#inicio" id="marcaInicio" title="Início: painel do professor"><img class="logo" src="assets/mosaico.webp" alt="" width="40" height="40">Planejamento</a>
     <span class="status" id="statusTopo"></span>
     <div class="plan-acoes" id="acoes" hidden></div>
   </div>
 </header>
 <main class="plan-pagina">
-  <nav class="fluxo" aria-label="Do planejamento à execução">
-    <a class="inicio" href="index.html" data-ico="inicio" title="Início"><span class="rot">Início</span></a><span class="sep" aria-hidden="true">›</span>
-    <a href="planejar.html" data-ico="planejar"><span class="num">2</span> Preparar</a>
-    <a href="planejar.html#revisao" data-ico="revisao"><span class="num">5</span> Revisar</a>
-    <a href="conduzir.html" data-ico="conduzir"><span class="num">8</span> Aplicar em sala</a>
-    <a href="telao.html" data-ico="telao">Telão de apoio</a>
-    <a href="simulador.html" data-ico="simulador">Simulador</a>
-  </nav>
-  <section id="login" class="cartao plan-login">
+  <nav class="fluxo" data-fluxo-docente aria-label="Navegação do professor"></nav>
+  <section id="login" class="cartao plan-login" hidden>
     <div class="entrada-cab"><span data-ilu="e_planejar" data-tam="72"></span><h1>Área do professor</h1></div>
     <p>Entre com sua conta Google para preparar, revisar e aplicar suas atividades.</p>
     <div class="linha-botoes"><button class="btn primario bloco" id="entrarGoogle">Entrar com Google</button></div>

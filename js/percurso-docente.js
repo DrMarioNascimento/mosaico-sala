@@ -5,7 +5,7 @@ export const PASSOS_DOCENTE = [
   ['Planejar','Defina turma, objetivo, tempo e grupos.'],
   ['Gerar ou adaptar','Peça a proposta à IA ou adapte seu modelo.'],
   ['Revisar conteúdo','Confira perguntas, respostas, fontes e ajustes.'],
-  ['Experimentar','Use “Ver como fica” com uma turma simulada.'],
+  ['Simular','Veja a aula no PC com uma turma fictícia.'],
   ['Salvar atividade','Guarde na biblioteca ou baixe uma cópia.'],
   ['Aplicar em sala','Abra a sala e compartilhe o código com a turma.']
 ];

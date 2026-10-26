@@ -35,6 +35,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Manual do professor: o texto fica aqui (e não no site público, nem no repositório).
+    // Só quem está na lista de mestres lê; só os administradores publicam uma nova versão.
+    match /manual/{d} {
+      allow read: if mestre();
+      allow create, update: if admin() && d == 'atual'
+        && request.resource.data.keys().hasOnly(['html', 'versao', 'autor', 'atualizadoEm'])
+        && request.resource.data.html is string && request.resource.data.html.size() > 0 && request.resource.data.html.size() < 900000
+        && request.resource.data.versao is string && request.resource.data.versao.size() <= 80
+        && request.resource.data.autor is string && request.resource.data.autor.size() <= 200
+        && request.resource.data.atualizadoEm == request.time;
+      allow delete: if false;
+    }
+
     // Biblioteca de atividades: FECHADA. Só contas da lista de mestres; cada uma lê e edita as suas,
     // e lê as que outro mestre marcou como compartilhadas. Nenhum dado de participante fica aqui.
     match /biblioteca/{id} {

@@ -1,6 +1,6 @@
 import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
-import { backend, link } from './backend.js';
+import { backend, link, EM_ENSAIO } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { criarTelao } from './telao-tipos.js';
@@ -14,6 +14,25 @@ async function alternarTelaCheia() {
   try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { /* navegador sem tela cheia */ }
 }
 $('telaCheia').onclick = alternarTelaCheia;
+
+/* Caber na tela: o telão nunca corta conteúdo. As medidas acompanham a tela (vw/vh), mas uma TV com zoom,
+   escala do Windows ou formato diferente de 16:9 pode deixar o conteúdo maior que o espaço. Nesse caso,
+   tudo encolhe junto (--ajuste) até caber inteiro. */
+let pedidoCaber = 0;
+function caber() {
+  cancelAnimationFrame(pedidoCaber);
+  pedidoCaber = requestAnimationFrame(() => {
+    const raiz = document.documentElement, centro = $('centro');
+    const passou = () => centro.scrollHeight > centro.clientHeight + 1 || centro.scrollWidth > centro.clientWidth + 1
+      || document.querySelector('.telao-palco').scrollHeight > innerHeight + 1 || raiz.scrollWidth > innerWidth + 1;
+    let a = 1; raiz.style.setProperty('--ajuste', a);
+    while (passou() && a > 0.45) { a = Math.round((a - 0.05) * 100) / 100; raiz.style.setProperty('--ajuste', a); }
+  });
+}
+addEventListener('resize', caber);
+document.addEventListener('fullscreenchange', caber);
+if ('ResizeObserver' in window) new ResizeObserver(caber).observe(document.documentElement);
+document.fonts?.ready?.then(caber);
 addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !(e.target instanceof HTMLInputElement)) alternarTelaCheia(); });
 let codigo = null, sala = null, relogio = null, revelacao = null, inscRevelacao = null, revelacaoDe = null;
 const ordemDaSala = (opcoes, enunciado) => embaralharPor(opcoes, codigo + '|' + (enunciado || ''));   // a mesma ordem dos celulares
@@ -49,7 +68,8 @@ async function abrir(c) {
 
 const nomeGrupo = g => sala.publico.grupos.find(x => x.id === g)?.nome || g;
 
-function render() {
+function render() { desenhar(); caber(); }
+function desenhar() {
   const c = $('centro');
   if (!sala || sala.status !== 'open') { $('cabecalho').textContent = ''; return limpar(c, h('h1', {}, 'Sala encerrada'), h('p', {}, 'Obrigado!')); }
   const p = sala.publico;
@@ -65,6 +85,7 @@ function render() {
         h('div', {}, h('p', {}, 'Aponte a câmera para o QR Code ou acesse o endereço e digite o código:'),
           h('p', { class: 'sutil' }, url.replace(/\?.*$/, '')), h('div', { class: 'codigo' }, codigo),
           h('p', { class: 'sutil' }, sala.entradaAberta ? 'Entrada aberta' : 'Entrada fechada'))),
+      EM_ENSAIO && h('p', { class: 'aviso faixa-simulacao', 'data-tipo': 'alerta' }, 'Simulação: esta sala existe só neste computador. O QR não funciona em celulares de verdade.'),
       p.introducao && h('p', {}, p.introducao));
   }
   if (sala.fase === 'grupos') {

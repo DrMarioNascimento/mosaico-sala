@@ -10,6 +10,7 @@
       "package.json",
       "README.md",
       "**/*_SUBSTITUIDO_*",
+      "privado/**",
       "firebase-debug*.log",
       "**/*.test.mjs",
       "ERGONOMIA-DOCENTE.md",

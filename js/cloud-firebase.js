@@ -118,6 +118,10 @@ export const backend = {
   },
   apagarBiblioteca(id) { return deleteDoc(doc(db, 'biblioteca', id)); },
 
+  // ---------- manual do professor (só mestres leem; só administradores publicam; regras no firestore.rules) ----------
+  async lerManual() { const s = await getDoc(doc(db, 'manual', 'atual')); if (!s.exists()) return null; const x = s.data(); return { ...x, atualizadoEm: x.atualizadoEm?.toMillis?.() ?? 0 }; },
+  salvarManual({ html, versao = '', autor = '' }) { return setDoc(doc(db, 'manual', 'atual'), { html, versao, autor, atualizadoEm: serverTimestamp() }); },
+
   // ---------- administração (só os administradores fixos; regras no firestore.rules) ----------
   /** Todas as atividades de todos os professores, com o conteúdo para abrir e o tamanho. */
   async listarTodaBiblioteca() {
@@ -129,7 +133,7 @@ export const backend = {
     const u = auth.currentUser; if (!u) return [];
     try {
       const s = await getDocs(query(collection(db, 'rooms'), where('owner', '==', u.uid)));
-      return s.docs.map(d => ({ codigo: d.id, status: d.data().status, venceEm: d.data().expiresAt?.toMillis?.() ?? 0 }));
+      return s.docs.map(d => { const x = d.data(); return { codigo: d.id, status: x.status, venceEm: x.expiresAt?.toMillis?.() ?? 0, criadaEm: x.createdAt?.toMillis?.() ?? 0, titulo: x.publico?.titulo || '', participantes: Object.keys(x.nomes || {}).length }; });
     } catch { return []; }
   },
   /** Todas as salas, abertas ou esquecidas (o servidor não apaga sozinho as vencidas). */

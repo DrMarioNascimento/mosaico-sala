@@ -45,7 +45,7 @@ for (const caso of CASOS.filter(c=>!process.env.MOSAICO_CASOS || process.env.MOS
       // Condução: entra, escolhe o modelo e abre a sala
       const cond = await ctx.newPage();
       await cond.goto(base + 'conduzir.html?ensaio=1');
-      await cond.locator('#entrarGoogle').click();
+      await cond.locator('#abas').waitFor();   // ensaio: sem tela de login, entra direto
       await cond.getByRole('button', { name: caso.titulo, exact: true }).click();
       await cond.getByRole('button', { name: 'Abrir sala', exact: true }).click();
       const codigo = (await cond.locator('.codigo').innerText({ timeout: 10_000 })).trim();
@@ -61,9 +61,9 @@ for (const caso of CASOS.filter(c=>!process.env.MOSAICO_CASOS || process.env.MOS
       await cond.waitForFunction(n => /(\d+) participante/.exec(document.body.innerText)?.[1] >= n, PARTICIPANTES, { timeout: 30_000 });
 
       // Grupos e condução de todas as etapas até o resultado
-      await cond.locator('#abas button[data-aba=grupos]').click();
-      await cond.getByRole('button', { name: 'Sortear grupos equilibrados' }).click();
-      await cond.locator('#abas button[data-aba=conducao]').click();
+      // Fluxo curto: na própria aba Sala, “Formar grupos e começar” sorteia e leva à condução
+      await cond.getByRole('button', { name: 'Formar grupos e começar', exact: true }).click();
+      await cond.locator('#aba-conducao:not([hidden])').waitFor();
       const fim = Date.now() + 660_000;
       let emAndamentoDesde = 0;
       while (Date.now() < fim) {

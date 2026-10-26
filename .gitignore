@@ -7,3 +7,6 @@ node_modules/
 
 # arquivos baixados pelos testes de ponta a ponta
 tests/.downloads/
+
+# Fonte privada do manual (o texto publicado fica no Firestore, só para a lista de mestres)
+privado/

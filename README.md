@@ -3,7 +3,7 @@
 Plataforma de atividades em grupo para a sala de aula: **cada grupo tem uma parte, ninguém tem o quadro completo, a turma junta as peças e supera a meta.** Quem conduz abre a sala; os alunos entram pelo celular, com um código ou QR, sem cadastro e sem instalar nada; o telão acompanha a aula.
 
 - **Site:** https://mosaico-sala.web.app
-- **Manual completo:** https://mosaico-sala.web.app/manual (também em [`manual.html`](manual.html))
+- **Manual completo:** https://mosaico-sala.web.app/manual (só para professores da lista de mestres; o texto fica no Firestore e a fonte, fora do repositório)
 - **Licença:** [LICENSE.md](LICENSE.md), publicada em https://mosaico-sala.web.app/licenca
 
 ## Estado em 25 de outubro de 2026
@@ -38,7 +38,7 @@ Acrescentar `?ensaio=1` a qualquer página roda tudo neste navegador, sem intern
 | `telao.html` | telão da sala (digitar o código já abre) | TV / projetor |
 | `previa.html` | “Ver como fica”: professor, telão e turma simulada lado a lado | PC |
 | `simulador.html` | simulador da aula na sala real | PC |
-| `manual.html` | manual completo, com versão para imprimir | todos |
+| `manual.html` | moldura do manual: pede o login e busca o texto no Firestore (publicado em Administração → Publicar manual) | professores da lista de mestres |
 | `licenca.html` | licença de uso (mesmo texto do `LICENSE.md`) | todos |
 
 ## Os 8 passos do professor

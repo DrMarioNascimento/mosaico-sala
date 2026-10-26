@@ -26,6 +26,7 @@ import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
 import { cartoesDoTexto, prepararCartoes } from './core/cartoes.js';
 import { criarEditores } from './planejar-tipos.js';
 import { ico, ilustra } from './icones.js';
+import { linkDocente } from './nav.js';
 
 const b = await backend();
 const RASCUNHO_BASE = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
@@ -63,22 +64,34 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.querySele
 const topoDocente=document.querySelector('header.topo');
 if(topoDocente && typeof ResizeObserver!=='undefined')new ResizeObserver(()=>document.documentElement.style.setProperty('--topo-docente',(topoDocente.getBoundingClientRect().height+12)+'px')).observe(topoDocente);
 let autoriaInicialAberta = false;
-window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao');});
+window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao'); else if(['#inicio','#minhas'].includes(location.hash))irParaPainel(location.hash==='#minhas');});
+if($('marcaInicio'))$('marcaInicio').href=linkDocente('planejar.html','inicio');
+const PEDIU_PAINEL=['#inicio','#minhas'].includes(location.hash);
+/** Início e Minhas atividades (barra de cima): fecha a atividade aberta (o rascunho fica guardado) e mostra o painel. */
+function irParaPainel(lista){
+  if(!P.conta)return;
+  if(P.A && !voltarMinhas())return;
+  P.adm=null; render();
+  try{history.replaceState(null,'',location.pathname+location.search);}catch{}
+  if(lista)requestAnimationFrame(()=>document.getElementById('minhasAtividades')?.scrollIntoView({block:'start'})); else window.scrollTo({top:0});
+}
 // ============================================================ entrada
 $('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio)' : 'Entrar com Google';
 $('entrarGoogle').onclick = () => {
   const p = b.entrarGoogle(); $('entrarGoogle').disabled = true;
   p.then(iniciar).catch(e => { $('entrarGoogle').disabled = false; aviso($('avisoLogin'), e.code === 'auth/popup-closed-by-user' ? 'Login cancelado.' : 'Não foi possível entrar. Confira a internet.', 'erro'); });
 };
-(async () => { const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO && new URLSearchParams(location.search).has('demonstracao')) iniciar(await b.entrarGoogle()); })();
+(async () => { const c = await b.contaAtual(); if (c) iniciar(c); else if(EM_ENSAIO) iniciar(await b.entrarGoogle()); else $('login').hidden = false; })();
 
 async function iniciar(conta) {
   P.conta = conta; RASCUNHO = RASCUNHO_BASE + ':' + conta.uid; RASCUNHOS = RASCUNHO + ':lista'; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
   if (souAdmin()) carregarMestres();
-  try { const r = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; rascunhoId = r.rascunhoId; salvoEm = r.salvoEm; historico = criarHistorico(P.A); marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
+  carregarSalasAbertas();
+  try { const r = PEDIU_PAINEL ? null : JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; rascunhoId = r.rascunhoId; salvoEm = r.salvoEm; historico = criarHistorico(P.A); marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
   if(location.hash==='#revisao' && P.A)P.secao='revisao';
   render();
+  if(PEDIU_PAINEL)irParaPainel(location.hash==='#minhas');
   if(!autoriaInicialAberta && new URLSearchParams(location.search).get('criar')==='texto'){autoriaInicialAberta=true;abrirIA();}
 }
 
@@ -87,6 +100,31 @@ async function carregarBiblioteca() {
   catch (e) { P.bib = null; P.bibErro = e?.code === 'permission-denied' || /permission/i.test(e?.message || '') ? 'fora' : 'falha'; }
 }
 const temBiblioteca = () => Array.isArray(P.bib);
+/** Salas on-line desta conta que continuam abertas (em qualquer aparelho). O ensaio não entra: fica só no navegador. */
+async function carregarSalasAbertas() {
+  if (EM_ENSAIO) return;
+  const agora = Date.now();
+  P.salas = (await b.listarMinhasSalas().catch(() => [])).filter(x => x.status === 'open' && (!x.venceEm || x.venceEm > agora));
+  if (!P.A && !P.adm) render();
+}
+function avisoSalasAbertas() {
+  if (!P.salas?.length) return null;
+  let guardada = null; try { guardada = JSON.parse(localStorage.getItem('mosaico-conducao') || 'null')?.codigo; } catch {}
+  const hora = ms => ms ? new Date(ms).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  return h('section', { class: 'cartao salas-abertas', 'aria-label': 'Salas abertas' },
+    h('h2', {}, ico('sala'), P.salas.length > 1 ? `Você tem ${P.salas.length} salas abertas` : 'Você tem uma sala aberta'),
+    h('p', { class: 'sutil' }, 'Uma sala fica aberta até você encerrar (ou por até 24 horas). Encerre as que não está usando: isso apaga os nomes e as respostas.'),
+    h('ul', { class: 'lista-bib' }, P.salas.map(x => h('li', {},
+      h('div', { class: 'tit' }, h('strong', {}, 'Sala ' + x.codigo + (x.titulo ? ' · ' + x.titulo : '')), h('small', {}, [x.criadaEm && 'aberta em ' + hora(x.criadaEm), pl(x.participantes || 0, 'participante'), x.codigo === guardada ? 'conduzida neste aparelho' : 'aberta em outro aparelho'].filter(Boolean).join(' · '))),
+      h('div', { class: 'mini' },
+        x.codigo === guardada && h('a', { class: 'btn pequeno primario', href: link('conduzir.html') }, 'Continuar conduzindo'),
+        h('button', { class: 'btn pequeno perigo', onclick: async ev => {
+          if (!confirmar(`Encerrar a sala ${x.codigo}? Os nomes e as respostas dessa sala serão apagados.`)) return;
+          ev.target.disabled = true;
+          try { await b.apagarSala(x.codigo); P.salas = P.salas.filter(y => y.codigo !== x.codigo); avisoGeral('Sala ' + x.codigo + ' encerrada.', 'ok'); render(); }
+          catch (e) { ev.target.disabled = false; avisoGeral('Não foi possível encerrar agora: ' + (e?.message || e), 'erro'); }
+        } }, 'Encerrar')))))) ;
+}
 const souAdmin = () => EM_ENSAIO || ehAdmin(P.conta?.email);
 
 // ============================================================ estado
@@ -275,12 +313,13 @@ function passosSecao() {
     ant ? h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => irPara(ant[0]) }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Anterior: ' + rot(ant)), h('span', { class: 'rot-curto' }, 'Anterior'))
       : h('button', { class: 'btn discreto', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), h('span', { class: 'rot-longo' }, 'Minhas atividades'), h('span', { class: 'rot-curto' }, 'Voltar')),
     prox ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', onclick: () => irPara(prox[0]) }, h('span', { class: 'rot-longo' }, 'Próxima: ' + rot(prox)), h('span', { class: 'rot-curto' }, 'Próxima'), ico('avancar'))
-      : P.secao === 'revisao' ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', disabled: temErros(validarAtividade(P.A)), onclick: previa }, numeroPasso(6),ico('previa'), 'Ver como fica') : null);
+      : P.secao === 'revisao' ? h('button', { class: 'btn primario proximo', 'data-sem-ico': '', disabled: temErros(validarAtividade(P.A)), onclick: previa }, numeroPasso(6),ico('simulador'), 'Simular') : null);
 }
 
 // ============================================================ renderização geral
 function render() {
   document.body.classList.toggle('planejando',!!P.A);
+  dispatchEvent(new Event('mosaico-navegacao'));
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
   if (!P.A) return limpar($('app'), P.adm && souAdmin() ? telaAdmin() : telaInicio());
@@ -297,7 +336,7 @@ function renderAcoes() {
     h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
     h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
     h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, numeroPasso(P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags)?8:5),P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
-    h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Experimentar a aula com turma simulada', onclick:()=>previa() },numeroPasso(6), 'Ver como fica'),
+    h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Simular a aula no PC com uma turma fictícia', onclick:()=>previa() },numeroPasso(6), 'Simular'),
     
     h('button',{class:'btn acao-imprimir',title:'Abrir o material para impressão',onclick:()=>{document.querySelectorAll('details.acoes-mais[open]').forEach(d=>d.open=false);abrirImpressao(P.A);}},'Imprimir'),
     h('details',{class:'acoes-mais'},h('summary',{class:'btn'},'Guardar e exportar'),
@@ -408,6 +447,7 @@ function telaInicio() {
       acao('e_material', 'Criar com IA', 'Cole um texto ou envie um arquivo. A IA monta a proposta para você revisar.', () => abrirIA(), true),
       acao('e_conduzir', 'Aplicar em sala', 'Abra a sala com uma atividade pronta e acompanhe a turma.', () => { location.href = link('conduzir.html'); }),
       acao('e_planejar', 'Usar um modelo', 'Comece de um exemplo e ajuste ao conteúdo da sua aula.', () => ir('modelosProntos'))),
+    avisoSalasAbertas(),
     antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
     !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
       ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
@@ -423,6 +463,7 @@ function telaInicio() {
           item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
           h('div', { class: 'mini' },
             h('a', { class: 'btn pequeno primario', href: aplicar(item.id) }, 'Aplicar'),
+            h('button', { class: 'btn pequeno', title: 'Simular no PC com uma turma fictícia', onclick: () => simularDaBiblioteca(item) }, 'Simular'),
             h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
             h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
             item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar'))))))
@@ -443,9 +484,9 @@ function telaInicio() {
           P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
           h('div', { class: 'linha-botoes' },
             h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
-        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulador'),
-          h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados no projetor. O simulador testa a aula com uma turma fictícia.'),
-          h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: link('simulador.html'), 'data-ico': 'simulador' }, 'Simulador'))),
+        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulação'),
+          h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados na TV. Simular mostra a aula no PC com uma turma fictícia; “Testar com meu celular” faz um ensaio geral com a sala de verdade.'),
+          h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: linkDocente('simulador.html'), 'data-ico': 'simulador' }, 'Simular'))),
         h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()))),
     h('a', { class: 'cartao manual-atalho', href: 'manual.html', target: '_blank', rel: 'noopener' }, ilustra('e_material', 56),
       h('div', {}, h('strong', {}, 'Manual do MOSAICO'), h('span', {}, 'Passo a passo, as 15 atividades e por que funcionam. Abre em outra aba.'))));
@@ -492,8 +533,8 @@ function cartaoMestres(contaPor = null) {
    As regras do Firestore (função admin()) são o que de fato libera isso; esta tela só aparece para eles. */
 async function carregarAdmin() {
   P.adm = { carregando: true, filtro: P.adm?.filtro || '' }; render();
-  const [bib, salas] = await Promise.allSettled([b.listarTodaBiblioteca(), b.listarSalas()]);
-  P.adm = { ...P.adm, carregando: false,
+  const [bib, salas, manual] = await Promise.allSettled([b.listarTodaBiblioteca(), b.listarSalas(), b.lerManual()]);
+  P.adm = { ...P.adm, carregando: false, manual: manual.status === 'fulfilled' ? (manual.value || { vazio: true }) : null,
     bib: bib.status === 'fulfilled' ? bib.value : null, salas: salas.status === 'fulfilled' ? salas.value : null,
     erro: [bib, salas].some(x => x.status === 'rejected') ? 'O servidor recusou parte da leitura. Publique as regras novas do Firestore (firestore.rules) e confira se a sua conta é de administrador.' : '' };
   if (!Array.isArray(P.mestres)) carregarMestres();
@@ -546,7 +587,38 @@ function telaAdmin() {
       h('p', { class: 'sutil' }, 'Salas abertas agora e as esquecidas depois de vencer. Encerrar apaga participantes, envios e pacotes.'),
       vencidas.length > 0 && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn perigo', onclick: () => admEncerrarSalas(vencidas.map(s => s.codigo), `Encerrar as ${vencidas.length} salas vencidas?`) }, `Encerrar as ${vencidas.length} salas vencidas`)),
       salas.length ? h('ul', { class: 'lista-bib' }, [...abertas, ...vencidas].map(linhaSala)) : h('p', { class: 'sutil' }, 'Nenhuma sala.')),
+    cartaoManual(A.manual),
     cartaoMestres(contaPor));
+}
+
+/* Manual do professor: o texto mora no Firestore (só mestres leem), não no site nem no GitHub.
+   A fonte fica no PC do administrador (privado/manual-fonte.html, fora do Git). Publicar = escolher o arquivo. */
+function cartaoManual(atual) {
+  const arquivo = h('input', { type: 'file', id: 'arqManual', accept: '.html,text/html' });
+  const estado = h('p', { class: 'sutil', role: 'status' }, atual === null ? 'Não foi possível consultar o manual publicado (publique as regras novas do Firestore).'
+    : atual.vazio ? 'Ainda não há manual publicado: os professores veem um aviso no lugar do texto.'
+    : `Versão publicada: ${atual.versao || '—'} · ${dataCurta(atual.atualizadoEm)}${atual.autor ? ' · por ' + atual.autor : ''} · ${Math.round((atual.html || '').length / 1024)} KB`);
+  arquivo.onchange = async () => {
+    const f = arquivo.files[0]; if (!f) return;
+    try {
+      const doc = new DOMParser().parseFromString(await f.text(), 'text/html');
+      const corpo = doc.querySelector('main.manual');
+      if (!corpo || !corpo.textContent.trim()) throw new Error('o arquivo não tem o conteúdo do manual (<main class="manual">). Use o privado/manual-fonte.html.');
+      corpo.querySelectorAll('script, iframe, object, embed').forEach(x => x.remove());
+      const html = corpo.innerHTML.trim();
+      if (html.length >= 880000) throw new Error('o manual ficou grande demais para o servidor (limite de ~880 KB de texto). Tire imagens embutidas.');
+      const versao = (doc.querySelector('.meta-capa')?.textContent.match(/Versão de (\d{1,2} de \S+ de \d{4})/)?.[1] || new Date().toLocaleDateString('pt-BR')).trim().slice(0, 80);
+      if (!confirmar(`Publicar o manual (${versao}, ${Math.round(html.length / 1024)} KB)? A versão atual será substituída para todos os professores.`)) { arquivo.value = ''; return; }
+      await b.salvarManual({ html, versao, autor: P.conta?.email || '' });
+      avisoGeral('Manual publicado. Os professores da lista de mestres já veem a versão nova.', 'ok');
+      carregarAdmin();
+    } catch (e) { arquivo.value = ''; avisoGeral('Não foi possível publicar o manual: ' + (e?.message || e), 'erro'); }
+  };
+  return h('section', { class: 'cartao' }, h('h2', {}, ico('atividade'), 'Manual do professor'),
+    h('p', { class: 'sutil' }, 'O texto do manual fica guardado no servidor e só quem está na lista de mestres consegue ler. Para atualizar: edite o arquivo privado/manual-fonte.html na sua pasta do projeto (ele não vai para o GitHub) e publique aqui.'),
+    estado,
+    h('label', { for: 'arqManual' }, 'Publicar nova versão (arquivo .html)'), campoArquivo(arquivo),
+    h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: linkDocente('manual.html'), target: '_blank', rel: 'noopener' }, 'Ver o manual publicado')));
 }
 
 async function abrirModelo(id) {
@@ -598,7 +670,7 @@ function painelFinalizarAtividade(erros) {
  const revisada=!!P.A.docente?.revisadoEm,liberada=!erros.length;
  const cartao=(n,t,descricao,botao)=>h('article',{class:'finalizar-passo'},h('h3',{},numeroPasso(n),t),h('p',{},descricao),botao);
  return h('section',{class:'cartao finalizar-atividade','aria-label':'Concluir a preparação da atividade'},h('h2',{},'Depois da revisão, conclua nesta ordem'),h('div',{class:'finalizar-grade'},
-  cartao(6,'Experimente a atividade',liberada?'Abra a simulação e confira o que professor e alunos verão. Depois volte a esta aba.':'Complete os itens de estrutura acima para simular.',h('button',{class:'btn',onclick:()=>previa()},numeroPasso(6),'Ver como fica')),
+  cartao(6,'Simule a atividade',liberada?'Veja no PC, com uma turma fictícia, o que você e os alunos verão. Depois volte a esta aba.':'Complete os itens de estrutura acima para simular.',h('button',{class:'btn',onclick:()=>previa()},numeroPasso(6),'Simular')),
   cartao(7,'Salve sua atividade',temBiblioteca()?'Guarde na biblioteca para recuperar em outro aparelho.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
   cartao(8,'Leve para a sala',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A atividade está pronta para abrir a sala e receber os alunos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},numeroPasso(8),'Abrir sala e conduzir'))));
 }
@@ -628,6 +700,18 @@ function baixarJSON(a) {
 }
 
 // ============================================================ pré-visualização
+/** Simular uma atividade da biblioteca direto da lista (sem abrir para editar). */
+async function simularDaBiblioteca(item) {
+  try { const d = item.conteudo ? item : await b.lerBiblioteca(item.id); simularAtividade(JSON.parse(d.conteudo)); }
+  catch (e) { avisoGeral('Não foi possível abrir a atividade para simular: ' + (e?.message || e), 'erro'); }
+}
+function simularAtividade(a) {
+  const erros = validarAtividade(a).filter(x => x.severidade === 'erro');
+  if (erros.length) return avisoGeral(`“${a.titulo}” ainda tem ${pl(erros.length, 'item', 'itens')} a completar. Abra a atividade e confira a Revisão antes de simular.`, 'alerta');
+  try { localStorage.setItem('mosaico-previa', JSON.stringify(a)); } catch { return avisoGeral('O navegador não permitiu guardar a simulação.', 'erro'); }
+  const url = new URL('previa.html', location.href); url.search = '?ensaio=1';
+  if (!window.open(url.href, '_blank')) location.href = url.href;
+}
 function previa(etapaId) {
   const copia=typeof etapaId==='string'?recortarPrevia(P.A,etapaId):P.A;
   const erros=validarAtividade(copia).filter(x=>x.severidade==='erro');

@@ -113,3 +113,14 @@ test('Participante grava o prazo da sala; prazo inventado é recusado; sem prazo
  await assertFails(setDoc(doc(db('a2'), 'rooms/555555/members/a2'), { nome: 'Bia', entrouEm: Date.now(), expiresAt: Timestamp.fromMillis(Date.now() + 9e10) }));
  await assertSucceeds(setDoc(doc(db('a3'), 'rooms/555555/members/a3'), { nome: 'Caio', entrouEm: Date.now() }));
 });
+test('Manual: só mestre lê; só administrador publica, no formato combinado; ninguém apaga', async () => {
+ const dados={html:'<section>Manual</section>',versao:'26/10/2026',autor:'Admin',atualizadoEm:serverTimestamp()};
+ await assertSucceeds(setDoc(doc(db('admin','mariocnascimento@gmail.com'),'manual/atual'),dados));
+ await assertFails(setDoc(doc(db('admin','mariocnascimento@gmail.com'),'manual/outro'),dados));
+ await assertFails(setDoc(doc(db('admin','mariocnascimento@gmail.com'),'manual/atual'),{...dados,extra:true}));
+ await assertFails(setDoc(doc(db('professor','professor@exemplo.com'),'manual/atual'),dados));
+ await assertSucceeds(getDoc(doc(db('professor','professor@exemplo.com'),'manual/atual')));
+ await assertFails(getDoc(doc(db('qualquer','qualquer@exemplo.com'),'manual/atual')));
+ await assertFails(getDoc(doc(db('anonimo'),'manual/atual')));
+ await assertFails(deleteDoc(doc(db('admin','mariocnascimento@gmail.com'),'manual/atual')));
+});

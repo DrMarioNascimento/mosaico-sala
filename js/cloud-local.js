@@ -36,7 +36,8 @@ export const backend = {
   modo: 'ensaio',
   async identificar() { return meuUid(); },
   entrarGoogle() { return Promise.resolve({ uid: meuUid(), email: 'ensaio@local' }); },
-  async contaAtual() { return sessionStorage.getItem('mosaico-ensaio-conduz') ? { uid: meuUid(), email: 'ensaio@local' } : null; },
+  // No ensaio não há login de verdade: quem abre uma página de professor já está “dentro” (sem tela de entrar).
+  async contaAtual() { return { uid: meuUid(), email: 'ensaio@local' }; },
 
   async criarSala(dados) {
     sessionStorage.setItem('mosaico-ensaio-conduz', '1');
@@ -87,8 +88,11 @@ export const backend = {
     return novo;
   },
   async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
+  // manual de ensaio: só existe se alguém publicou neste navegador (Administração → Publicar manual)
+  async lerManual() { return ler('manual/atual'); },
+  async salvarManual({ html, versao = '', autor = '' }) { gravar('manual/atual', { html, versao, autor, atualizadoEm: Date.now() }); },
   async listarTodaBiblioteca() { return chaves('biblioteca/').map(k => ({ id: k.slice(11), ...ler(k) })).sort((x, y) => y.atualizadoEm - x.atualizadoEm); },
-  async listarMinhasSalas() { return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => ({ k, x: ler(k) || {} })).filter(({ x }) => x.owner === meuUid()).map(({ k, x }) => ({ codigo: k.slice(6), status: x.status, venceEm: x.expiresAt || 0 })); },
+  async listarMinhasSalas() { return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => ({ k, x: ler(k) || {} })).filter(({ x }) => x.owner === meuUid()).map(({ k, x }) => ({ codigo: k.slice(6), status: x.status, venceEm: x.expiresAt || 0, criadaEm: x.createdAt || 0, titulo: x.publico?.titulo || '', participantes: Object.keys(x.nomes || {}).length })); },
   async listarSalas() {
     return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => { const x = ler(k) || {}; return { codigo: k.slice(6), owner: x.owner, status: x.status, fase: x.fase || '', titulo: x.publico?.titulo || '',
       participantes: Object.keys(x.nomes || {}).length, criadaEm: x.createdAt || 0, venceEm: x.expiresAt || 0 }; }).sort((x, y) => y.criadaEm - x.criadaEm);

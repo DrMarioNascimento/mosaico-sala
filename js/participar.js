@@ -1,6 +1,6 @@
 import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Tela de quem participa (celular) */
-import { backend } from './backend.js';
+import { backend, EM_ENSAIO } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arrastar.js';
@@ -63,7 +63,9 @@ $('entrar').onclick = async () => {
   try {
     uid = await b.identificar();
     const s = await b.lerSala(c);
-    if (!s || s.status !== 'open') throw new Error('Sala não encontrada ou já encerrada.');
+    if (!s || s.status !== 'open') throw new Error(EM_ENSAIO
+      ? 'Esta é uma sala de simulação: ela só existe no computador que a abriu e não funciona em outro celular. Peça ao professor o código de uma sala de verdade.'
+      : 'Sala não encontrada ou já encerrada. Confira os 6 números no telão.');
     const existente = await b.lerMembro(c, uid);
     if (!existente) {
       if (!s.entradaAberta) throw new Error('A entrada nesta sala está fechada no momento. Peça a quem conduz para liberar.');
