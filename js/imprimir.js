@@ -10,6 +10,10 @@ import { montarGrade } from './core/cruzadas.js';
 import { respostaCerta } from './core/desafios.js';
 
 const icone = (a, gid, tam = 44) => `<img src="${new URL(urlIcone(formaDoGrupo(a, gid).forma), location.href).href}" alt="" width="${tam}" height="${tam}" style="vertical-align:middle;margin-right:8px">`;
+/* Imagem só entra no HTML impresso se for, do começo ao fim, uma data URI de imagem em base64 válida. */
+const IMG_OK = /^data:image\/(webp|png|jpe?g);base64,[A-Za-z0-9+/]+={0,2}$/;
+const imgSrc = d => (typeof d === 'string' && IMG_OK.test(d)) ? d : '';
+const num = (x, padrao = 0) => Number.isFinite(Number(x)) ? Number(x) : padrao;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ordem = a => [...a.etapas].sort((x, y) => x.ordem - y.ordem);
 
@@ -45,11 +49,11 @@ export function gerarImpressao(a) {
           <p>${esc(e.instrucao || 'Recorte as peças e entregue embaralhadas. A turma deve colocá-las na ordem certa.')}</p>
           <div class="pecas-imp">${embaralharSemOrdemCerta(pecas).map(svg).join('')}</div></section>`);
         partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · ordem certa</h3><p>${textos.map(esc).join(' &nbsp;|&nbsp; ')}</p></div>`);
-      } else if (cfg.imagem?.dados) {
+      } else if (imgSrc(cfg.imagem?.dados)) {
         const g = gradeDoCorte(cfg.corte?.tipo || 'colunas', cfg.corte?.n || 4, cfg.corte?.colunas);
         partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · recortar nas linhas e embaralhar</p><h2>${esc(e.titulo)}</h2>
-          <div class="img-corte" style="--l:${g.linhas};--c:${g.colunas}"><img src="${cfg.imagem.dados}" alt=""><div class="grade-corte"></div></div></section>`);
-        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · imagem completa</h3><img src="${cfg.imagem.dados}" alt="" style="max-width:100%"></div>`);
+          <div class="img-corte" style="--l:${num(g.linhas, 1)};--c:${num(g.colunas, 1)}"><img src="${imgSrc(cfg.imagem.dados)}" alt=""><div class="grade-corte"></div></div></section>`);
+        partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · imagem completa</h3><img src="${imgSrc(cfg.imagem.dados)}" alt="" style="max-width:100%"></div>`);
       }
     } else if (e.typeId === 'cadeado_grupo') {
       // papel: cartões de pergunta para recortar; no verso (ou entregue pelo professor), o pedaço do código
@@ -113,7 +117,7 @@ export function gerarImpressao(a) {
     } else if (e.typeId === 'cruzadas') {
       const g = montarGrade(cfg.palavras || []), nums = {};
       g.numeros.forEach((l, r) => l.forEach((n, k) => { if (n) nums[r + ',' + k] = n; }));
-      const grade = cheia => `<div class="cruz-imp" style="grid-template-columns:repeat(${g.colunas},1fr)">${g.celulas.flatMap((l, r) => l.map((ch, k) => ch === null ? '<span class="v"></span>' : `<span class="c">${nums[r + ',' + k] ? `<small>${nums[r + ',' + k]}</small>` : ''}${cheia ? ch : ''}</span>`)).join('')}</div>`;
+      const grade = cheia => `<div class="cruz-imp" style="grid-template-columns:repeat(${num(g.colunas, 1)},1fr)">${g.celulas.flatMap((l, r) => l.map((ch, k) => ch === null ? '<span class="v"></span>' : `<span class="c">${nums[r + ',' + k] ? `<small>${nums[r + ',' + k]}</small>` : ''}${cheia ? esc(ch) : ''}</span>`)).join('')}</div>`;
       const dicas = d => g.palavras.filter(p => p.dir === d).map(p => `<li value="${p.numero}">${esc(p.dica)} (${p.resposta.length})</li>`).join('');
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · palavras cruzadas</p><h2>${esc(e.titulo)}</h2>${grade(false)}
         <div class="cruz-dicas-imp"><div><h3>Horizontais →</h3><ol>${dicas('h')}</ol></div><div><h3>Verticais ↓</h3><ol>${dicas('v')}</ol></div></div></section>`);
@@ -124,10 +128,10 @@ export function gerarImpressao(a) {
         ${ts.some(t => t.definicao) ? `<dl class="glossario">${ts.map(t => `<dt>${esc(t.termo)}</dt>${t.definicao ? `<dd>${esc(t.definicao)}</dd>` : ''}`).join('')}</dl>` : `<p>${ts.map(t => esc(t.termo)).join(' · ')}</p>`}</section>`);
     } else if (e.typeId === 'analise_imagem') {
       const rp = a.docente?.respostas?.[e.id] || {};
-      const img = cfg.imagem?.dados ? `<img src="${cfg.imagem.dados}" alt="" style="max-width:100%;border:1px solid #999">` : cfg.modelo?.url ? `<p>Modelo 3D: ${esc(cfg.modelo.url)}</p>` : '';
+      const img = imgSrc(cfg.imagem?.dados) ? `<img src="${imgSrc(cfg.imagem.dados)}" alt="" style="max-width:100%;border:1px solid #999">` : cfg.modelo?.url ? `<p>Modelo 3D: ${esc(cfg.modelo.url)}</p>` : '';
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · análise de imagem</p><h2>${esc(e.titulo)}</h2><p>${esc(cfg.enunciado || '')}</p>${img}
         ${cfg.tarefa === 'marcar' ? `<p>Marque na imagem: ${(cfg.marcadores || []).map((m, i) => `<strong>${i + 1}</strong> ${esc(m.rotulo)}`).join(' · ')}</p>` : cfg.tarefa === 'observar' ? '<p class="linhas">O que o grupo observa:</p>' : (cfg.perguntas || []).map((q, i) => `<div class="questao"><h3>${i + 1}. ${esc(q.enunciado)}</h3><ul class="caixas">${q.alternativas.map(al => `<li>☐ ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</section>`);
-      if (cfg.tarefa === 'marcar') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · posições</h3><div class="img-marcada">${img}${(cfg.marcadores || []).map((m, i) => rp.posicoes?.[m.id] ? `<span style="left:${rp.posicoes[m.id].x}%;top:${rp.posicoes[m.id].y}%">${i + 1}</span>` : '').join('')}</div></div>`);
+      if (cfg.tarefa === 'marcar') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · posições</h3><div class="img-marcada">${img}${(cfg.marcadores || []).map((m, i) => rp.posicoes?.[m.id] ? `<span style="left:${num(rp.posicoes[m.id].x)}%;top:${num(rp.posicoes[m.id].y)}%">${i + 1}</span>` : '').join('')}</div></div>`);
       if (cfg.tarefa === 'perguntas') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · respostas</h3><ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)} → <strong>${esc(respostaCerta(q, rp).texto)}</strong></li>`).join('')}</ol></div>`);
     } else if (e.typeId === 'comparar_hipoteses') {
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · uma folha por grupo</p><h2>${esc(e.titulo)}</h2>

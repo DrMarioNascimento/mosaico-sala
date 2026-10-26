@@ -125,7 +125,7 @@ export const TIPOS = {
         if (n > 30) d.push(aviso('config.texto', `São ${n} peças; acima de 20 fica difícil de montar.`));
       }
       if (c.modo === 'imagem') {
-        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem que será cortada.'));
+        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,[A-Za-z0-9+/]+={0,2}$/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem que será cortada.'));
         else if (c.imagem.dados.length > 950000) d.push(erro('config.imagem', 'Imagem pesada demais. Envie de novo para ser reduzida.'));
         if (!['colunas', 'linhas', 'grade'].includes(c.corte?.tipo)) d.push(erro('config.corte', 'Escolha como cortar a imagem.'));
         if (c.quantidade !== 'celulares' && !(Number.isInteger(c.corte?.n) && c.corte.n >= 2 && c.corte.n <= 20)) d.push(erro('config.corte', 'A imagem precisa de 2 a 20 peças.'));
@@ -517,12 +517,12 @@ export const TIPOS = {
       const d = [], c = etapa.config || {};
       if (!['foto', 'grafico', 'modelo3d'].includes(c.midia)) d.push(erro('config.midia', "Escolha a mídia: 'foto', 'grafico' ou 'modelo3d'."));
       if (c.midia === 'modelo3d') {
-        const ok = (c.modelo?.url && /^https:\/\/\S+\.glb(\?\S*)?$/i.test(c.modelo.url)) || /^data:(model\/gltf-binary|application\/octet-stream);base64,/.test(c.modelo?.dados || '');
+        const ok = (c.modelo?.url && /^https:\/\/\S+\.glb(\?\S*)?$/i.test(c.modelo.url)) || /^data:(model\/gltf-binary|application\/octet-stream);base64,[A-Za-z0-9+/]+={0,2}$/.test(c.modelo?.dados || '');
         if (!ok) d.push(erro('config.modelo', 'Informe o endereço https de um arquivo .glb (ou envie um .glb pequeno).'));
         else if ((c.modelo?.dados || '').length > 950000) d.push(erro('config.modelo', 'Modelo pesado demais para enviar: publique o .glb e informe o endereço.'));
         if (c.tarefa === 'marcar') d.push(erro('config.tarefa', 'No modelo 3D, use perguntas ou observar (marcar é só para foto e gráfico).'));
       } else if (c.midia) {
-        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem.'));
+        if (!c.imagem?.dados || !/^data:image\/(webp|png|jpe?g);base64,[A-Za-z0-9+/]+={0,2}$/.test(c.imagem.dados)) d.push(erro('config.imagem', 'Envie a imagem.'));
         else if (c.imagem.dados.length > 950000) d.push(erro('config.imagem', 'Imagem pesada demais. Envie de novo para ser reduzida.'));
       }
       if (!['marcar', 'perguntas', 'observar'].includes(c.tarefa)) d.push(erro('config.tarefa', "Escolha a tarefa: 'marcar', 'perguntas' ou 'observar'."));
