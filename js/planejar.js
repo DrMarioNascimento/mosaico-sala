@@ -405,8 +405,8 @@ function cartaoMestres(contaPor = null) {
   return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
     h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Tirar um professor corta o acesso dele; as atividades que ele já guardou continuam na lista acima até alguém apagá-las.'),
     h('ul', { class: 'lista-bib' },
-        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador')))),
-        lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), contaPor && h('small', {}, contaPor(e) + ' atividade(s) na biblioteca')),
+        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador' + (contaPor ? ' · ' + contaPor(e) + ' atividade(s) na biblioteca' : ''))))),
+        lista.filter(e => !ADMINS.includes(e)).map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), contaPor && h('small', {}, contaPor(e) + ' atividade(s) na biblioteca')),
           h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
     h('label', { for: 'novoMestre' }, 'Adicionar professor (conta Google)'), novo,
     h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: adicionar }, ico('mais'), 'Adicionar')));
