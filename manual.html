@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Manual do MOSAICO · Sala</title>
+<meta name="description" content="Manual completo do MOSAICO · Sala: para que serve, os passos do professor e do aluno, todas as atividades e por que funcionam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="css/mosaico.css">
+<style>
+  /* Manual: mesmo tema escuro da plataforma; na impressão vira papel branco, uma seção por página. */
+  .manual { max-width: 980px; margin: 0 auto; padding: 0 16px 60px; }
+  .manual section { margin: 0 0 56px; scroll-margin-top: 80px; }
+  .manual h2 { font-size: clamp(1.6rem, 3.6vw, 2.2rem); display: flex; align-items: center; gap: 14px; margin: 0 0 14px; }
+  .manual h2 img, .manual h3 img { flex: none; }
+  .manual h3 { font-size: 1.3rem; display: flex; align-items: center; gap: 10px; margin: 26px 0 8px; }
+  .manual p, .manual li { font-size: 1.08rem; line-height: 1.6; }
+  .manual .sutil { color: var(--texto-2); }
+  .ico3d { width: 56px; height: 56px; object-fit: contain; }
+  .ico3d.p { width: 34px; height: 34px; }
+  .ico3d.g { width: 96px; height: 96px; }
+  .num { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--acento); color: #1b1206; font: 900 1.2rem var(--fonte-titulo); flex: none; }
+
+  /* capa */
+  .capa { min-height: 92vh; display: grid; place-items: center; text-align: center; padding: 40px 0; }
+  .capa .logo-capa { width: 168px; height: 168px; }
+  .capa h1 { font-size: clamp(2.4rem, 7vw, 4.2rem); margin: 10px 0 6px; letter-spacing: .02em; }
+  .capa .sub { font-size: clamp(1.1rem, 2.6vw, 1.45rem); color: var(--texto-2); max-width: 32em; margin: 0 auto 26px; }
+  .capa .faixa { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 18px auto 26px; max-width: 760px; }
+  .capa .faixa img { width: 58px; height: 58px; object-fit: contain; }
+  .capa .meta-capa { color: var(--texto-2); font-size: 1rem; }
+  .botoes-capa { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
+
+  /* sumário */
+  .sumario ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  @media (min-width: 720px) { .sumario ol { grid-template-columns: 1fr 1fr; } }
+  .sumario a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--linha); background: var(--cartao); color: var(--texto); text-decoration: none; font-weight: 700; }
+  .sumario a:hover { border-color: var(--acento-2); }
+  .sumario a .n { color: var(--acento); font: 900 1.1rem var(--fonte-titulo); min-width: 1.6em; }
+
+  /* blocos */
+  .grade2 { display: grid; gap: 14px; }
+  @media (min-width: 720px) { .grade2 { grid-template-columns: 1fr 1fr; } }
+  .grade4 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .bloco { border: 1px solid var(--linha); border-radius: 18px; background: linear-gradient(160deg, var(--cartao-2), var(--fundo-2)); padding: 18px; }
+  .bloco h4 { font: 800 1.15rem var(--fonte-titulo); margin: 6px 0; }
+  .bloco p { margin: 4px 0; font-size: 1rem; }
+  .bloco.destaque { border: 2px solid var(--acento); }
+  .pilar { text-align: center; }
+  .pilar img { width: 72px; height: 72px; object-fit: contain; }
+
+  /* passo com foto */
+  .passo { display: grid; gap: 18px; align-items: start; margin: 18px 0 30px; }
+  @media (min-width: 760px) { .passo { grid-template-columns: minmax(0, 1fr) 230px; } }
+  .passo .cab { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .passo .cab h3 { margin: 0; }
+  .tela { width: 230px; max-width: 100%; justify-self: center; border-radius: 26px; border: 3px solid #2c3a57; background: #000; padding: 6px; box-shadow: 0 10px 26px #0006; }
+  .tela img { width: 100%; height: auto; display: block; border-radius: 20px; }
+  .tela-larga { width: 100%; max-width: 640px; border-radius: 14px; border: 3px solid #2c3a57; display: block; margin: 12px auto; }
+  .legenda { text-align: center; color: var(--texto-2); font-size: .9rem; margin-top: 6px; }
+  .dica { border-left: 4px solid var(--acento-2); background: #3ddcff12; border-radius: 10px; padding: 10px 14px; margin: 10px 0; }
+  .atencao { border-left: 4px solid var(--alerta); background: #ffd23d12; border-radius: 10px; padding: 10px 14px; margin: 10px 0; }
+  .fluxo-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0; }
+  .fluxo-linha .et { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--linha); background: var(--cartao); font-weight: 700; }
+  .fluxo-linha .et img { width: 28px; height: 28px; object-fit: contain; }
+  .fluxo-linha .seta { color: var(--acento); font-weight: 900; }
+
+  /* atividades */
+  .atividade { border: 1px solid var(--linha); border-radius: 20px; background: linear-gradient(160deg, var(--cartao-2), var(--fundo-2)); padding: 20px; margin: 16px 0; break-inside: avoid; }
+  .atividade .topo-at { display: flex; align-items: center; gap: 16px; }
+  .atividade .topo-at h3 { margin: 0; }
+  .atividade .tag { display: inline-block; font-size: .78rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--acento-2); }
+  .atividade dl { display: grid; grid-template-columns: 1fr; gap: 6px 14px; margin: 12px 0 0; }
+  @media (min-width: 720px) { .atividade dl { grid-template-columns: 170px 1fr; } }
+  .atividade dt { font-weight: 800; color: var(--acento); }
+  .atividade dd { margin: 0; line-height: 1.55; }
+  .atividade .com-foto { display: grid; gap: 16px; }
+  @media (min-width: 760px) { .atividade .com-foto { grid-template-columns: minmax(0, 1fr) 200px; } .atividade .tela { width: 200px; } }
+  table.tab { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 1rem; }
+  table.tab th, table.tab td { border-bottom: 1px solid var(--linha); padding: 8px 10px; text-align: left; vertical-align: top; }
+  table.tab th { color: var(--acento-2); font-family: var(--fonte-titulo); }
+  .faq details { border: 1px solid var(--linha); border-radius: 14px; padding: 12px 16px; margin: 8px 0; background: var(--cartao); }
+  .faq summary { font-weight: 800; cursor: pointer; }
+  .refs li { font-size: .98rem; }
+  .barra-manual { position: sticky; top: 0; z-index: 5; background: #0b0f17ee; backdrop-filter: blur(6px); border-bottom: 1px solid var(--linha); }
+  .barra-manual .dentro { max-width: 980px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+  .barra-manual .marca { font-size: 1.1rem; }
+  .barra-manual .btn { margin-left: auto; min-height: 44px; }
+
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    :root { --texto: #111; --texto-2: #444; --cartao: #fff; --cartao-2: #fff; --fundo-2: #fff; --linha: #ccc; }
+    body { background: #fff !important; color: #111; font-size: 11pt; }
+    .barra-manual, .botoes-capa, .nao-imprimir { display: none !important; }
+    .manual section { break-before: page; margin: 0; }
+    .capa { min-height: 250mm; }
+    .sumario { break-before: page; }
+    .bloco, .atividade, .passo { break-inside: avoid; box-shadow: none; background: #fff !important; }
+    .tela { box-shadow: none; }
+    a { color: #111; }
+  }
+</style>
+</head>
+<body>
+<header class="barra-manual">
+  <div class="dentro">
+    <a class="marca" href="index.html" style="color:inherit;text-decoration:none"><img class="logo" src="assets/mosaico.webp" alt="" width="36" height="36">MOSAICO</a>
+    <span class="sutil">Manual</span>
+    <button class="btn" type="button" onclick="print()">Imprimir ou salvar em PDF</button>
+  </div>
+</header>
+
+<main class="manual">
+
+<!-- ================================================================ CAPA -->
+<section class="capa" id="capa">
+  <div>
+    <img class="logo-capa" src="assets/mosaico.webp" alt="Logo do MOSAICO">
+    <h1>MOSAICO · Sala</h1>
+    <p class="sub">Manual completo para quem ensina: como preparar, aplicar e acompanhar atividades em grupo em que cada grupo tem uma parte e só a turma inteira tem o quadro completo.</p>
+    <div class="faixa" aria-hidden="true">
+      <img src="assets/ilustracoes/3d/investigar.webp" alt=""><img src="assets/ilustracoes/3d/comparar.webp" alt=""><img src="assets/ilustracoes/3d/montar.webp" alt=""><img src="assets/ilustracoes/3d/cadeado.webp" alt=""><img src="assets/ilustracoes/3d/quiz-grupos.webp" alt=""><img src="assets/ilustracoes/3d/cartoes.webp" alt=""><img src="assets/ilustracoes/3d/pares.webp" alt=""><img src="assets/ilustracoes/3d/corrida.webp" alt="">
+      <img src="assets/ilustracoes/3d/cruzadas.webp" alt=""><img src="assets/ilustracoes/3d/sequencia.webp" alt=""><img src="assets/ilustracoes/3d/quiz-pensar.webp" alt=""><img src="assets/ilustracoes/3d/imagem.webp" alt=""><img src="assets/ilustracoes/3d/escala.webp" alt=""><img src="assets/ilustracoes/3d/economia.webp" alt=""><img src="assets/ilustracoes/3d/individual.webp" alt="">
+    </div>
+    <p class="meta-capa">Prof. Mário César Nascimento, PhD · Versão de 25 de outubro de 2026<br>mosaico-sala.web.app</p>
+    <div class="botoes-capa"><a class="btn primario" href="#sumario">Começar a ler</a><a class="btn" href="index.html">Abrir o MOSAICO</a></div>
+  </div>
+</section>
+
+<!-- ================================================================ SUMÁRIO -->
+<section class="sumario" id="sumario">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/biblioteca.webp" alt="">Sumário</h2>
+  <ol>
+    <li><a href="#finalidade"><span class="n">1</span>Para que serve o MOSAICO</a></li>
+    <li><a href="#por-que"><span class="n">2</span>Por que em sala, no celular, sem instalação</a></li>
+    <li><a href="#antes"><span class="n">3</span>Antes da primeira aula</a></li>
+    <li><a href="#entrada"><span class="n">4</span>A página inicial: três portas</a></li>
+    <li><a href="#professor"><span class="n">5</span>Professor: os 8 passos</a></li>
+    <li><a href="#aplicar"><span class="n">6</span>Aplicar em sala, do QR ao resultado</a></li>
+    <li><a href="#aluno"><span class="n">7</span>Aluno: entrar e participar</a></li>
+    <li><a href="#atividades"><span class="n">8</span>As 15 atividades e por que funcionam</a></li>
+    <li><a href="#meta"><span class="n">9</span>A meta da turma</a></li>
+    <li><a href="#administracao"><span class="n">10</span>Administração</a></li>
+    <li><a href="#dados"><span class="n">11</span>Privacidade e dados</a></li>
+    <li><a href="#duvidas"><span class="n">12</span>Dúvidas e problemas comuns</a></li>
+    <li><a href="#referencias"><span class="n">13</span>Para saber mais</a></li>
+  </ol>
+</section>
+
+<!-- ================================================================ 1 FINALIDADE -->
+<section id="finalidade">
+  <h2><span class="num">1</span>Para que serve o MOSAICO</h2>
+  <p>O MOSAICO transforma o conteúdo da sua aula em atividades em grupo que só se resolvem com conversa. A ideia está no nome: <strong>cada grupo recebe uma parte, ninguém tem o quadro completo, e a turma precisa juntar as peças</strong> para chegar à explicação e superar uma meta coletiva.</p>
+  <p>Você traz o material (um texto, um capítulo, uma apresentação). O MOSAICO ajuda a montar as etapas, divide as evidências entre os grupos, leva tudo para os celulares dos alunos e mostra no telão o andamento da turma. Você conduz; a plataforma cuida da logística.</p>
+  <h3>A gramática MOSAICO</h3>
+  <div class="grade4">
+    <div class="bloco pilar"><img src="assets/ilustracoes/3d/montar.webp" alt=""><h4>Fracionar</h4><p>Cada grupo recebe só uma parte das evidências. Ninguém resolve sozinho.</p></div>
+    <div class="bloco pilar"><img src="assets/ilustracoes/3d/grupos.webp" alt=""><h4>Cooperar</h4><p>Os grupos trocam o que descobriram: a explicação certa integra as partes de todos.</p></div>
+    <div class="bloco pilar"><img src="assets/ilustracoes/3d/trofeu.webp" alt=""><h4>Competir para superar</h4><p>Placar e desafios dão ritmo, mas o adversário é o problema, não o colega.</p></div>
+    <div class="bloco pilar"><img src="assets/ilustracoes/3d/meta.webp" alt=""><h4>Atingir a meta</h4><p>A turma inteira vence quando supera a meta. O sucesso de um ajuda todos.</p></div>
+  </div>
+  <p class="sutil">A gramática é uma proposta: você decide, em cada atividade, o que usar. Uma aula pode ser só um quiz rápido ou uma investigação completa em vários encontros.</p>
+</section>
+
+<!-- ================================================================ 2 POR QUE -->
+<section id="por-que">
+  <h2><span class="num">2</span>Por que em sala, no celular, sem instalação</h2>
+  <div class="grade2">
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/participar.webp" alt=""> Sem instalar, sem cadastro</h4><p>O aluno abre o navegador, digita um código de 6 números (ou aponta a câmera para o QR) e escreve o primeiro nome. Não há aplicativo, conta, senha nem e-mail. A aula começa em um minuto.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/sala.webp" alt=""> O celular que já está na sala</h4><p>O aparelho que costuma disputar a atenção vira ferramenta de trabalho em grupo. Cada celular mostra só a parte daquele grupo ou daquele aluno: é isso que obriga a conversar.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/telao.webp" alt=""> Telão como palco comum</h4><p>O projetor mostra o QR, de quem é a vez, o placar e, no fim, as explicações. A turma discute olhando para o mesmo lugar.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/conduzir.webp" alt=""> Você no controle</h4><p>O professor inicia e encerra cada etapa, decide quando revelar, cobre grupos ausentes e ajusta o tempo. A plataforma nunca avança sozinha.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/relogio.webp" alt=""> Tempo de aula ativo</h4><p>Sem papel para distribuir nem corrigir: cada envio chega na hora, com o retorno imediato que a atividade prevê. O tempo vai para a discussão.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/cadeado.webp" alt=""> Privacidade por desenho</h4><p>As respostas esperadas ficam só no aparelho de quem conduz. Os nomes dos alunos existem só durante a aula e são apagados quando a sala é encerrada.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/olho.webp" alt=""> Acessível</h4><p>Botões grandes, alternativa de "toque e toque" para quem não consegue arrastar, imagem que amplia em tela cheia e textos legíveis no celular.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/baixar.webp" alt=""> Dados para o professor</h4><p>Ao fim, um relatório com envios e acertos por etapa e por grupo, sem nomes, ajuda a decidir o que retomar na próxima aula.</p></div>
+  </div>
+  <div class="dica"><strong>Internet oscilando?</strong> As páginas continuam abertas e as respostas são enviadas quando a conexão volta. O aluno vê um aviso de "sem internet" em vez de perder o que fez.</div>
+</section>
+
+<!-- ================================================================ 3 ANTES -->
+<section id="antes">
+  <h2><span class="num">3</span>Antes da primeira aula</h2>
+  <table class="tab">
+    <tr><th>Você precisa de</th><th>Para quê</th></tr>
+    <tr><td>Uma conta Google</td><td>Entrar na área do professor, preparar, revisar e exportar atividades.</td></tr>
+    <tr><td>Ser professor autorizado</td><td>Guardar atividades na biblioteca, abrir salas on-line e gerar com a IA integrada. Peça ao administrador.</td></tr>
+    <tr><td>Celular ou computador</td><td>Para conduzir. O celular basta; o computador é mais confortável para preparar.</td></tr>
+    <tr><td>Projetor ou TV (opcional)</td><td>Para o telão. Sem ele, a aula funciona; o telão só deixa tudo visível para a turma.</td></tr>
+    <tr><td>Celulares dos alunos</td><td>Um por aluno é o ideal; um por grupo também funciona em várias atividades.</td></tr>
+    <tr><td>Internet</td><td>No aparelho de quem conduz e nos celulares (dados móveis ou Wi-Fi).</td></tr>
+  </table>
+  <div class="dica"><strong>Quer conhecer antes?</strong> Na página inicial, o cartão "Quer conhecer antes?" abre uma atividade com turma simulada, sem cadastro. Tudo fica no seu navegador.</div>
+</section>
+
+<!-- ================================================================ 4 ENTRADA -->
+<section id="entrada">
+  <h2><span class="num">4</span>A página inicial: três portas</h2>
+  <div class="passo">
+    <div>
+      <p>Quem chega ao MOSAICO escolhe uma de três portas:</p>
+      <div class="bloco" style="margin:10px 0"><h4><img class="ico3d p" src="assets/ilustracoes/3d/participar.webp" alt=""> Entrar em uma sala</h4><p>Para o aluno. O código de 6 números é digitado no próprio cartão; com os 6 números, segue direto.</p></div>
+      <div class="bloco" style="margin:10px 0"><h4><img class="ico3d p" src="assets/ilustracoes/3d/planejar.webp" alt=""> Sou professor</h4><p>Leva à área do professor, com login Google.</p></div>
+      <div class="bloco" style="margin:10px 0"><h4><img class="ico3d p" src="assets/ilustracoes/3d/simulador.webp" alt=""> Quer conhecer antes?</h4><p>Uma atividade de demonstração com turma simulada.</p></div>
+    </div>
+    <figure class="tela"><img src="assets/manual/inicio.webp" alt="Página inicial no celular, com o cartão Entrar em uma sala e o campo do código"><figcaption class="legenda">Página inicial no celular</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================================================================ 5 PROFESSOR -->
+<section id="professor">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/planejar.webp" alt=""><span><span class="num" style="margin-right:8px">5</span>Professor: os 8 passos</span></h2>
+  <p>A preparação segue sempre a mesma ordem. Os números aparecem nos botões da plataforma, para você saber onde está.</p>
+  <div class="fluxo-linha" aria-label="Sequência dos passos">
+    <span class="et"><img src="assets/ilustracoes/3d/sair.webp" alt="">1 Entrar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/material.webp" alt="">2 Material</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/planejar.webp" alt="">3 Planejar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/ia.webp" alt="">4 Gerar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/revisar.webp" alt="">5 Revisar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/olho.webp" alt="">6 Experimentar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/biblioteca.webp" alt="">7 Salvar</span><span class="seta">›</span>
+    <span class="et"><img src="assets/ilustracoes/3d/conduzir.webp" alt="">8 Aplicar</span>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">1</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/sair.webp" alt="">Entrar</h3></div>
+      <p>Na página inicial, toque em <strong>Sou professor</strong> e depois em <strong>Entrar com Google</strong>. Você chega à sua área, que mostra:</p>
+      <ul>
+        <li><strong>Três ações grandes:</strong> Criar com IA, Aplicar em sala e Usar um modelo.</li>
+        <li><strong>Minhas atividades:</strong> o que você salvou, com <em>Aplicar</em>, <em>Abrir</em>, duplicar e apagar; e os rascunhos deste navegador, com <em>Continuar</em> e lixeira.</li>
+        <li><strong>Modelos prontos</strong> para adaptar.</li>
+        <li><strong>Mais opções:</strong> criar do zero, importar planilha, telão, simulador e pedido para IA externa.</li>
+      </ul>
+    </div>
+    <figure class="tela"><img src="assets/manual/professor-inicio.webp" alt="Área do professor com as três ações: Criar com IA, Aplicar em sala e Usar um modelo"><figcaption class="legenda">Área do professor</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">2</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/material.webp" alt="">Inserir o material</h3></div>
+      <p>Em <strong>Criar com IA</strong>, cole o texto da aula ou toque em <strong>Escolher arquivo</strong> (PDF com texto selecionável, Word, texto ou Markdown; até 60 mil caracteres). O arquivo é lido no seu próprio navegador.</p>
+      <div class="atencao"><strong>Confira a extração.</strong> PDF digitalizado como imagem não tem texto para ler; nesse caso, cole o texto.</div>
+    </div>
+    <figure class="tela"><img src="assets/manual/material.webp" alt="Tela Insira o material da aula, com o campo de texto preenchido"><figcaption class="legenda">Passo 2: material</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">3</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/planejar.webp" alt="">Planejar</h3></div>
+      <p>Diga <strong>para quem é a aula</strong>, o <strong>tempo disponível</strong>, <strong>o que os alunos deverão fazer</strong> (investigar, relacionar, explicar, comparar, decidir, revisar), <strong>o que deverão saber ao final</strong> e se o trabalho é em grupos (e quantos). Se quiser, escolha você mesmo os formatos.</p>
+      <p>Em <strong>Como usar o material</strong>, escolha entre <em>usar só o que está no texto</em> ou <em>permitir situações fictícias identificadas</em>.</p>
+    </div>
+    <figure class="tela"><img src="assets/manual/planejar.webp" alt="Tela Defina a atividade e gere com IA, com público, tempo e objetivo"><figcaption class="legenda">Passo 3: planejar</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">4</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/ia.webp" alt="">Gerar ou adaptar</h3></div>
+      <p>Toque em <strong>Gerar atividade com IA</strong>. Em menos de um minuto chega uma proposta com etapas, peças para cada grupo, respostas esperadas e as fontes de cada evidência. A IA também registra <strong>pendências</strong>: o que o material não traz e precisa da sua decisão.</p>
+      <ul>
+        <li><strong>IA integrada (Gemini):</strong> para professores autorizados.</li>
+        <li><strong>IA externa:</strong> para todos. A plataforma monta o pedido completo; você cola na IA que preferir e traz a resposta de volta.</li>
+        <li><strong>Modelo pronto:</strong> abra um exemplo e troque o conteúdo pelo seu.</li>
+      </ul>
+    </div>
+    <div class="bloco destaque" style="align-self:center"><img class="ico3d g" src="assets/ilustracoes/3d/ia.webp" alt="" style="display:block;margin:0 auto"><p style="text-align:center">A IA propõe; <strong>quem decide é você</strong>. Nada vai para a sala sem passar pela sua revisão.</p></div>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">5</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/revisar.webp" alt="">Revisar o conteúdo</h3></div>
+      <p>Na aba <strong>Revisão</strong>, cada etapa mostra, em linguagem de professor, o que os alunos vão receber e a resposta esperada: a alternativa certa, a ordem dos cartões, as colunas, os pares, os finais de cada decisão. Confira e marque <em>Conferi o conteúdo desta etapa</em>.</p>
+      <ul>
+        <li>A plataforma valida a <strong>estrutura</strong> (nada faltando, tempos, grupos), mas <strong>não verifica a correção científica</strong>: essa é a sua parte.</li>
+        <li><strong>Sugestões de equilíbrio</strong> avisam, por exemplo, quando há três formatos iguais seguidos. São propostas; você decide.</li>
+        <li>A ordem das etapas se muda pelas setas ↑ ↓ no editor de cada etapa.</li>
+      </ul>
+    </div>
+    <figure class="tela"><img src="assets/manual/revisao.webp" alt="Revisão do professor mostrando a ordem esperada de uma etapa de cartões"><figcaption class="legenda">Passo 5: revisão legível</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">6</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/olho.webp" alt="">Experimentar: “Ver como fica”</h3></div>
+      <p>Abre, lado a lado, o seu celular de condução, o telão e uma turma simulada (até 8 celulares em piloto automático). Dá para experimentar uma etapa só, sem esperar as anteriores. Nada disso vai para a internet.</p>
+    </div>
+    <div class="bloco" style="align-self:center"><img class="ico3d g" src="assets/ilustracoes/3d/simulador.webp" alt="" style="display:block;margin:0 auto"><p style="text-align:center">Ensaiar 5 minutos evita surpresas na frente da turma.</p></div>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">7</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/biblioteca.webp" alt="">Salvar</h3></div>
+      <p><strong>Guardar e exportar → Salvar na biblioteca</strong> guarda a atividade na sua conta, para abrir em qualquer aparelho. Você pode <strong>compartilhar</strong> com os outros professores (eles leem e duplicam; só você edita). Também é possível <strong>baixar a planilha</strong> (.xlsx) ou <strong>imprimir</strong> a versão em papel.</p>
+      <div class="atencao"><strong>A planilha e o material de quem conduz contêm o gabarito.</strong> Não entregue aos alunos.</div>
+    </div>
+    <div class="bloco" style="align-self:center"><img class="ico3d g" src="assets/ilustracoes/3d/biblioteca.webp" alt="" style="display:block;margin:0 auto"><p style="text-align:center">Rascunhos ficam no navegador; a biblioteca, na sua conta.</p></div>
+  </div>
+
+  <div class="passo">
+    <div>
+      <div class="cab"><span class="num">8</span><h3><img class="ico3d p" src="assets/ilustracoes/3d/conduzir.webp" alt="">Aplicar em sala</h3></div>
+      <p>Em <strong>Minhas atividades</strong>, toque em <strong>Aplicar</strong> (ou, na área do professor, em <strong>Aplicar em sala</strong>). A próxima seção mostra a aula do começo ao fim.</p>
+    </div>
+    <div class="bloco destaque" style="align-self:center"><img class="ico3d g" src="assets/ilustracoes/3d/conduzir.webp" alt="" style="display:block;margin:0 auto"><p style="text-align:center">Você conduz pelo celular, andando pela sala.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================ 6 APLICAR -->
+<section id="aplicar">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/conduzir.webp" alt=""><span><span class="num" style="margin-right:8px">6</span>Aplicar em sala, do QR ao resultado</span></h2>
+  <p>A condução tem quatro abas, sempre no topo: <strong>8.1 Atividade</strong>, <strong>8.2 Sala</strong>, <strong>8.3 Grupos</strong> e <strong>8.4 Condução</strong>.</p>
+
+  <div class="passo">
+    <div>
+      <h3><img class="ico3d p" src="assets/ilustracoes/3d/sala.webp" alt="">Abrir a sala</h3>
+      <p>Toque em <strong>Abrir sala</strong>. Aparecem o <strong>código de 6 números</strong> e o <strong>QR Code</strong>. Os alunos entram por qualquer um dos dois. Quando todos estiverem dentro, use <strong>Fechar a entrada</strong>; quem chegar depois pode entrar se você reabrir.</p>
+      <h3><img class="ico3d p" src="assets/ilustracoes/3d/telao.webp" alt="">Abrir o telão</h3>
+      <p>No computador ligado ao projetor, abra <strong>mosaico-sala.web.app/telao</strong> e digite o código: o telão abre sozinho. Ou toque em <strong>Abrir telão</strong> no seu aparelho.</p>
+    </div>
+    <figure class="tela"><img src="assets/manual/sala-qr.webp" alt="Aba Sala com o código 499676 e o QR Code"><figcaption class="legenda">Aba 8.2 · Sala</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <h3><img class="ico3d p" src="assets/ilustracoes/3d/grupos.webp" alt="">Formar os grupos</h3>
+      <p><strong>Sortear grupos equilibrados</strong> distribui quem entrou entre os grupos planejados. Cada grupo tem um <strong>representante</strong> (REP), que envia as decisões do grupo. Você pode mover pessoas, trocar o representante e sortear de novo. Quem chega atrasado vai para o grupo com menos gente.</p>
+    </div>
+    <figure class="tela"><img src="assets/manual/grupos.webp" alt="Aba Grupos com cinco grupos coloridos e seus representantes"><figcaption class="legenda">Aba 8.3 · Grupos</figcaption></figure>
+  </div>
+
+  <div class="passo">
+    <div>
+      <h3><img class="ico3d p" src="assets/ilustracoes/3d/play.webp" alt="">Conduzir as etapas</h3>
+      <p>Toque em <strong>Iniciar etapa</strong>. Você acompanha quem já enviou, o cronômetro sugerido (pausar, +1 min, +5 min) e o <strong>roteiro do professor</strong> daquela etapa. Quando quiser, <strong>Encerrar etapa</strong> (fica sempre na barra de baixo).</p>
+      <ul>
+        <li><strong>Grupo faltando?</strong> A etapa seguinte avisa e oferece <em>Registrar ausência e liberar</em>: os outros grupos seguem com as contribuições que existem.</li>
+        <li><strong>Quiz, equipe, cadeado:</strong> você sorteia a pergunta, abre a fase do grupo e revela a resposta no seu ritmo.</li>
+      </ul>
+    </div>
+    <figure class="tela"><img src="assets/manual/conducao.webp" alt="Aba Condução com a etapa em andamento, cronômetro e grupos aguardando envio"><figcaption class="legenda">Aba 8.4 · Condução</figcaption></figure>
+  </div>
+
+  <h3><img class="ico3d p" src="assets/ilustracoes/3d/telao.webp" alt="">O que a turma vê no telão</h3>
+  <img class="tela-larga" src="assets/manual/telao.webp" alt="Telão mostrando a etapa de palavras cruzadas e o progresso de cada grupo">
+  <p class="legenda">O telão mostra a etapa, o tempo e o progresso de cada grupo, nunca as respostas antes de você revelar.</p>
+
+  <h3><img class="ico3d p" src="assets/ilustracoes/3d/trofeu.webp" alt="">Resultado e encerramento</h3>
+  <ol>
+    <li><strong>Revelar resultado final:</strong> o telão e os celulares mostram se a turma atingiu a meta e as explicações de cada etapa.</li>
+    <li><strong>Baixar o relatório</strong> (.csv, sem nomes) para planejar a próxima aula.</li>
+    <li><strong>Encerrar sala</strong> (aba 8.2, dois toques): apaga participantes, envios e a sala.</li>
+  </ol>
+  <div class="dica"><strong>Esqueceu de encerrar?</strong> Toda sala vence em 24 horas. Quando você voltar a "Aplicar em sala", as suas salas vencidas são apagadas sozinhas, em qualquer aparelho. E, como garantia, o próprio banco de dados apaga o que venceu.</div>
+</section>
+
+<!-- ================================================================ 7 ALUNO -->
+<section id="aluno">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/participar.webp" alt=""><span><span class="num" style="margin-right:8px">7</span>Aluno: entrar e participar</span></h2>
+  <div class="passo">
+    <div>
+      <ol>
+        <li><strong>Abrir a sala:</strong> apontar a câmera para o QR do telão, ou abrir <strong>mosaico-sala.web.app</strong> e digitar o código no cartão <em>Entrar em uma sala</em>.</li>
+        <li><strong>Digitar o nome:</strong> o primeiro nome ou um apelido basta. Não há cadastro.</li>
+        <li><strong>Encontrar o grupo:</strong> o celular mostra o grupo (cor e forma) e quem é o representante.</li>
+        <li><strong>Seguir a etapa:</strong> cada etapa aparece quando o professor inicia. Envios importantes pedem <em>dois toques</em> para confirmar.</li>
+      </ol>
+      <div class="dica">Se o celular recarregar ou a internet cair, basta abrir de novo: o aluno volta para o mesmo grupo e não perde o que já enviou.</div>
+    </div>
+    <figure class="tela"><img src="assets/manual/entrar-codigo.webp" alt="Tela Entrar na sala com o código já confirmado e o campo do nome"><figcaption class="legenda">Código confirmado pelo QR: só falta o nome</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================================================================ 8 ATIVIDADES -->
+<section id="atividades">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/atividade.webp" alt=""><span><span class="num" style="margin-right:8px">8</span>As 15 atividades e por que funcionam</span></h2>
+  <p>Cada atividade é um formato que você combina com o seu conteúdo. Abaixo, o que o aluno faz, por que isso ajuda a aprender e quando usar.</p>
+
+  <article class="atividade" id="at-investigacao">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/investigar.webp" alt=""><div><span class="tag">Grupo · cooperação</span><h3>Investigação por fragmentos</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada grupo recebe só uma parte das evidências, marca as que usou, escolhe a hipótese que suas peças sustentam e justifica.</dd>
+      <dt>Por que é importante</dt><dd>É o coração do MOSAICO: a informação dividida cria <strong>interdependência positiva</strong>, base da aprendizagem cooperativa (o mesmo princípio do método <em>jigsaw</em>). O aluno pratica raciocínio por evidências e percebe que conclusões dependem do que se sabe.</dd>
+      <dt>Quando usar</dt><dd>Abertura de um tema, casos clínicos, mistérios, problemas com várias causas possíveis.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-investigacao.webp" alt="Celular do aluno com as peças do grupo e as hipóteses"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/comparar.webp" alt=""><div><span class="tag">Grupo · argumentação</span><h3>Comparação de hipóteses entre grupos</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada grupo vê o que os outros concluíram e com quais evidências, e decide qual explicação integra melhor o conjunto.</dd>
+      <dt>Por que é importante</dt><dd>Ensina a <strong>revisar uma conclusão diante de novas evidências</strong>, o gesto central do pensamento científico. A troca entre grupos transforma o "nós achamos" em "o conjunto mostra".</dd>
+      <dt>Quando usar</dt><dd>Logo depois de uma investigação por fragmentos.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/montar.webp" alt=""><div><span class="tag">Grupo · presencial</span><h3>Quebra-cabeça de texto ou imagem</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada celular mostra uma peça (um trecho, uma conta ou um recorte de imagem). Só pondo os celulares na ordem certa o todo aparece. Não há envio: a etapa seguinte cobra o que foi montado.</dd>
+      <dt>Por que é importante</dt><dd>Obriga a <strong>conversar e se movimentar</strong>: ninguém resolve olhando só para o próprio aparelho. Trabalha sequência, coerência e leitura do todo.</dd>
+      <dt>Quando usar</dt><dd>Processos em etapas, poemas, demonstrações, esquemas e figuras.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-quebra.webp" alt="Peça de quebra-cabeça com o texto Ribossomos do RER"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/cadeado.webp" alt=""><div><span class="tag">Grupo · escape room</span><h3>Cadeado do grupo</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada aluno responde a própria pergunta no celular. O grupo destrava quando um número de membros acerta, ou quando junta os pedaços revelados e o líder digita o código.</dd>
+      <dt>Por que é importante</dt><dd>Une <strong>responsabilidade individual</strong> (cada um tem a sua pergunta) a um <strong>objetivo comum</strong> (o cadeado é do grupo). Quem sabe ajuda quem não sabe, porque todos precisam acertar.</dd>
+      <dt>Quando usar</dt><dd>Revisão de conceitos, fechamento de unidade, desafio de abertura.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/quiz-grupos.webp" alt=""><div><span class="tag">Entre grupos · telão</span><h3>Quiz entre grupos</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>A cada pergunta o sistema sorteia o grupo da vez. A pergunta aparece só no celular do líder desse grupo, que lê em voz alta; o telão mostra a vez e o placar. Se errar, a pergunta passa para outro grupo.</dd>
+      <dt>Por que é importante</dt><dd>Responder de memória é uma das formas mais eficazes de fixar o conteúdo (<strong>efeito de testagem</strong>). A pergunta lida em voz alta faz o grupo inteiro pensar junto.</dd>
+      <dt>Quando usar</dt><dd>Revisão rápida, aquecimento, fechamento com energia.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/cartoes.webp" alt=""><div><span class="tag">Grupo · organização</span><h3>Cartões de arrastar</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>O grupo arrasta cartões num quadro compartilhado: <strong>ordenar</strong> (sequência ou causa e efeito), <strong>classificar</strong> em colunas ou posicionar num <strong>termômetro</strong> entre dois polos. Cada celular pode segurar só alguns cartões. Quem não consegue arrastar toca no cartão e depois no lugar.</dd>
+      <dt>Por que é importante</dt><dd>Ordenar e classificar tornam visível <strong>como o aluno organiza o conhecimento</strong>. O termômetro sem gabarito abre debate sobre graus e critérios (ótimo para ética).</dd>
+      <dt>Quando usar</dt><dd>Cascatas e vias, linhas do tempo, categorias, dilemas.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-cartoes.webp" alt="Quadro de cartões para ordenar a via secretora"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/pares.webp" alt=""><div><span class="tag">Grupo · associação</span><h3>Pares</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd><strong>Ligar:</strong> o grupo arrasta cada cartão até o seu par (estrutura e função, termo e definição). <strong>Memória:</strong> cartas viradas; vira duas, e se formam par ficam abertas. A memória pode ser por grupo ou no telão, com a vez de cada grupo.</dd>
+      <dt>Por que é importante</dt><dd>Reforça <strong>associações</strong> que sustentam o raciocínio mais complexo; a memória acrescenta atenção e recuperação ativa de um jeito leve.</dd>
+      <dt>Quando usar</dt><dd>Vocabulário técnico, estrutura × função, causa × efeito.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/corrida.webp" alt=""><div><span class="tag">Individual soma para o grupo</span><h3>Corrida</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada aluno responde no próprio ritmo e os pontos somam para o grupo. Formatos: <strong>quiz</strong>, <strong>corrente</strong> de causa e efeito (cada acerto libera a próxima consequência) e <strong>direção</strong> (↑ ↓ = para cada variável depois de um estímulo). As alternativas aparecem em ordem diferente para cada aluno.</dd>
+      <dt>Por que é importante</dt><dd>Prática de recuperação com <strong>retorno imediato</strong> e no ritmo de cada um. A corrente e a direção treinam <strong>raciocínio causal</strong>, essencial em ciências e saúde.</dd>
+      <dt>Quando usar</dt><dd>Fixação, fisiologia e mecanismos, preparação para prova.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/cruzadas.webp" alt=""><div><span class="tag">Grupo · vocabulário</span><h3>Palavras cruzadas</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>O professor dá a palavra e a dica; a grade se monta sozinha. As dicas ficam divididas entre os celulares, então o grupo precisa juntar. A grade pode ser de cada grupo ou uma só, da turma, no telão.</dd>
+      <dt>Por que é importante</dt><dd>Recuperar uma palavra a partir de uma definição consolida o <strong>vocabulário da área</strong>; dividir as dicas faz do vocabulário um trabalho coletivo.</dd>
+      <dt>Quando usar</dt><dd>Termos novos, revisão de unidade.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-cruzadas.webp" alt="Grade de palavras cruzadas com duas palavras preenchidas"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/sequencia.webp" alt=""><div><span class="tag">Individual · memória</span><h3>Sequência (Genius)</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>O painel acende termos com luz e som; o aluno repete a sequência, que cresce a cada acerto. Os botões são termos sorteados de um banco, então cada partida é diferente. Vale o recorde de cada um, que soma para o grupo.</dd>
+      <dt>Por que é importante</dt><dd>Exercita <strong>memória de trabalho e atenção</strong> enquanto expõe o aluno repetidas vezes ao vocabulário. É uma pausa ativa que mantém o tema em jogo.</dd>
+      <dt>Quando usar</dt><dd>Aquecimento, intervalo entre etapas longas, vocabulário.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/quiz-pensar.webp" alt=""><div><span class="tag">Pensamento</span><h3>Quiz que faz pensar</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd><strong>Em equipe:</strong> cada um responde sozinho, depois o grupo debate e manda a resposta do grupo. <strong>Decisão:</strong> cada escolha leva a um cenário diferente, até um final bom, neutro ou ruim. <strong>Certeza:</strong> junto com a resposta, o aluno diz se tem certeza, está em dúvida ou chutou.</dd>
+      <dt>Por que é importante</dt><dd>O formato em equipe segue a <strong>aprendizagem baseada em equipes</strong> (TBL): o debate só começa depois do pensamento individual. A decisão ensina consequências. A certeza desenvolve <strong>metacognição</strong>: saber o que se sabe.</dd>
+      <dt>Quando usar</dt><dd>Casos clínicos e éticos, conceitos com confusões frequentes, autoavaliação.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-certeza.webp" alt="Pergunta com a escolha de certeza: tenho certeza, estou em dúvida, chutei"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="com-foto"><div>
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/imagem.webp" alt=""><div><span class="tag">Leitura visual</span><h3>Análise de imagem</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Você envia uma foto, um gráfico ou um modelo 3D. Os alunos <strong>marcam pontos</strong> na imagem, <strong>respondem perguntas</strong> sobre ela ou <strong>descrevem o que observam</strong> (a descrição de cada grupo vai para o telão). A imagem amplia em tela cheia no celular, até 3×.</dd>
+      <dt>Por que é importante</dt><dd>Ler esquemas, gráficos e imagens é uma competência própria. Unir imagem e palavra fortalece a compreensão (<strong>codificação dupla</strong>), e separar o que se vê do que se infere é treino de observação científica.</dd>
+      <dt>Quando usar</dt><dd>Lâminas, exames de imagem, gráficos de experimentos, mapas, obras de arte.</dd>
+    </dl></div>
+    <figure class="tela"><img src="assets/manual/aluno-ampliar.webp" alt="Imagem de célula ampliada em tela cheia com botões 1x 2x 3x"></figure></div>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/escala.webp" alt=""><div><span class="tag">Individual · autoconhecimento</span><h3>Escala padronizada</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada aluno responde uma escala de autorrelato de domínio público (Mini-IPIP6: os cinco grandes fatores de personalidade e Honestidade-Humildade) e vê o próprio perfil no celular. O telão mostra só a média da turma, e só com 5 respostas ou mais.</dd>
+      <dt>Por que é importante</dt><dd>Dá base concreta para discutir traços, conduta e diferenças individuais <strong>sem expor ninguém</strong>. É para refletir, não para avaliar ou diagnosticar.</dd>
+      <dt>Quando usar</dt><dd>Ética, psicologia, comportamento, antes de um jogo econômico.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/economia.webp" alt=""><div><span class="tag">Experimento em sala</span><h3>Jogo econômico</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Jogos clássicos da economia comportamental: <strong>ditador, ultimato, confiança e bens públicos</strong>. Cada aluno decide uma vez, sem saber com quem joga; os pares são sorteados e cada celular vê o próprio ganho. O telão mostra a distribuição da turma.</dd>
+      <dt>Por que é importante</dt><dd>A turma <strong>vive o experimento</strong> antes de discutir a teoria: justiça, confiança e cooperação deixam de ser abstratas quando a decisão foi sua.</dd>
+      <dt>Quando usar</dt><dd>Ética, economia, saúde coletiva, dinâmica de grupos.</dd>
+    </dl>
+  </article>
+
+  <article class="atividade">
+    <div class="topo-at"><img class="ico3d" src="assets/ilustracoes/3d/individual.webp" alt=""><div><span class="tag">Individual · transferência</span><h3>Questão individual</h3></div></div>
+    <dl>
+      <dt>Como funciona</dt><dd>Cada aluno responde uma questão de múltipla escolha, em geral aplicando o que o grupo integrou a um caso novo. Pode contar para a meta da turma.</dd>
+      <dt>Por que é importante</dt><dd>Garante <strong>responsabilidade individual</strong> dentro do trabalho em grupo e mede a <strong>transferência</strong>: se o aluno consegue usar o que aprendeu numa situação diferente.</dd>
+      <dt>Quando usar</dt><dd>Fechamento de toda atividade em grupo.</dd>
+    </dl>
+  </article>
+</section>
+
+<!-- ================================================================ 9 META -->
+<section id="meta">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/meta.webp" alt=""><span><span class="num" style="margin-right:8px">9</span>A meta da turma</span></h2>
+  <p>Em <strong>Geral e meta</strong>, você liga a meta, escolhe o limiar (de 40% a 80% de acertos) e marca <strong>quais etapas contam</strong>. Só essas entram na conta, e só elas aparecem como "conta para a meta" na condução. No fim, o telão mostra se a turma superou o desafio.</p>
+  <p>A meta é coletiva de propósito: o placar entre grupos dá ritmo, mas <strong>a vitória é da turma</strong>. Quem já entendeu tem um bom motivo para explicar a quem ainda não entendeu.</p>
+</section>
+
+<!-- ================================================================ 10 ADMINISTRAÇÃO -->
+<section id="administracao">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/licenca.webp" alt=""><span><span class="num" style="margin-right:8px">10</span>Administração</span></h2>
+  <p>Os administradores veem o botão <strong>Administração</strong> no topo da área do professor. Lá estão:</p>
+  <div class="grade2">
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/biblioteca.webp" alt=""> Atividades de todos</h4><p>Lista de todas as atividades da biblioteca, com autor e data, filtro por professor, <em>Abrir cópia</em> e apagar.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/sala.webp" alt=""> Salas</h4><p>Salas abertas e vencidas, com o número de participantes. <em>Encerrar</em> apaga a sala e tudo o que há nela; <em>Encerrar as vencidas</em> faz a faxina de uma vez.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/grupos.webp" alt=""> Professores autorizados</h4><p>Incluir e tirar professores, com quantas atividades cada um tem. Tirar corta o acesso; as atividades dele continuam até alguém apagá-las.</p></div>
+    <div class="bloco"><h4><img class="ico3d p" src="assets/ilustracoes/3d/ia.webp" alt=""> IA integrada</h4><p>A geração com o Gemini usa créditos pré-pagos do projeto. Se acabarem, o professor vê "Os créditos de IA do projeto acabaram" e pode usar a IA externa.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================ 11 DADOS -->
+<section id="dados">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/cadeado.webp" alt=""><span><span class="num" style="margin-right:8px">11</span>Privacidade e dados</span></h2>
+  <ul>
+    <li><strong>Alunos não têm conta.</strong> O servidor guarda só o nome digitado, o grupo e o que cada um envia, e apenas enquanto a sala existe.</li>
+    <li><strong>As respostas esperadas ficam no aparelho de quem conduz.</strong> O telão e os celulares só recebem o que você revela.</li>
+    <li><strong>A ordem das alternativas é sorteada por aluno:</strong> a posição nunca entrega a resposta.</li>
+    <li><strong>A introdução da atividade é pública</strong> (aparece no telão e nos celulares). A revisão avisa quando ela parece falar com o professor.</li>
+    <li><strong>Encerrar apaga tudo.</strong> Salas esquecidas vencem em 24 horas e são apagadas automaticamente.</li>
+    <li><strong>Material e IA:</strong> arquivos são lidos no navegador; ao pedir a geração integrada, o texto do material vai ao Gemini (Google). Nenhum dado de aluno é enviado.</li>
+    <li><strong>Casos fictícios:</strong> a validação avisa quando um texto parece conter CPF, e-mail ou telefone. Peça aos alunos que usem o primeiro nome.</li>
+  </ul>
+</section>
+
+<!-- ================================================================ 12 DÚVIDAS -->
+<section id="duvidas" class="faq">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/quiz-pensar.webp" alt=""><span><span class="num" style="margin-right:8px">12</span>Dúvidas e problemas comuns</span></h2>
+  <details><summary>O aluno digitou o código e aparece “sala não encontrada”.</summary><p>Confira os 6 números no telão. A sala pode ter sido encerrada ou vencida (24 horas). Abra uma sala nova.</p></details>
+  <details><summary>“A entrada nesta sala está fechada.”</summary><p>Na aba 8.2 · Sala, reabra a entrada. Quem chegar vai para o grupo com menos pessoas.</p></details>
+  <details><summary>Um grupo não enviou e a turma está esperando.</summary><p>Encerre a etapa e use <em>Registrar ausência e liberar</em>: os outros grupos seguem com as contribuições que existem.</p></details>
+  <details><summary>A imagem está pequena no celular.</summary><p>Toque na imagem ou em <em>Ampliar imagem</em>: abre em tela cheia, com zoom de 1×, 2× e 3×.</p></details>
+  <details><summary>“Os créditos de IA do projeto acabaram.”</summary><p>Avise o administrador. Enquanto isso, use <em>Usar uma IA externa</em> no mesmo diálogo: o pedido completo é montado para você.</p></details>
+  <details><summary>Não aparece o botão para gerar com IA.</summary><p>A geração integrada é para professores autorizados. Peça acesso ao administrador ou use a IA externa.</p></details>
+  <details><summary>Posso aplicar sem internet?</summary><p>Para uma sala real, todos precisam de internet. Para ensaiar sozinho, acrescente <code>?ensaio=1</code> ao endereço ou use “Ver como fica”: tudo roda no seu navegador.</p></details>
+  <details><summary>Posso usar no papel?</summary><p>Sim: <em>Imprimir atividade</em> gera as folhas da turma e o material de quem conduz (este com o gabarito, em folha separada).</p></details>
+</section>
+
+<!-- ================================================================ 13 REFERÊNCIAS -->
+<section id="referencias" class="refs">
+  <h2><img class="ico3d" src="assets/ilustracoes/3d/material.webp" alt=""><span><span class="num" style="margin-right:8px">13</span>Para saber mais</span></h2>
+  <p>As ideias por trás dos formatos vêm de linhas de pesquisa conhecidas em educação. Algumas referências de partida:</p>
+  <ul>
+    <li>Aronson, E. e colaboradores. <em>The Jigsaw Classroom</em> (1978): a turma como quebra-cabeça, cada aluno com uma parte.</li>
+    <li>Johnson, D. W. e Johnson, R. T.: aprendizagem cooperativa, interdependência positiva e responsabilidade individual.</li>
+    <li>Roediger, H. L. e Karpicke, J. D. (2006), <em>Test-enhanced learning</em>: o efeito de testagem na retenção.</li>
+    <li>Michaelsen, L. K.: aprendizagem baseada em equipes (<em>Team-Based Learning</em>).</li>
+    <li>Flavell, J. H. (1979): metacognição e monitoramento do próprio conhecimento.</li>
+    <li>Paivio, A.: teoria da codificação dupla (imagem e palavra).</li>
+    <li>Jogos do ditador, ultimato, confiança e bens públicos: paradigmas clássicos da economia comportamental.</li>
+    <li>Mini-IPIP6: versão curta, de domínio público, dos cinco grandes fatores com Honestidade-Humildade.</li>
+  </ul>
+  <p class="sutil" style="margin-top:28px">© 2026 Prof. Mário César Nascimento, PhD · Todos os direitos reservados · <a href="licenca.html">Licença de uso</a></p>
+</section>
+
+</main>
+</body>
+</html>

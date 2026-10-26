@@ -130,7 +130,8 @@ export function criarTelas(ctx) {
     const marca = JSON.stringify([pk.ultima, pk.achados, telao ? pk.jogadas : pk.tentativas]);
     if (sel.vista !== marca) { sel.vista = marca; sel.cartas = []; sel.mostrarErradas = true; }
     const esperando = pend[chave] && pend[chave] === marca;
-    const grade = h('div', { class: 'memoria', style: { '--n': Math.ceil(Math.sqrt(pk.cartas.length * 1.4)) } }, pk.cartas.map((c, i) => {
+    // no celular, poucas colunas: cartas largas o bastante para ler
+    const grade = h('div', { class: 'memoria', style: { '--n': Math.min(Math.ceil(Math.sqrt(pk.cartas.length * 1.4)), innerWidth < 520 ? (pk.cartas.length <= 12 ? 3 : 4) : 8) } }, pk.cartas.map((c, i) => {
       const aberta = c.achada || (c.errada && sel.mostrarErradas) || sel.cartas.includes(i);
       const btn = h('button', { class: 'carta' + (aberta ? ' aberta' : '') + (c.achada ? ' achada' : '') + (c.errada && sel.mostrarErradas ? ' errada' : ''), disabled: !minha || c.achada || pk.concluido || esperando, 'data-auto': c.achada ? null : 'carta', 'aria-label': aberta ? (c.texto || 'carta') : 'Carta virada ' + (i + 1) },
         aberta ? (c.texto || '…') : h('span', { class: 'verso' }, i + 1));

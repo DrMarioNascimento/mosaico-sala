@@ -352,7 +352,7 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 .direcao { width: 54px; height: 54px; border-radius: 12px; border: 2px solid var(--linha); background: var(--fundo-2); color: var(--texto); font: 900 1.4rem var(--fonte-titulo); }
 .direcao.ativo { border-color: var(--acento); background: #2a1d12; }
 .memoria { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 8px; margin: 10px 0; }   /* minmax(0): texto longo não alarga o tabuleiro além do cartão */
-.carta { min-width: 0; hyphens: auto; -webkit-hyphens: auto; aspect-ratio: 3 / 4; border-radius: 12px; border: 2px solid var(--linha); background: linear-gradient(135deg, #2b3a5c, #1b2439); color: var(--texto); font: 700 .9rem var(--fonte); padding: 4px; overflow-wrap: anywhere; display: grid; place-items: center; box-shadow: 0 4px 0 #0c111d; }
+.carta { min-width: 0; hyphens: auto; -webkit-hyphens: auto; aspect-ratio: 3 / 4; border-radius: 12px; border: 2px solid var(--linha); background: linear-gradient(135deg, #2b3a5c, #1b2439); color: var(--texto); font: 700 .9rem var(--fonte); padding: 4px; overflow-wrap: break-word; display: grid; place-items: center; box-shadow: 0 4px 0 #0c111d; }
 .carta .verso { font-family: var(--fonte-titulo); font-weight: 900; opacity: .5; }
 .carta.aberta { background: linear-gradient(180deg, #fffaf0, #efe4cf); color: #1b1b1b; }
 .carta.achada { border-color: var(--cor, #3ddc84); box-shadow: 0 0 0 3px var(--cor, #3ddc84) inset; }
