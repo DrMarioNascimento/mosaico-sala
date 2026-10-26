@@ -88,6 +88,7 @@ export const backend = {
   },
   async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
   async listarTodaBiblioteca() { return chaves('biblioteca/').map(k => ({ id: k.slice(11), ...ler(k) })).sort((x, y) => y.atualizadoEm - x.atualizadoEm); },
+  async listarMinhasSalas() { return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => ({ k, x: ler(k) || {} })).filter(({ x }) => x.owner === meuUid()).map(({ k, x }) => ({ codigo: k.slice(6), status: x.status, venceEm: x.expiresAt || 0 })); },
   async listarSalas() {
     return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => { const x = ler(k) || {}; return { codigo: k.slice(6), owner: x.owner, status: x.status, fase: x.fase || '', titulo: x.publico?.titulo || '',
       participantes: Object.keys(x.nomes || {}).length, criadaEm: x.createdAt || 0, venceEm: x.expiresAt || 0 }; }).sort((x, y) => y.criadaEm - x.criadaEm);

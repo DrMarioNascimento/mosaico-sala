@@ -13,6 +13,7 @@
       "firebase-debug*.log",
       "**/*.test.mjs",
       "ERGONOMIA-DOCENTE.md",
+      "OPERACAO-SALAS.md",
       "AUDITORIA-FIREBASE-2026-10-25.json"
     ],
     "headers": [

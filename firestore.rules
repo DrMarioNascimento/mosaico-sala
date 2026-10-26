@@ -21,6 +21,8 @@ service cloud.firestore {
          request.auth.token.email in get(/databases/$(database)/documents/config/mestres).data.emails));
     }
     function sala(c) { return get(/databases/$(database)/documents/rooms/$(c)).data; }
+    // Prazo (TTL) opcional, mas, se vier, é o da sala: ninguém escapa da limpeza com um prazo inventado.
+    function prazoDaSala(c, d) { return !('expiresAt' in d) || d.expiresAt == sala(c).expiresAt; }
     function dono(c) { return signed() && sala(c).owner == request.auth.uid; }
 
     // Configurações administrativas não são públicas para logins anônimos.
@@ -52,7 +54,8 @@ service cloud.firestore {
 
     match /rooms/{c} {
       allow get: if signed();
-      allow list: if admin();   // administração: ver salas abertas e esquecidas
+      // Administração vê todas; o professor lista só as próprias (faxina das vencidas abertas em outro aparelho).
+      allow list: if admin() || (mestre() && resource.data.owner == request.auth.uid);
       allow create: if mestre() && c.matches('[0-9]{6}')
         && request.resource.data.owner == request.auth.uid
         && request.resource.data.status == 'open'
@@ -71,7 +74,8 @@ service cloud.firestore {
         allow list: if dono(c) || admin();
         allow create: if signed() && uid == request.auth.uid
           && sala(c).status == 'open' && sala(c).entradaAberta == true
-          && request.resource.data.keys().hasOnly(['nome', 'entrouEm'])
+          && request.resource.data.keys().hasOnly(['nome', 'entrouEm', 'expiresAt'])
+          && prazoDaSala(c, request.resource.data)
           && request.resource.data.nome is string
           && request.resource.data.nome.size() > 0 && request.resource.data.nome.size() <= 30;
         allow delete: if dono(c) || admin();
@@ -100,7 +104,8 @@ service cloud.firestore {
 
       function envioValido(c, id, d) {
         let s = sala(c);
-        return d.keys().hasOnly(['etapaId', 'escopo', 'grupoId', 'autor', 'dados', 'contingencia', 'enviadoEm'])
+        return d.keys().hasOnly(['etapaId', 'escopo', 'grupoId', 'autor', 'dados', 'contingencia', 'enviadoEm', 'expiresAt'])
+          && prazoDaSala(c, d)
           && d.autor == request.auth.uid && d.dados is map && d.enviadoEm == request.time
           && (
             // Contingência registrada por quem conduz (ex.: grupo vazio)

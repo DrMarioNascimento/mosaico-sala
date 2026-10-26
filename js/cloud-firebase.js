@@ -18,6 +18,21 @@ const auth = getAuth(app), db = getFirestore(app);
 const sala = c => doc(db, 'rooms', c);
 const google = u => !!u?.providerData.some(p => p.providerId === 'google.com');
 
+/* Prazo da sala (expiresAt) repetido em membros, pacotes e envios: a política de TTL do Firestore apaga
+   cada documento vencido sozinha, mesmo que o professor nunca volte (o TTL não apaga subcoleções). */
+const prazos = new Map();
+async function prazoDe(c) {
+  if (!prazos.has(c)) { const s = await getDoc(sala(c)); prazos.set(c, s.exists() ? s.data().expiresAt || null : null); }
+  return prazos.get(c);
+}
+/** Grava com o prazo; se as regras publicadas ainda não aceitam o campo, grava sem ele (aluno nunca fica de fora). */
+async function comPrazo(c, gravar) {
+  const p = await prazoDe(c).catch(() => null);
+  if (!p) return gravar({});
+  try { return await gravar({ expiresAt: p }); }
+  catch (e) { if (e?.code === 'permission-denied' || e?.message === 'recusado') return gravar({}); throw e; }
+}
+
 export const backend = {
   modo: 'firebase',
 
@@ -46,7 +61,9 @@ export const backend = {
       try {
         await runTransaction(db, async tx => {
           if ((await tx.get(sala(codigo))).exists()) throw new Error('colisao');
-          tx.set(sala(codigo), { ...dados, createdAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(Date.now() + 24 * 3600e3) });
+          const expiresAt = Timestamp.fromMillis(Date.now() + 24 * 3600e3);
+          tx.set(sala(codigo), { ...dados, createdAt: serverTimestamp(), expiresAt });
+          prazos.set(codigo, expiresAt);
         });
         return codigo;
       } catch (e) { if (e.message !== 'colisao') throw e; }
@@ -54,18 +71,19 @@ export const backend = {
     throw new Error('Não foi possível gerar um código de sala.');
   },
 
-  async lerSala(c) { const s = await getDoc(sala(c)); return s.exists() ? s.data() : null; },
+  async lerSala(c) { const s = await getDoc(sala(c)); if (s.exists() && s.data().expiresAt) prazos.set(c, s.data().expiresAt); return s.exists() ? s.data() : null; },
   observarSala(c, cb, erro) { return onSnapshot(sala(c), s => cb(s.exists() ? s.data() : null), erro); },
   atualizarSala(c, patch) { return updateDoc(sala(c), patch); },
 
   async lerMembro(c, uid) { const s = await getDoc(doc(sala(c), 'members', uid)); return s.exists() ? s.data() : null; },
-  entrar(c, uid, nome) { return setDoc(doc(sala(c), 'members', uid), { nome, entrouEm: Date.now() }); },
+  entrar(c, uid, nome) { return comPrazo(c, extra => setDoc(doc(sala(c), 'members', uid), { nome, entrouEm: Date.now(), ...extra })); },
   observarMembros(c, cb, erro) { return onSnapshot(collection(sala(c), 'members'), s => cb(s.docs.map(d => ({ uid: d.id, ...d.data() }))), erro); },
 
-  gravarPacote(c, id, dados) { return setDoc(doc(sala(c), 'pacotes', id), dados); },
+  gravarPacote(c, id, dados) { return comPrazo(c, extra => setDoc(doc(sala(c), 'pacotes', id), { ...dados, ...extra })); },
   observarPacote(c, id, cb, erro) { return onSnapshot(doc(sala(c), 'pacotes', id), s => cb(s.exists() ? s.data() : null), erro); },
 
-  async enviar(c, id, dados) {
+  async enviar(c, id, dados) { return comPrazo(c, extra => this.enviarSemPrazo(c, id, { ...dados, ...extra })); },
+  async enviarSemPrazo(c, id, dados) {
     const ref = doc(sala(c), 'envios', id);
     // A regra deixa ler um envio inexistente ou o próprio; nunca permite sobrescrever.
     try {
@@ -105,6 +123,14 @@ export const backend = {
   async listarTodaBiblioteca() {
     const s = await getDocs(collection(db, 'biblioteca'));
     return s.docs.map(d => ({ id: d.id, ...d.data(), atualizadoEm: d.data().atualizadoEm?.toMillis?.() ?? 0 })).sort((x, y) => y.atualizadoEm - x.atualizadoEm);
+  },
+  /** Salas desta conta, em qualquer aparelho (para a faxina das vencidas). Regras antigas recusam: devolve []. */
+  async listarMinhasSalas() {
+    const u = auth.currentUser; if (!u) return [];
+    try {
+      const s = await getDocs(query(collection(db, 'rooms'), where('owner', '==', u.uid)));
+      return s.docs.map(d => ({ codigo: d.id, status: d.data().status, venceEm: d.data().expiresAt?.toMillis?.() ?? 0 }));
+    } catch { return []; }
   },
   /** Todas as salas, abertas ou esquecidas (o servidor não apaga sozinho as vencidas). */
   async listarSalas() {

@@ -489,6 +489,11 @@ async function faxina() {
       if (s.status === 'closed' || Date.now() - criada > 6 * 3600e3) { await b.apagarSala(c); marcarPendente(c, false); }
     } catch (e) { console.warn('faxina', c, e); }
   }
+  // Salas da mesma conta abertas em outro aparelho: o servidor sabe quais são. Apaga as vencidas (prazo de 24 h) e as já fechadas.
+  for (const s of await b.listarMinhasSalas().catch(() => [])) {
+    if (s.codigo === E.codigo || !(s.status === 'closed' || (s.venceEm && s.venceEm < Date.now()))) continue;
+    try { await b.apagarSala(s.codigo); marcarPendente(s.codigo, false); } catch (e) { console.warn('faxina', s.codigo, e); }
+  }
 }
 
 // =====================================================================

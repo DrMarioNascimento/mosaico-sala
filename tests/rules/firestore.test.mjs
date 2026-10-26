@@ -1,7 +1,7 @@
 import { before, after, test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 if(!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Execute apenas no emulador Firestore. Nenhum projeto real será usado.');
 let env;
 const google=email=>({email,email_verified:true,firebase:{sign_in_provider:'google.com'}});
@@ -97,4 +97,19 @@ test('Administrador sem e-mail verificado não lista salas nem apaga atividades'
  const d = env.authenticatedContext('falso', { email: 'mariocnascimento@gmail.com', email_verified: false, firebase: { sign_in_provider: 'google.com' } }).firestore();
  await assertFails(getDocs(collection(d, 'rooms')));
  await assertFails(deleteDoc(doc(d, 'biblioteca/privada')));
+});
+
+// ---------- Prazo (TTL) e faxina das salas vencidas ----------
+test('Professor lista só as próprias salas; não as de outro', async () => {
+ const prof = db('professor', 'professor@exemplo.com');
+ await assertSucceeds(getDocs(query(collection(prof, 'rooms'), where('owner', '==', 'professor'))));
+ await assertFails(getDocs(query(collection(prof, 'rooms'), where('owner', '==', 'outro'))));
+ await assertFails(getDocs(collection(prof, 'rooms')));
+});
+test('Participante grava o prazo da sala; prazo inventado é recusado; sem prazo continua aceito', async () => {
+ const prazo = Timestamp.fromMillis(Date.now() + 3600000);
+ await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'rooms/555555'), { owner: 'professor', status: 'open', entradaAberta: true, createdAt: Timestamp.now(), expiresAt: prazo }); });
+ await assertSucceeds(setDoc(doc(db('a1'), 'rooms/555555/members/a1'), { nome: 'Ana', entrouEm: Date.now(), expiresAt: prazo }));
+ await assertFails(setDoc(doc(db('a2'), 'rooms/555555/members/a2'), { nome: 'Bia', entrouEm: Date.now(), expiresAt: Timestamp.fromMillis(Date.now() + 9e10) }));
+ await assertSucceeds(setDoc(doc(db('a3'), 'rooms/555555/members/a3'), { nome: 'Caio', entrouEm: Date.now() }));
 });
