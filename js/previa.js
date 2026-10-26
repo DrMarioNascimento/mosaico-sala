@@ -7,6 +7,11 @@ if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio',
 const $ = id => document.getElementById(id);
 let codigo = null, esperaSala = null;
 const ETAPA = new URLSearchParams(location.search).get('etapa');   // “Ver esta etapa”: a condução já começa nela
+// Os iframes focam campos e o navegador rola a página até eles; enquanto a turma entra, a página fica no topo.
+let rolouSozinho = false, segurarTopo = 0;
+for (const ev of ['wheel', 'touchmove', 'keydown', 'pointerdown']) addEventListener(ev, () => { rolouSozinho = true; }, { passive: true });
+addEventListener('scroll', () => { if (!rolouSozinho && Date.now() < segurarTopo && scrollY > 0) scrollTo(0, 0); }, { passive: true });
+const manterTopo = ms => { rolouSozinho = false; segurarTopo = Date.now() + ms; scrollTo(0, 0); };
 
 
 function iniciar() {
@@ -30,6 +35,7 @@ addEventListener('message', async e => {
   $('telao').replaceChildren(t); ajustarTelao();
   $('turma').replaceChildren();
   const n = Math.min(20, Math.max(1, Number($('qtd').value) || 8));
+  manterTopo(n * 250 + 6000);
   for (let i = 1; i <= n; i++) {
     const caixa = document.createElement('div'); caixa.className = 'pv-cel';
     const f = document.createElement('iframe'); f.title = 'Participante ' + i;

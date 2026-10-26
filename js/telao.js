@@ -1,7 +1,7 @@
 import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
 import { backend, link } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual } from './ui.js';
+import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { criarTelao } from './telao-tipos.js';
 import { ilustra } from './icones.js';
@@ -54,7 +54,7 @@ function render() {
   if (!sala || sala.status !== 'open') { $('cabecalho').textContent = ''; return limpar(c, h('h1', {}, 'Sala encerrada'), h('p', {}, 'Obrigado!')); }
   const p = sala.publico;
   $('cabecalho').textContent = p.titulo + ' · sala ' + codigo;
-  $('rodape').textContent = `${Object.keys(sala.nomes || {}).length} participante(s)`;
+  $('rodape').textContent = `${pl(Object.keys(sala.nomes || {}).length, 'participante')}`;
 
   if (sala.fase === 'lobby') {
     const url = link('participar.html', { sala: codigo });
@@ -87,7 +87,7 @@ function render() {
     const f = sala.final || {}, m = f.meta;
     return limpar(c,
       h('h1', {}, m ? (m.atingida ? 'A turma atingiu a meta!' : 'Meta não atingida desta vez') : 'Atividade concluída'),
-      m && h('p', {}, `${m.acertos} acerto(s) em ${m.total} resposta(s) · meta de ${Math.round(m.limiar * 100)}%`),
+      m && h('p', {}, `${pl(m.acertos, 'acerto')} em ${pl(m.total, 'resposta')} · meta de ${Math.round(m.limiar * 100)}%`),
       h('div', { style: { display: 'grid', gap: '.8em', overflow: 'auto' } },
         (f.explicacoes || []).map(e => h('div', { class: 'explicacao' }, h('strong', {}, e.titulo + ': '), e.resposta && h('span', {}, e.resposta + ' — '), e.explicacao))));
   }

@@ -305,3 +305,13 @@ html{scroll-padding-top:var(--topo-docente,160px)} .plan-migalhas button,.plan-n
 .lista-ordem .etapa-nav.arrastando .pega { color: var(--acento); cursor: grabbing; }
 .lista-ordem.reordenando { user-select: none; -webkit-user-select: none; }
 .ordem-dialog p { text-align: left; }
+
+/* ---------- Celular: barra que rola com a página e uma navegação a menos no editor ---------- */
+@media (max-width: 640px) {
+  /* a barra com as ações (Revisar, Ver como fica, Imprimir, Guardar) ocupava ~40% da tela fixa no topo:
+     no celular ela rola junto com a página; as mesmas ações seguem no início e no fim da Revisão */
+  .planejando .topo { position: static; }
+  html:has(body.planejando) { scroll-padding-top: 12px; }
+  .planejando :is(.plan-migalhas button, .plan-nav button, .plan-editor h2) { scroll-margin-top: 12px; }
+  .planejando .percurso-docente.compacto { display: none; }
+}

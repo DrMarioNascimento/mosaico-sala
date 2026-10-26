@@ -9,7 +9,7 @@ import { painelRevisaoDocente } from './revisao-docente.js';
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
 
 import { backend, EM_ENSAIO, link } from './backend.js';
-import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS } from './ui.js';
+import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, VISUAL_GRUPOS, pl } from './ui.js';
 import { validarAtividade, temErros, SCHEMA_VERSION } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica, alertasSemelhanca } from './core/equilibrio.js';
 import { ligarReordenacao } from './ordenar-etapas.js';
@@ -327,7 +327,7 @@ function renderNav() {
     item('geral', [ico('geral'), h('span', { class: 'rot' }, 'Geral e meta')]),
     item('grupos', [ico('grupos'), h('span', { class: 'rot' }, 'Grupos'), h('span', { class: 'selo ok' }, P.A.grupos.length)]),
     h('div', { class: 'divisor' }, 'Etapas'),
-    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return h('div', { class: 'etapa-nav', 'data-id': e.id }, multi && h('span', { class: 'pega', title: 'Arraste para mudar a ordem', 'aria-hidden': 'true' }, '⠿'), item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n), parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima', 'aria-hidden': 'true' }, '≈')], { class: 'sub', title: NOMES_TIPO[e.typeId] || e.typeId })); }),
+    etapasOrdenadas(P.A).map((e, i) => { const n = errosEtapa.get(e.id) || 0; return h('div', { class: 'etapa-nav', 'data-id': e.id }, multi && h('span', { class: 'pega', title: 'Arraste para mudar a ordem', 'aria-hidden': 'true' }, '⠿'), item('etapa:' + e.id, [ilustra(e.typeId, 26), h('span', { class: 'num' }, i + 1), h('span', { class: 'rot' }, e.titulo || '(sem título)'), n > 0 && h('span', { class: 'selo erro', title: 'Pendências nesta etapa' }, n), parecidas.has(e.id) && h('span', { class: 'selo alerta', title: 'Muito parecida com uma etapa próxima', 'aria-hidden': 'true' }, '≈')], { class: 'sub', title: (e.titulo || '(sem título)') + ' · ' + (NOMES_TIPO[e.typeId] || e.typeId) })); }),
     item('nova-etapa', [ico('mais'), h('span', { class: 'rot' }, 'Nova etapa')], { class: 'sub nova' }),
     h('div', { class: 'divisor' }, 'Mais'),
     item('fontes', [ico('fontes'), h('span', { class: 'rot' }, 'Fontes'), h('span', { class: 'selo ok' }, P.A.fontes.length)]),
@@ -346,7 +346,7 @@ function renderPassos3(nErros, nErrosEtapas) {
   ];
   limpar(alvo, passos.map(([rot, atual, destino, n], i) => h('button', { class: 'passo3', 'aria-current': atual ? 'step' : null, onclick: () => irPara(destino) },
     h('span', { class: 'n' }, i===2?'5':'•'), h('span', { class: 'rot' }, rot),
-    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? (P.A.docente?.revisadoEm ? 'revisada' : 'estrutura completa') : 'ok') : n < 0 ? 'nenhuma ainda' : `${n} pendência(s)`))));
+    h('small', { class: n === 0 ? 'ok' : 'pend' }, n === 0 ? (i === 2 ? (P.A.docente?.revisadoEm ? 'revisada' : 'estrutura completa') : 'ok') : n < 0 ? 'nenhuma ainda' : `${pl(n, 'pendência')}`))));
 }
 
 function renderEditor() {
@@ -480,8 +480,8 @@ function cartaoMestres(contaPor = null) {
   return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
     h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Tirar um professor corta o acesso dele; as atividades que ele já guardou continuam na lista acima até alguém apagá-las.'),
     h('ul', { class: 'lista-bib' },
-        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador' + (contaPor ? ' · ' + contaPor(e) + ' atividade(s) na biblioteca' : ''))))),
-        lista.filter(e => !ADMINS.includes(e)).map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), contaPor && h('small', {}, contaPor(e) + ' atividade(s) na biblioteca')),
+        ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador' + (contaPor ? ' · ' + pl(contaPor(e), 'atividade') + ' na biblioteca' : ''))))),
+        lista.filter(e => !ADMINS.includes(e)).map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), contaPor && h('small', {}, pl(contaPor(e), 'atividade') + ' na biblioteca')),
           h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
     h('label', { for: 'novoMestre' }, 'Adicionar professor (conta Google)'), novo,
     h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: adicionar }, ico('mais'), 'Adicionar')));
@@ -510,7 +510,7 @@ async function admEncerrarSalas(codigos, pergunta) {
   let ok = 0;
   for (const c of codigos) { try { await b.apagarSala(c); ok++; } catch {} }
   await carregarAdmin();
-  avisoGeral(ok === codigos.length ? `${ok} sala(s) encerrada(s). Participantes, envios e pacotes foram apagados.` : `Encerradas ${ok} de ${codigos.length}. Confira as regras do Firestore.`, ok === codigos.length ? 'ok' : 'erro');
+  avisoGeral(ok === codigos.length ? `${pl(ok, 'sala encerrada', 'salas encerradas')}. Participantes, envios e pacotes foram apagados.` : `Encerradas ${ok} de ${codigos.length}. Confira as regras do Firestore.`, ok === codigos.length ? 'ok' : 'erro');
 }
 function telaAdmin() {
   const A = P.adm || {}, agora = Date.now();
@@ -526,7 +526,7 @@ function telaAdmin() {
     h('option', { value: '' }, `Todos os professores (${bib.length})`), autores.map(a => h('option', { value: a, selected: a === A.filtro }, `${a} (${bib.filter(x => (x.autor || '(sem e-mail)') === a).length})`)));
   const linhaSala = s => h('li', {},
     h('div', { class: 'tit' }, h('strong', {}, `Sala ${s.codigo}` + (s.titulo ? ' · ' + s.titulo : '')),
-      h('small', {}, `${nomeDe(s.owner)} · ${s.participantes} participante(s) · aberta em ${dataCurta(s.criadaEm)} · ` + (s.venceEm && s.venceEm < agora ? 'vencida' : 'vence ' + dataCurta(s.venceEm)))),
+      h('small', {}, `${nomeDe(s.owner)} · ${pl(s.participantes, 'participante')} · aberta em ${dataCurta(s.criadaEm)} · ` + (s.venceEm && s.venceEm < agora ? 'vencida' : 'vence ' + dataCurta(s.venceEm)))),
     h('div', { class: 'mini' }, h('button', { class: 'btn pequeno perigo', onclick: () => admEncerrarSalas([s.codigo], `Encerrar a sala ${s.codigo}? Participantes, envios e pacotes serão apagados.`) }, 'Encerrar')));
   return h('div', { class: 'painel-admin' }, voltar,
     h('h1', {}, 'Administração'),
@@ -707,7 +707,7 @@ function editorGrupos() {
 }
 function removerGrupo(g) {
   const usadas = P.A.pecas.filter(p => p.destinatarios.includes(g.id)).length;
-  if (!confirmar(`Remover “${g.nome}”?` + (usadas ? ` Ele recebe ${usadas} peça(s); elas deixam de ir para esse grupo.` : ''))) return;
+  if (!confirmar(`Remover “${g.nome}”?` + (usadas ? ` Ele recebe ${pl(usadas, 'peça')}; elas deixam de ir para esse grupo.` : ''))) return;
   mudar(a => {
     a.grupos = a.grupos.filter(x => x.id !== g.id);
     a.grupos.sort((x, y) => x.ordemAlocacao - y.ordemAlocacao).forEach((x, i) => { x.ordemAlocacao = i + 1; });
@@ -828,7 +828,7 @@ function trocarTipo(e, novo) {
 }
 function removerEtapa(e) {
   const n = P.A.pecas.filter(p => p.etapaId === e.id).length;
-  if (!confirmar(`Remover a etapa “${e.titulo}”?` + (n ? ` As ${n} peça(s) dela também serão removidas.` : ''))) return;
+  if (!confirmar(`Remover a etapa “${e.titulo}”?` + (n ? ` As ${pl(n, 'peça')} dela também serão removidas.` : ''))) return;
   mudar(a => {
     a.etapas = a.etapas.filter(x => x.id !== e.id);
     a.pecas = a.pecas.filter(p => p.etapaId !== e.id);
@@ -1064,7 +1064,7 @@ function editorPerguntas(e, { explicacao }) {
             if (n.certa) r.perguntas[id] = { corretaId: n.certa };
           }
         });
-        avisoGeral(`${novas.length} pergunta(s) adicionada(s).`, 'ok');
+        avisoGeral(`${pl(novas.length, 'pergunta adicionada', 'perguntas adicionadas')}.`, 'ok');
       } }, 'Adicionar as perguntas coladas'))));
 }
 /** Mantém as alternativas com ids a, b, c… (a planilha usa as letras). */
@@ -1110,7 +1110,7 @@ function previaCadeado(e) {
     if (!prep) return h('p', { class: 'sutil' }, 'Adicione perguntas.');
     return h('div', { class: 'cad-exemplo' }, h('strong', {}, `Grupo com ${n}`), h('ul', {}, prep.membros.slice().sort().map(u => h('li', {}, u + ': ',
       prep.deUid[u].map(i => { const t = prep.tarefas[i]; const k = c.perguntas.findIndex(q => q.id === t.perguntaId) + 1; return `pergunta ${k}` + (t.fragmento !== null ? ` → pedaço “${c.fragmentos[t.fragmento]}”` : ''); }).join(' · ')))),
-      !frag && h('small', {}, `Abre com ${Math.max(1, Math.min(n, c.minAcertos > 0 ? c.minAcertos : n))} acerto(s).`));
+      !frag && h('small', {}, `Abre com ${pl(Math.max(1, Math.min(n, c.minAcertos > 0 ? c.minAcertos : n)), 'acerto')}.`));
   };
   if (frag && (c.fragmentos || []).length < 2) return h('p', { class: 'sutil' }, 'Escreva pelo menos 2 pedaços para ver a distribuição.');
   return h('div', {},
@@ -1215,7 +1215,7 @@ function blocoCartoes(e) {
             c.cartoes = c.cartoes.filter(x => x.texto.trim());
             for (const t of novos) if (c.cartoes.length < 20) c.cartoes.push({ id: novoId('c', idsDe(c.cartoes)), texto: t.slice(0, 200) });
           });
-          avisoGeral(`${novos.length} cartão(ões) adicionado(s).`, 'ok');
+          avisoGeral(`${pl(novos.length, 'cartão adicionado', 'cartões adicionados')}.`, 'ok');
         } }, 'Adicionar os cartões colados'))),
       campo('Explicação para a discussão (aparece na revelação final)', r.explicacao || '', v => { r.explicacao = v; }, { area: true, linhas: 2 })),
     h('div', { class: 'cartao' }, h('h3', {}, 'Como a turma recebe'), previa),
@@ -1242,7 +1242,7 @@ function editorFontes() {
     h('p', { class: 'sutil' }, 'Referências que sustentam as peças. No regime “fiel ao material”, toda peça precisa de fonte.'),
     a.fontes.map((f, i) => h('div', { class: 'cartao', style: { margin: '10px 0' } },
       h('div', { style: { display: 'flex', justifyContent: 'space-between' } }, h('strong', {}, `Fonte ${i + 1}`),
-        h('button', { class: 'btn perigo pequeno', onclick: () => { const n = a.pecas.filter(p => p.origem?.fonteId === f.id).length; if (n && !confirmar(`${n} peça(s) usam esta fonte. Remover mesmo assim?`)) return; mudar(x => { x.fontes = x.fontes.filter(y => y !== f); x.pecas.forEach(p => { if (p.origem?.fonteId === f.id) p.origem = { natureza: 'sintetico' }; }); }); } }, 'Remover')),
+        h('button', { class: 'btn perigo pequeno', onclick: () => { const n = a.pecas.filter(p => p.origem?.fonteId === f.id).length; if (n && !confirmar(`${pl(n, 'peça')} usam esta fonte. Remover mesmo assim?`)) return; mudar(x => { x.fontes = x.fontes.filter(y => y !== f); x.pecas.forEach(p => { if (p.origem?.fonteId === f.id) p.origem = { natureza: 'sintetico' }; }); }); } }, 'Remover')),
       campo('Referência', f.descricao, v => { f.descricao = v; }, { area: true, linhas: 2 }),
       h('div', { class: 'campos-2' }, campo('Localização (página, seção)', f.localizacao, v => { f.localizacao = v; }), campo('Trecho ou resumo', f.trecho, v => { f.trecho = v; })))),
     h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => mudar(x => { x.fontes.push({ id: novoId('f', idsDe(x.fontes)), descricao: '', localizacao: '', trecho: '' }); }) }, '＋ Adicionar fonte')));

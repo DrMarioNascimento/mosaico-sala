@@ -59,14 +59,14 @@ export function gerarImpressao(a) {
       // papel: cartões de pergunta para recortar; no verso (ou entregue pelo professor), o pedaço do código
       const frag = cfg.regra === 'fragmentos';
       const rp = a.docente?.respostas?.[e.id] || {};
-      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cartões para recortar (um por aluno)</p><h2><img src="${new URL('../assets/icons/locks/closed-blue.png', import.meta.url).href}" alt="" aria-hidden="true" style="display:inline-block;width:2.1em;height:2.1em;max-width:none;object-fit:contain;vertical-align:middle;flex-shrink:0"> ${esc(e.titulo)}</h2>
+      partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · cartões para recortar (um por aluno)</p><h2><img src="${new URL('../assets/icons/locks/closed-blue.webp', import.meta.url).href}" alt="" aria-hidden="true" style="display:inline-block;width:2.1em;height:2.1em;max-width:none;object-fit:contain;vertical-align:middle;flex-shrink:0"> ${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || (frag ? 'Cada aluno responde a sua pergunta. Quem acerta recebe um pedaço do código. Juntem os pedaços para abrir o cadeado.' : 'Cada aluno responde a sua pergunta. O cadeado abre quando o grupo acerta o suficiente.'))}</p>
         <div class="cartoes">${(cfg.perguntas || []).map((q, i) => `<div class="cartao-q"><small>Pergunta ${i + 1}</small><strong>${esc(q.enunciado)}</strong>
           <ul class="caixas">${q.alternativas.map((al, k) => `<li>☐ ${'ABCDE'[k]}) ${esc(al.texto)}</li>`).join('')}</ul></div>`).join('')}</div></section>`);
       if (frag) partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · pedaços do código (o professor entrega a quem acertar)</p>
         <div class="pedacos">${(cfg.fragmentos || []).map(f => `<div class="pedaco">${esc(f)}</div>`).join('')}</div></section>`);
       partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · cadeado</h3>
-        ${frag ? `<p>Código: <strong>${esc(rp.codigo || '')}</strong> · pedaços na ordem: ${(cfg.fragmentos || []).map(esc).join(' | ')}</p>` : `<p>Abre com ${cfg.minAcertos > 0 ? cfg.minAcertos : 'todos os'} acerto(s) no grupo.</p>`}
+        ${frag ? `<p>Código: <strong>${esc(rp.codigo || '')}</strong> · pedaços na ordem: ${(cfg.fragmentos || []).map(esc).join(' | ')}</p>` : `<p>Abre com ${cfg.minAcertos > 0 ? num(cfg.minAcertos) + (Number(cfg.minAcertos) === 1 ? ' acerto' : ' acertos') : 'todos os acertos'} no grupo.</p>`}
         <ol>${(cfg.perguntas || []).map(q => `<li>${esc(q.enunciado)} → <strong>${esc(q.alternativas.find(o => o.id === rp.perguntas?.[q.id]?.corretaId)?.texto || '?')}</strong></li>`).join('')}</ol></div>`);
     } else if (e.typeId === 'quiz_grupos') {
       const rp = a.docente?.respostas?.[e.id] || {};

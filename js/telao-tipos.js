@@ -1,7 +1,7 @@
 /* MOSAICO · Telão dos tipos novos (junto com telao.js). Só informação pública: placar, andamento,
    o tabuleiro da memória entre grupos e, depois de encerrar, as respostas e os caminhos. */
 
-import { h, corDoGrupo, iconeGrupo } from './ui.js';
+import { h, corDoGrupo, iconeGrupo, pl } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { INSTRUMENTOS } from './core/escalas.js';
 import { JOGOS } from './core/jogos.js';
@@ -47,7 +47,7 @@ export function criarTelao(ctx) {
       ch === '#' ? h('span', { class: 'cruz-vazio' }) : h('span', { class: 'cruz-cel' + (ch !== '.' ? ' cheia' : '') }, nums[r + ',' + c] && h('small', {}, nums[r + ',' + c]), ch !== '.' ? ch : ''))));
   }
   function tabuleiro(j) {
-    return h('div', { class: 'memoria telao-memoria', style: { '--n': Math.ceil(Math.sqrt(j.cartas.length * 1.6)) } }, j.cartas.map((c, i) => {
+    return h('div', { class: 'memoria telao-memoria', style: (n => ({ '--n': n, '--l': Math.ceil(j.cartas.length / n) }))(Math.ceil(Math.sqrt(j.cartas.length * 1.6))) }, j.cartas.map((c, i) => {
       const aberta = c.aberta;
       return h('div', { class: 'carta' + (aberta ? ' aberta' : '') + (c.achada ? ' achada' : '') + (c.errada ? ' errada' : ''), style: c.achada && c.por ? { '--cor': corDoGrupo(gs(), c.por) } : null }, aberta ? c.texto : h('span', { class: 'verso' }, i + 1));
     }));
@@ -89,7 +89,7 @@ export function criarTelao(ctx) {
     const R = j.resumo; if (!R) return null;
     const itens = [];
     if (j.formato === 'ditador') itens.push(`${R.deuZero} de ${R.n} não deram nada`, `${R.deuMetade} deram metade ou mais`);
-    if (j.formato === 'ultimato') itens.push(`${R.recusadas} oferta(s) recusada(s) de ${R.n}`, `mínimo aceito, em média: ${virgula(R.mediaMinimo)}`);
+    if (j.formato === 'ultimato') itens.push(`${pl(R.recusadas, 'oferta recusada', 'ofertas recusadas')} de ${R.n}`, `mínimo aceito, em média: ${virgula(R.mediaMinimo)}`);
     if (j.formato === 'confianca') itens.push(`devolveram, em média, ${virgula(R.mediaDevolver)}% do que receberam`, `cada ponto enviado vira ${R.multiplicador}`);
     if (j.formato === 'bens_publicos') itens.push(`puseram no fundo, em média, ${virgula(R.media)} de ${R.dotacao} (${Math.round(100 * R.media / R.dotacao)}%)`, `se todos pusessem tudo, cada um teria ${R.dotacao * R.fator}`);
     itens.push(`ganho médio: ${virgula(R.ganhoMedio)} pontos`);
@@ -146,9 +146,9 @@ export function criarTelao(ctx) {
         corpo.push(enfeiteSeq(j.botoes), frase('🧠 Observe, ouça e repita: a sequência cresce a cada acerto'));
         if (j.placar) corpo.push(placar(j.placar, j.media ? ' (média)' : ' passos'));
         if (j.ranking?.length) corpo.push(rankingSeq(j.ranking));
-        if (j.jogadores) corpo.push(h('p', { class: 'sutil', style: { textAlign: 'center' } }, `${j.jogaram} de ${j.jogadores} já jogaram · ${j.partidas} partida(s)`));
+        if (j.jogadores) corpo.push(h('p', { class: 'sutil', style: { textAlign: 'center' } }, `${j.jogaram} de ${j.jogadores} já jogaram · ${pl(j.partidas, 'partida')}`));
       }
-      if (t === 'ramos') corpo.push(frase('🧭 Cada escolha muda o caminho'), barras(pr.porGrupo || {}, x => x.final ? 1 : 0, () => 1, x => x.final ? `chegou a um final · ${x.passos} escolhas` : `${x.passos} escolha(s)`));
+      if (t === 'ramos') corpo.push(frase('🧭 Cada escolha muda o caminho'), barras(pr.porGrupo || {}, x => x.final ? 1 : 0, () => 1, x => x.final ? `chegou a um final · ${x.passos} escolhas` : `${pl(x.passos, 'escolha')}`));
       if (t === 'escala') corpo.push(frase('🪞 Cada um responde sozinho: não há resposta certa'), contagem(j.respondidos ?? 0, j.total ?? 0, 'responderam'),
         h('p', { class: 'sutil', style: { textAlign: 'center' } }, 'O perfil de cada um aparece só no próprio celular. Aqui, ao final, só a média da turma.'));
       if (t === 'jogo') {

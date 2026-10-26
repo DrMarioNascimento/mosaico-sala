@@ -8,6 +8,12 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 $('codigo').value = params.get('sala') || '';
 let total = 0, codigo = null;
+// Os celulares simulados focam campos dentro dos próprios iframes, e o navegador rola a página até eles,
+// escondendo o telão sob a barra. Enquanto a turma entra, a página fica no topo, a menos que a pessoa role.
+let rolouSozinho = false, segurarTopo = 0;
+for (const ev of ['wheel', 'touchmove', 'keydown', 'pointerdown']) addEventListener(ev, () => { rolouSozinho = true; }, { passive: true });
+addEventListener('scroll', () => { if (!rolouSozinho && Date.now() < segurarTopo && scrollY > 0) scrollTo(0, 0); }, { passive: true });
+const manterTopo = ms => { rolouSozinho = false; segurarTopo = Date.now() + ms; scrollTo(0, 0); };
 
 function ajustarTelao() {
   const box = $('telao'), f = box.querySelector('iframe');
@@ -34,6 +40,7 @@ $('iniciar').onclick = async () => {
   $('telao').append(t); ajustarTelao();
   $('celulares').innerHTML = '';
   const n = Math.min(30, Math.max(1, Number($('qtd').value) || 12));
+  manterTopo(n * 500 + 6000);
   $('info').textContent = `Entrando ${n} participantes simulados…`;
   // entradas espaçadas, como numa sala de verdade (e para não sobrecarregar o login)
   for (let i = 1; i <= n; i++) { celular(++total); await new Promise(r => setTimeout(r, 500)); }

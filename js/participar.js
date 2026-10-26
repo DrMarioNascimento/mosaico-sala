@@ -1,7 +1,7 @@
 import { cadeadoIcone } from './lock-icons.js';
 /* MOSAICO · Tela de quem participa (celular) */
 import { backend } from './backend.js';
-import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual } from './ui.js';
+import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
 import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arrastar.js';
 import { aplicarMovimento } from './core/cartoes.js';
@@ -199,6 +199,13 @@ function enviados() {
 
 function renderStatus() {
   const s = sala, g = grupoDe(s), p = s.progresso;
+  // Leitor de tela: anuncia só quando muda a fase ou a etapa (não a cada atualização).
+  const chaveFase = s.fase + '|' + (s.etapaAtual || '');
+  if (chaveFase !== renderStatus.ultima) {
+    renderStatus.ultima = chaveFase;
+    const msg = s.fase === 'etapa' ? 'Nova etapa: ' + (s.etapaInfo?.titulo || '') : s.fase === 'grupos' ? 'Os grupos foram formados.' : s.fase === 'revisao' ? 'Etapa encerrada. Aguarde a próxima.' : s.fase === 'final' ? 'Atividade concluída. Veja o resultado.' : '';
+    const el = $('anuncio'); if (el && msg) el.textContent = msg;
+  }
   const partes = [];
   if (s.fase === 'etapa' && s.etapaInfo?.typeId) partes.push(ilustra(s.etapaInfo.typeId, 38));
   if (g) partes.push(chipGrupo(s.publico.grupos, g, nomeGrupo(s, g)));
@@ -508,7 +515,7 @@ function tarefaCartoes(info) {
     h('div', { class: 'cadeado-barra' }, h('span', { style: { width: Math.round(100 * colocados / Math.max(1, total)) + '%' } }))));
   caixa.append(placa);
   if (fracionado && !pk.travado) caixa.append(h('p', { class: 'sutil' }, meus
-    ? `Você segura ${meus} cartão(ões) (os destacados). Só você pode movê-los: combinem quem põe o quê.`
+    ? `Você segura ${pl(meus, 'cartão', 'cartões')} (${meus === 1 ? 'o destacado' : 'os destacados'}). Só você pode movê-los: combinem quem põe o quê.`
     : 'Os cartões estão com seus colegas. Ajude a decidir onde vai cada um.'));
 
   caixa.append(quadroCartoes({ pk, quadro, uid, nomes: sala.nomes || {}, mover: (id, para) => moverCartao(pk, id, para), imagemDados: pacotes.revelacao?.etapaId === pk.etapaId ? pacotes.revelacao.imagem?.dados : null }));
@@ -593,7 +600,7 @@ function tarefaGrupo(pk, g, possoEnviar) {
   const botao = botaoConfirmar('Enviar decisão do grupo', async () => {
     if (!r.escolha) throw new Error('Escolham uma hipótese.');
     const min = pk.typeId === 'investigacao_fragmentos' ? (cfg.minEvidencias ?? 1) : 0;
-    if (r.evidencias.size < min) throw new Error(`Marquem pelo menos ${min} peça(s) como evidência.`);
+    if (r.evidencias.size < min) throw new Error(`Marquem pelo menos ${pl(min, 'peça')} como evidência.`);
     if (just === 'obrigatoria' && r.justificativa.trim().length < 10) throw new Error('Escrevam uma justificativa curta.');
     const dados = { hipoteseId: r.escolha, justificativa: r.justificativa.trim().slice(0, 400) };
     if (pk.typeId === 'investigacao_fragmentos') dados.evidencias = [...r.evidencias];
@@ -649,6 +656,6 @@ function resultadoFinal(s) {
   const m = f.meta;
   return h('div', {},
     h('div', { class: 'cartao destaque' }, h('h2', {}, m ? (m.atingida ? 'A turma atingiu a meta!' : 'A turma não atingiu a meta desta vez') : 'Atividade concluída'),
-      m && h('p', {}, `${m.acertos} acerto(s) em ${m.total} resposta(s) · meta de ${Math.round(m.limiar * 100)}%`)),
+      m && h('p', {}, `${pl(m.acertos, 'acerto')} em ${pl(m.total, 'resposta')} · meta de ${Math.round(m.limiar * 100)}%`)),
     (f.explicacoes || []).map(e => h('div', { class: 'cartao' }, h('h3', {}, e.titulo), e.resposta && h('p', {}, h('strong', {}, 'Resposta esperada: '), e.resposta), h('p', {}, e.explicacao))));
 }

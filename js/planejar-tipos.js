@@ -3,7 +3,7 @@ import { painelImagem } from './midia-docente.js';
    Pares · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem
    Como nos outros tipos, a resposta certa vai para docente.respostas (só quem conduz vê). */
 
-import { h, limpar, campoArquivo } from './ui.js';
+import { h, limpar, campoArquivo, pl } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { montarGrade } from './core/cruzadas.js';
 import { problemasRamos } from './core/pensar.js';
@@ -51,7 +51,7 @@ export function criarEditores(ctx) {
   const colar = (rotulo, ajuda, placeholder, aoColar) => {
     const ta = h('textarea', { rows: 5, placeholder });
     return h('details', { style: { marginTop: '10px' } }, h('summary', {}, rotulo), h('p', { class: 'sutil' }, ajuda), ta,
-      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => { const n = aoColar(ta.value); ctx.avisoGeral(n ? `${n} item(ns) adicionado(s).` : 'Nada reconhecido. Confira o formato.', n ? 'ok' : 'erro'); } }, 'Adicionar')));
+      h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: () => { const n = aoColar(ta.value); ctx.avisoGeral(n ? `${pl(n, 'item adicionado', 'itens adicionados')}.` : 'Nada reconhecido. Confira o formato.', n ? 'ok' : 'erro'); } }, 'Adicionar')));
   };
   const caixaOpcoes = (...l) => h('div', { class: 'opcoes', style: { marginTop: '10px' } }, ...l);
   const marcar = (rot, val, fn) => h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: !!val, onchange: ev => { fn(ev.target.checked); tocar(); } }), h('span', {}, rot));
@@ -112,7 +112,7 @@ export function criarEditores(ctx) {
           remover(ts, t, 0))),
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn', disabled: ts.length >= 300, onclick: () => mudar(() => { ts.push({ id: novoId('t', idsDe(ts)), termo: '', definicao: '' }); }) }, '＋ Adicionar termo'),
-          h('button', { class: 'btn discreto', onclick: () => { const k = adicionar(BANCO_FISIOLOGIA); ctx.avisoGeral(k ? `${k} termo(s) de Fisiologia adicionado(s).` : 'Os termos do banco de Fisiologia já estão aqui.', k ? 'ok' : 'info'); } }, 'Acrescentar o banco de Fisiologia (30 termos)'),
+          h('button', { class: 'btn discreto', onclick: () => { const k = adicionar(BANCO_FISIOLOGIA); ctx.avisoGeral(k ? `${pl(k, 'termo', 'termos')} de Fisiologia ${k === 1 ? 'adicionado' : 'adicionados'}.` : 'Os termos do banco de Fisiologia já estão aqui.', k ? 'ok' : 'info'); } }, 'Acrescentar o banco de Fisiologia (30 termos)'),
           ts.length > 0 && h('button', { class: 'btn perigo discreto', onclick: () => { if (confirm('Apagar todos os termos do banco?')) mudar(() => { c.termos = []; }); } }, 'Apagar todos')),
         colar('Colar vários termos', 'Um termo por linha. Para pôr a definição, separe com "|" ou tabulação (dá para colar duas colunas de uma planilha).', 'Renina | Enzima renal que converte angiotensinogênio em angiotensina I\nNéfron\nMiosina', adicionar))));
   }
@@ -187,7 +187,7 @@ export function criarEditores(ctx) {
       const g = montarGrade(ws);
       if (!g.palavras.length) return limpar(previa, h('p', { class: 'sutil' }, 'Escreva palavras com dica para ver a grade.'));
       const nums = {}; g.numeros.forEach((l, r) => l.forEach((n, k) => { if (n) nums[r + ',' + k] = n; }));
-      limpar(previa, h('p', {}, h('strong', {}, `${g.palavras.length} palavra(s) na grade · ${g.linhas} × ${g.colunas}`)),
+      limpar(previa, h('p', {}, h('strong', {}, `${pl(g.palavras.length, 'palavra')} na grade · ${g.linhas} × ${g.colunas}`)),
         h('div', { class: 'cruz-grade', style: { '--c': g.colunas, maxWidth: Math.min(520, g.colunas * 34) + 'px' } }, g.celulas.flatMap((l, r) => l.map((ch, k) => ch === null ? h('span', { class: 'cruz-vazio' }) : h('span', { class: 'cruz-cel cheia' }, nums[r + ',' + k] && h('small', {}, nums[r + ',' + k]), ch)))),
         g.naoCouberam.length > 0 && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Não couberam (sem letra em comum ou grade grande demais): ' + g.naoCouberam.map(x => x.palavra).join(', ') + '. Troque ou acrescente palavras que cruzem.'));
     };

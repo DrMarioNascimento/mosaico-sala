@@ -5,7 +5,7 @@
 import { backend, link, EM_ENSAIO } from './backend.js';
 import { melhorarConducao, indicarConexao } from './conducao-docente.js';
 import { CASOS, carregarCaso } from './casos.js';
-import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva } from './ui.js';
+import { $, h, limpar, campoArquivo, aviso, corDoGrupo, chipGrupo, iconeGrupo, escalaVisual, contagemRegressiva, pl } from './ui.js';
 import { validarAtividade, temErros, lerJsonImportado } from './core/validacao.js';
 import { sugerirEquilibrio, avisoGramatica } from './core/equilibrio.js';
 import { distribuir, calcularVagas, diagnosticarComposicao, grupoParaEntradaTardia, moverParticipante } from './core/distribuicao.js';
@@ -399,7 +399,7 @@ function renderSala() {
         h('p', {}, h('a', { href: link('simulador.html', { sala: E.codigo }), target: '_blank', rel: 'noopener' }, link('simulador.html', { sala: E.codigo }).replace('simulador.html', 'simulador').replace(/^https?:\/\//, '')))),
       h('button', { class: 'btn bloco', onclick: () => b.atualizarSala(E.codigo, { entradaAberta: !s.entradaAberta }).catch(falha) }, s.entradaAberta ? 'Fechar a entrada' : 'Reabrir a entrada'),
       h('p', { class: 'sutil' }, s.entradaAberta ? 'Entrada aberta: novos participantes podem entrar. Depois da formação dos grupos, quem chega vai para o grupo com menos pessoas.' : 'Entrada fechada.')),
-    h('div', { class: 'cartao' }, h('h2', {}, `${nomes.length} participante(s)`),
+    h('div', { class: 'cartao' }, h('h2', {}, `${pl(nomes.length, 'participante')}`),
       nomes.length ? h('ul', {}, nomes.map(([u, n]) => h('li', {}, n, ' ', grupoDoUid(u) && chip(grupoDoUid(u))))) : h('p', { class: 'sutil' }, 'Ninguém entrou ainda.')),
     EM_ENSAIO && h('div', { class: 'cartao' }, h('h2', {}, 'Ensaio'),
       h('p', { class: 'sutil' }, 'Abra a tela de participante em outras abas ou acrescente participantes simulados.'),
@@ -509,7 +509,7 @@ function renderGrupos() {
     const vagas = n ? calcularVagas(a.grupos, n) : [];
     return limpar(alvo, h('div', { class: 'cartao' },
       h('h1', {}, 'Formar grupos'),
-      h('p', {}, `${n} participante(s) para ${a.grupos.length} grupos planejados.`),
+      h('p', {}, `${pl(n, 'participante')} para ${a.grupos.length} grupos planejados.`),
       n > 0 && h('p', { class: 'sutil' }, 'Tamanhos: ' + vagas.map(v => `${nomeGrupo(v.grupoId)} ${v.vagas}`).join(' · ')),
       n > 0 && n < a.grupos.length && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Há menos participantes que grupos: alguns grupos ficarão vazios. Os grupos não são removidos; durante as etapas você poderá pedir a outro grupo para cobrir a tarefa.'),
       h('button', { class: 'btn primario bloco', disabled: !n, onclick: formarGrupos }, 'Sortear grupos equilibrados')));
@@ -694,7 +694,7 @@ function resumoEnvios(e) {
   const correta = A().docente?.respostas?.[e.id]?.corretaId;
   if (e.participacao.organizacao === 'individual') {
     const n = envs.length, ac = correta ? envs.filter(x => x.dados?.alternativaId === correta).length : null;
-    return h('p', { class: 'sutil' }, `${n} resposta(s)` + (ac !== null ? ` · ${ac} correta(s) (${Math.round(100 * ac / n)}%) — só você vê` : ''));
+    return h('p', { class: 'sutil' }, `${pl(n, 'resposta')}` + (ac !== null ? ` · ${pl(ac, 'correta')} (${Math.round(100 * ac / n)}%) — só você vê` : ''));
   }
   const opcoes = e.config?.hipotesesCandidatas || [];
   return h('details', {}, h('summary', {}, `Envios (${envs.length}) — só você vê`),
@@ -874,7 +874,7 @@ function painelCadeado(e, caixa) {
   caixa.append(h('p', {}, h('strong', { id: 'relogioConducao' }, contagemRegressiva(E.sala.etapaInfo?.inicio, E.sala.etapaInfo?.tempoMin)), ` · ${p.enviados ?? 0} de ${p.esperados ?? 0} cadeados abertos`),
     h('p', { class: 'sutil' }, e.config.regra === 'fragmentos'
       ? 'Cada acerto revela um pedaço do código no celular de quem acertou. O líder digita o código para abrir.'
-      : `O grupo abre quando ${e.config.minAcertos > 0 ? e.config.minAcertos : 'todos os'} membro(s) acertam a própria pergunta.`),
+      : (e.config.minAcertos === 1 ? 'O grupo abre quando 1 membro acerta a própria pergunta.' : `O grupo abre quando ${pl(e.config.minAcertos > 0 ? e.config.minAcertos : 'todos os', 'membro')} acertam a própria pergunta.`)),
     h('ul', { class: 'diag' }, A().grupos.filter(g => por[g.id]).map(g => {
       const x = por[g.id];
       return h('li', { class: x.destravado ? 'info' : 'aviso' }, chip(g.id), ' ',
@@ -975,7 +975,7 @@ function resumoDesafio(e) {
     const so = soDebate(e);
     return h('p', { class: 'sutil' }, Object.entries(est).map(([g, S]) => `${g === 'representantes' ? 'Representantes' : nomeGrupo(g)}: ${!S.confirmacoes ? 'não enviou' : so ? 'fechou as posições' : `${S.ultimo.acertos} de ${S.ultimo.total}` + (S.concluido ? ` ✔ (${S.posicao}º)` : '')}`).join(' · '));
   }
-  return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(j.placar).sort((x, y) => y[1] - x[1]).map(([g, n]) => `${nomeGrupo(g)} ${n}`).join(' · ') + ` · ${j.historico.filter(r => r.acertou).length} acerto(s) em ${j.historico.length} resposta(s)`);
+  return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(j.placar).sort((x, y) => y[1] - x[1]).map(([g, n]) => `${nomeGrupo(g)} ${n}`).join(' · ') + ` · ${pl(j.historico.filter(r => r.acertou).length, 'acerto')} em ${pl(j.historico.length, 'resposta')}`);
 }
 
 function painelQuiz(e, caixa) {
@@ -987,7 +987,7 @@ function painelQuiz(e, caixa) {
       h('p', {}, q.enunciado), h('p', { class: 'sutil' }, 'Resposta: ' + rc.texto + ' — só você vê'),
       h('p', { class: 'estado ' + (v.estado === 'certo' ? 'ok' : v.estado === 'respondendo' ? 'pend' : '') }, { respondendo: 'Aguardando o líder responder…', certo: 'Acertou!', errado: 'Errou.', tempo: 'Tempo esgotado.', encerrada: 'Encerrada.' }[v.estado]));
     if (v.estado === 'respondendo') caixa.append(h('button', { class: 'btn bloco', onclick: () => emSerie(() => avaliarVezQuiz(e, true)) }, 'Encerrar esta pergunta (conta como erro)'));
-  } else caixa.append(h('p', {}, `${total} pergunta(s). A cada uma, o sistema sorteia o grupo da vez.`));
+  } else caixa.append(h('p', {}, `${pl(total, 'pergunta')}. A cada uma, o sistema sorteia o grupo da vez.`));
   caixa.append(h('p', { class: 'sutil' }, 'Placar: ' + (gruposComGente().map(g => `${nomeGrupo(g)} ${j?.placar?.[g] || 0}`).join(' · ') || '—')));
   if (!fim && (!v || v.estado !== 'respondendo')) caixa.append(h('button', { class: 'btn primario bloco', onclick: () => emSerie(() => proximaPerguntaQuiz(e)) }, v ? 'Sortear a próxima pergunta' : 'Sortear a primeira pergunta'));
   caixa.append(h('button', { class: 'btn ' + (fim ? 'primario ' : '') + 'bloco', onclick: encerrarEtapa }, fim ? 'Encerrar etapa (todas respondidas)' : 'Encerrar etapa'));

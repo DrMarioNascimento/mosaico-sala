@@ -677,3 +677,8 @@ dialog.ampliar-imagem::backdrop { background: #000c; }
 .ampliar-barra .btn { min-height: 44px; min-width: 52px; font-size: 1rem; }
 .ampliar-area { overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom; display: block; }
 .ampliar-area img { width: 100%; height: auto; max-width: none; display: block; margin: auto; background: #fff; }
+
+/* 26/10/2026 · palavras longas quebram com hífen, na sílaba, e não no meio ("Vasoconstriçã/o") */
+.cartao-arr, .rotulo-par, .fragmento div, .seq-btn { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 7 3 3; }
+/* Telão: o tabuleiro da memória cabe na altura da TV (cartas 5:3; a grade ocupa no máximo ~36% da altura) */
+.telao .telao-memoria { width: min(70vw, calc(36vh * var(--n, 4) * 5 / (3 * var(--l, 3)))); }

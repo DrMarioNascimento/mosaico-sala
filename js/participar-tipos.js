@@ -2,7 +2,7 @@
    Pares na memória · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem (mídia, perguntas e observar)
    O celular só manda a jogada; quem conduz confere e devolve o resultado. */
 
-import { h, corDoGrupo, iconeGrupo, ampliarImagem, botaoAmpliar } from './ui.js';
+import { h, corDoGrupo, iconeGrupo, ampliarImagem, botaoAmpliar, pl } from './ui.js';
 import { POWER_UPS } from './core/corrida.js';
 import { VELOCIDADES, duracaoTom, frequencias, TOM_ERRO, sortearPainel, proximoBotao, conferirToque, MAX_PASSOS } from './core/sequencia.js';
 import { INSTRUMENTOS, OPCOES_RESPOSTA, pontuar } from './core/escalas.js';
@@ -119,7 +119,7 @@ export function criarTelas(ctx) {
     if (!pk || pk.etapaId !== S().etapaAtual) { caixa.append(ctx.carregando()); return caixa; }
     if (!pk.cartas) { caixa.append(ctx.carregando()); return caixa; }
     const minha = telao ? (pk.vez === g() && souLider(g())) : true;
-    caixa.append(h('p', {}, h('strong', {}, `${pk.achados} de ${pk.total} pares`), telao ? '' : ` · ${pk.tentativas} jogada(s)`));
+    caixa.append(h('p', {}, h('strong', {}, `${pk.achados} de ${pk.total} pares`), telao ? '' : ` · ${pl(pk.tentativas, 'jogada')}`));
     if (telao) {
       caixa.append(placar(pk.placar || {}));
       if (pk.concluido) caixa.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Todos os pares foram achados!'));
@@ -323,7 +323,7 @@ export function criarTelas(ctx) {
       else if (G.enviando) acoes.append(h('p', { class: 'sutil' }, 'Enviando o resultado…'));
       else if (pode) acoes.append(h('button', { class: 'btn primario bloco seq-iniciar', 'data-auto': 'seq-iniciar', onclick: iniciar }, G.estado === 'fim' ? 'Nova partida (novas palavras)' : 'Iniciar'));
       else acoes.append(h('p', { class: 'aviso', 'data-tipo': 'ok' }, 'Suas partidas acabaram. Acompanhe o ranking no telão!'));
-      if (pode && pk.partidas) acoes.append(h('small', { class: 'sutil' }, restam === 1 ? 'Última partida.' : `${restam} partida(s) restante(s).`));
+      if (pode && pk.partidas) acoes.append(h('small', { class: 'sutil' }, restam === 1 ? 'Última partida.' : `${pl(restam, 'partida restante', 'partidas restantes')}.`));
     }
     function iniciar() {
       somPronto(); parar();
@@ -512,7 +512,7 @@ export function criarTelas(ctx) {
     return caixa;
   }
   function descreverDecisao(formato, d, j) {
-    if (formato === 'ditador') return `Você vai dar ${d.dar} ponto(s).`;
+    if (formato === 'ditador') return `Você vai dar ${pl(d.dar, 'ponto')}.`;
     if (formato === 'ultimato') return `Você oferece ${d.oferta} e aceita a partir de ${d.minimo}.`;
     if (formato === 'confianca') return `Você envia ${d.enviar} e devolve ${d.devolver}% do que receber.`;
     if (formato === 'bens_publicos') return `Você põe ${d.contribuir} no fundo do grupo.`;

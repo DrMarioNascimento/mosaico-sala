@@ -3,7 +3,7 @@
    (Os pares para ligar e a marcação na imagem usam o quadro dos cartões, em conduzir.js.)
    Como nos outros tipos: o gabarito fica aqui; os celulares mandam a jogada e recebem o resultado. */
 
-import { h, contagemRegressiva } from './ui.js';
+import { h, contagemRegressiva, pl } from './ui.js';
 import { prepararMemoria, estadoMemoria, estadoMemoriaTelao, tabuleiroVisivel } from './core/pares.js';
 import { itensCorrida, prepararCorrida, estadoCorrida, itemDoJogador, alternativaParaTirar, POWER_UPS } from './core/corrida.js';
 import { montarGrade, prepararCruzadas, estadoCruzadas, gradeVisivel } from './core/cruzadas.js';
@@ -289,7 +289,7 @@ export function criarTipos(ctx) {
         if (est) {
           caixa.append(h('p', { class: 'sutil' }, `${Object.values(est.jogadores).filter(S => S.terminou).length} de ${Object.keys(est.jogadores).length} terminaram. Placar: ` + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ')));
           caixa.append(h('details', {}, h('summary', {}, 'Cada jogador — só você vê'), h('ul', { class: 'diag' }, Object.entries(est.jogadores).map(([id, S]) =>
-            h('li', { class: 'info' }, ctx.chip(S.grupo), ' ', porGrupoJogador(e) ? '' : ctx.nomeDe(id) + ': ', `${S.pos} de ${j.prep.jogadores[id].ordem.length} · ${S.acertos} acerto(s) · ${S.pontos} pts` + (S.inventario.length ? ` · power-ups: ${S.inventario.map(p => POWER_UPS[p]?.nome).join(', ')}` : ''))))));
+            h('li', { class: 'info' }, ctx.chip(S.grupo), ' ', porGrupoJogador(e) ? '' : ctx.nomeDe(id) + ': ', `${S.pos} de ${j.prep.jogadores[id].ordem.length} · ${pl(S.acertos, 'acerto')} · ${S.pontos} pts` + (S.inventario.length ? ` · power-ups: ${S.inventario.map(p => POWER_UPS[p]?.nome).join(', ')}` : ''))))));
         }
       }
       if (t === 'memoria') { const est = estadoM(e); caixa.append(h('ul', { class: 'diag' }, Object.entries(est).map(([g, S]) => linha(g, S.concluido ? `completou (${S.posicao}º) em ${S.tentativas} jogadas` : `${Object.keys(S.achados).length} de ${S.total} pares · ${S.tentativas} jogadas`, S.concluido)))); }
@@ -302,14 +302,14 @@ export function criarTipos(ctx) {
       if (t === 'cruzadas') { const est = estadoX(e); caixa.append(h('ul', { class: 'diag' }, Object.entries(est).map(([g, S]) => g === 'turma' ? h('li', { class: 'info' }, h('strong', {}, 'Turma: '), `${S.acertos} de ${S.total} palavras`) : linha(g, S.concluido ? `completou (${S.posicao}º)` : `${S.acertos} de ${S.total} palavras`, S.concluido)))); }
       if (t === 'ramos') {
         const est = estadoR(e);
-        caixa.append(h('ul', { class: 'diag' }, Object.entries(est).map(([g, S]) => linha(g, S.final ? `chegou ao final ${({ bom: 'bom', neutro: 'neutro', ruim: 'ruim' })[S.desfecho]} em ${S.caminho.length} escolhas` : `${S.caminho.length} escolha(s) feitas`, S.final))));
+        caixa.append(h('ul', { class: 'diag' }, Object.entries(est).map(([g, S]) => linha(g, S.final ? `chegou ao final ${({ bom: 'bom', neutro: 'neutro', ruim: 'ruim' })[S.desfecho]} em ${S.caminho.length} escolhas` : `${pl(S.caminho.length, 'escolha')} feitas`, S.final))));
       }
       if (t === 'observar') { const est = estadoO(e); caixa.append(h('ul', { class: 'diag' }, (j.grupos || []).map(g => linha(g, est[g] ? 'escreveu' : 'pensando', !!est[g])))); }
       if (t === 'sequencia') {
         const est = estadoS(e), dr = termosQueDerrubaram(est, e.config.termos || [], 5);
-        caixa.append(h('p', { class: 'sutil' }, `${est.ranking.length} de ${Object.keys(est.jogadores).length} já jogaram · ${est.partidas} partida(s). Placar${e.config.placar === 'media' ? ' (média dos recordes)' : ' (soma dos recordes)'}: ` + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ')),
+        caixa.append(h('p', { class: 'sutil' }, `${est.ranking.length} de ${Object.keys(est.jogadores).length} já jogaram · ${pl(est.partidas, 'partida')}. Placar${e.config.placar === 'media' ? ' (média dos recordes)' : ' (soma dos recordes)'}: ` + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ')),
           h('details', {}, h('summary', {}, 'Recorde de cada aluno'), h('ul', { class: 'diag' }, Object.entries(est.jogadores).sort((x, y) => y[1].recorde - x[1].recorde).map(([id, S]) =>
-            h('li', { class: S.partidas ? 'info' : 'aviso' }, ctx.chip(S.grupo), ' ', ctx.nomeDe(id) + ': ', S.partidas ? `recorde ${S.recorde} · ${S.partidas} partida(s) · última ${S.ultima.pontos}` : 'ainda não jogou')))),
+            h('li', { class: S.partidas ? 'info' : 'aviso' }, ctx.chip(S.grupo), ' ', ctx.nomeDe(id) + ': ', S.partidas ? `recorde ${S.recorde} · ${pl(S.partidas, 'partida')} · última ${S.ultima.pontos}` : 'ainda não jogou')))),
           dr.length > 0 && h('p', { class: 'sutil' }, 'Termos que mais derrubaram: ' + dr.map(x => `${x.termo} (${x.vezes})`).join(' · ')));
       }
       if (t === 'equipe') return painelEquipe(e, caixa);
@@ -333,7 +333,7 @@ export function criarTipos(ctx) {
       if (t === 'equipe') { const est = estadoQ(e); return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(est.placar).map(([g, p]) => `${ctx.nomeGrupo(g)} ${p.pontos}`).join(' · ')); }
       if (t === 'ramos') { const est = estadoR(e); return h('p', { class: 'sutil' }, Object.entries(est).map(([g, S]) => `${ctx.nomeGrupo(g)}: ${S.final ? 'final ' + S.desfecho : 'não terminou'}`).join(' · ')); }
       if (t === 'sequencia') { const est = estadoS(e); return h('p', { class: 'sutil' }, 'Placar: ' + Object.entries(est.grupos).sort((x, y) => y[1].total - x[1].total).map(([g, G]) => `${ctx.nomeGrupo(g)} ${G.total}`).join(' · ') + (est.ranking[0] ? ` · maior sequência: ${est.ranking[0].recorde} (${ctx.nomeDe(est.ranking[0].id)})` : '')); }
-      if (t === 'escala') return h('p', { class: 'sutil' }, `${Object.keys(escoresDe(e)).length} resposta(s).`);
+      if (t === 'escala') return h('p', { class: 'sutil' }, `${pl(Object.keys(escoresDe(e)).length, 'resposta')}.`);
       if (t === 'jogo') return h('p', { class: 'sutil' }, j.revelado ? `${j.resumo.n} decisões · média ${j.resumo.media} ${JOGOS[e.config.formato].rotulo}` : `${Object.keys(decisoesDe(e)).length} decisões`);
       if (t === 'observar') { const est = estadoO(e); return h('details', {}, h('summary', {}, 'O que cada grupo escreveu'), h('ul', {}, Object.entries(est).map(([g, x]) => h('li', {}, h('strong', {}, ctx.nomeGrupo(g) + ': '), x.texto)))); }
       return h('span');

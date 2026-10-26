@@ -38,6 +38,7 @@
   .porta-conhecer > div { flex: 1; min-width: 0; }
   @media (max-width: 560px) { .porta-conhecer { flex-wrap: wrap; } .porta-conhecer .btn { width: 100%; margin: 0; } .porta { padding: 22px 16px; } }
 </style>
+<style>.porta .erro-codigo,.erro-codigo{flex-basis:100%;margin:6px 0 0;color:#ff8a7a;font-weight:700;font-size:.95rem}</style>
 </head>
 <body>
 <main class="pagina">
@@ -52,7 +53,8 @@
       <p>Digite o código que o professor mostrou. Não precisa de cadastro.</p>
       <form action="participar.html" method="get" id="formSala">
         <label class="visualmente-oculto" for="codigoInicio">Código da sala</label>
-        <input id="codigoInicio" name="sala" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" placeholder="Código de 6 números" required>
+        <input id="codigoInicio" name="sala" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" placeholder="Código de 6 números" required aria-describedby="erroCodigo">
+        <p class="erro-codigo" id="erroCodigo" role="alert" hidden>O código tem 6 números. Confira no telão.</p>
         <button class="btn primario" type="submit" data-ico="participar">Entrar</button>
       </form>
     </article>
@@ -75,6 +77,10 @@
   // O código só aceita números; com os 6 digitados, segue direto para a sala.
   const cod = document.getElementById('codigoInicio');
   cod.addEventListener('input', () => { cod.value = cod.value.replace(/\D/g, '').slice(0, 6); if (cod.value.length === 6) document.getElementById('formSala').requestSubmit(); });
+  // Mensagem própria, em português, no lugar do aviso do navegador ('Please match the requested format').
+  const erroCod = document.getElementById('erroCodigo');
+  cod.addEventListener('invalid', ev => { ev.preventDefault(); erroCod.textContent = cod.value ? `O código tem 6 números; faltam ${6 - cod.value.length}.` : 'Digite o código de 6 números que aparece no telão.'; erroCod.hidden = false; cod.setAttribute('aria-invalid', 'true'); cod.focus(); });
+  cod.addEventListener('input', () => { erroCod.hidden = true; cod.removeAttribute('aria-invalid'); });
 </script>
 </body>
 </html>
