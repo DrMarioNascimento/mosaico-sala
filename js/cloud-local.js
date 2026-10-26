@@ -87,6 +87,11 @@ export const backend = {
     return novo;
   },
   async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
+  async listarTodaBiblioteca() { return chaves('biblioteca/').map(k => ({ id: k.slice(11), ...ler(k) })).sort((x, y) => y.atualizadoEm - x.atualizadoEm); },
+  async listarSalas() {
+    return chaves('rooms/').filter(k => k.split('/').length === 2).map(k => { const x = ler(k) || {}; return { codigo: k.slice(6), owner: x.owner, status: x.status, fase: x.fase || '', titulo: x.publico?.titulo || '',
+      participantes: Object.keys(x.nomes || {}).length, criadaEm: x.createdAt || 0, venceEm: x.expiresAt || 0 }; }).sort((x, y) => y.criadaEm - x.criadaEm);
+  },
   async lerMestres() { return ler('config/mestres')?.emails || []; },
   async salvarMestres(emails) { gravar('config/mestres', { emails }); },
   async apagarSala(c) { chaves(`rooms/${c}`).forEach(k => gravar(k, null)); }

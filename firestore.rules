@@ -36,11 +36,12 @@ service cloud.firestore {
     // Biblioteca de atividades: FECHADA. Só contas da lista de mestres; cada uma lê e edita as suas,
     // e lê as que outro mestre marcou como compartilhadas. Nenhum dado de participante fica aqui.
     match /biblioteca/{id} {
-      allow read: if mestre() && (resource.data.owner == request.auth.uid || resource.data.compartilhada == true);
+      // Administração: os administradores fixos leem e apagam qualquer atividade (sem editar a de outra pessoa).
+      allow read: if admin() || (mestre() && (resource.data.owner == request.auth.uid || resource.data.compartilhada == true));
       allow create: if mestre() && bibliotecaValida(request.resource.data) && request.resource.data.owner == request.auth.uid;
       allow update: if mestre() && resource.data.owner == request.auth.uid && bibliotecaValida(request.resource.data)
         && request.resource.data.owner == resource.data.owner;
-      allow delete: if mestre() && resource.data.owner == request.auth.uid;
+      allow delete: if admin() || (mestre() && resource.data.owner == request.auth.uid);
     }
     function bibliotecaValida(d) {
       return d.keys().hasOnly(['owner', 'autor', 'titulo', 'conteudo', 'compartilhada', 'atualizadoEm'])
@@ -51,7 +52,7 @@ service cloud.firestore {
 
     match /rooms/{c} {
       allow get: if signed();
-      allow list: if false;
+      allow list: if admin();   // administração: ver salas abertas e esquecidas
       allow create: if mestre() && c.matches('[0-9]{6}')
         && request.resource.data.owner == request.auth.uid
         && request.resource.data.status == 'open'
@@ -62,17 +63,18 @@ service cloud.firestore {
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.expiresAt == resource.data.expiresAt;
-      allow delete: if signed() && resource.data.owner == request.auth.uid;
+      allow delete: if admin() || (signed() && resource.data.owner == request.auth.uid);
 
+      // Encerrar pela administração apaga a sala inteira: membros, pacotes e envios.
       match /members/{uid} {
         allow get: if signed() && (request.auth.uid == uid || dono(c));
-        allow list: if dono(c);
+        allow list: if dono(c) || admin();
         allow create: if signed() && uid == request.auth.uid
           && sala(c).status == 'open' && sala(c).entradaAberta == true
           && request.resource.data.keys().hasOnly(['nome', 'entrouEm'])
           && request.resource.data.nome is string
           && request.resource.data.nome.size() > 0 && request.resource.data.nome.size() <= 30;
-        allow delete: if dono(c);
+        allow delete: if dono(c) || admin();
       }
 
       // Cada grupo só lê o próprio pacote (ou o de um grupo que esteja cobrindo por contingência).
@@ -85,13 +87,14 @@ service cloud.firestore {
           request.auth.uid in sala(c).composicao.get(g, []) ||
           request.auth.uid in sala(c).leitoresExtra.get(g, []));
         allow write: if dono(c);
+        allow list, delete: if admin();
       }
 
       match /envios/{id} {
         allow get: if signed() && (dono(c) || resource == null || resource.data.autor == request.auth.uid);
-        allow list: if dono(c);
+        allow list: if dono(c) || admin();
         allow create: if signed() && envioValido(c, id, request.resource.data);
-        allow delete: if dono(c);
+        allow delete: if dono(c) || admin();
         // Sem update: um envio confirmado nunca é sobrescrito.
       }
 

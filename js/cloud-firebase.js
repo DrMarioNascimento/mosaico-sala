@@ -100,6 +100,19 @@ export const backend = {
   },
   apagarBiblioteca(id) { return deleteDoc(doc(db, 'biblioteca', id)); },
 
+  // ---------- administração (só os administradores fixos; regras no firestore.rules) ----------
+  /** Todas as atividades de todos os professores, com o conteúdo para abrir e o tamanho. */
+  async listarTodaBiblioteca() {
+    const s = await getDocs(collection(db, 'biblioteca'));
+    return s.docs.map(d => ({ id: d.id, ...d.data(), atualizadoEm: d.data().atualizadoEm?.toMillis?.() ?? 0 })).sort((x, y) => y.atualizadoEm - x.atualizadoEm);
+  },
+  /** Todas as salas, abertas ou esquecidas (o servidor não apaga sozinho as vencidas). */
+  async listarSalas() {
+    const s = await getDocs(collection(db, 'rooms'));
+    return s.docs.map(d => { const x = d.data(); return { codigo: d.id, owner: x.owner, status: x.status, fase: x.fase || '', titulo: x.publico?.titulo || '', participantes: Object.keys(x.nomes || {}).length,
+      criadaEm: x.createdAt?.toMillis?.() ?? 0, venceEm: x.expiresAt?.toMillis?.() ?? 0 }; }).sort((x, y) => y.criadaEm - x.criadaEm);
+  },
+
   // ---------- lista de mestres (só administradores gravam; regras no firestore.rules) ----------
   async lerMestres() { const s = await getDoc(doc(db, 'config', 'mestres')); return s.exists() ? (s.data().emails || []) : []; },
   salvarMestres(emails) { return setDoc(doc(db, 'config', 'mestres'), { emails }); },

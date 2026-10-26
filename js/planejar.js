@@ -30,7 +30,7 @@ const b = await backend();
 const RASCUNHO_BASE = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 let RASCUNHO = RASCUNHO_BASE, RASCUNHOS = '', historico = null, salvoEm = null, falhaRascunho = false, rascunhoId = null;
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
-const P = { mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
+const P = { adm: null, mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Quebra-cabeça: texto ou imagem', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
@@ -100,6 +100,15 @@ function salvarRascunho() {
     localStorage.setItem(RASCUNHOS, JSON.stringify(lista)); salvoEm = agora; falhaRascunho = false;
   } catch { falhaRascunho = true; }
   estadoSalvamento();
+}
+/** Tira rascunhos deste navegador (um ou vários). A biblioteca em nuvem não é tocada. */
+function apagarRascunhos(ids, pergunta) {
+  if (!confirmar(pergunta)) return;
+  try {
+    localStorage.setItem(RASCUNHOS, JSON.stringify(rascunhosLocais().filter(x => !ids.includes(x.rascunhoId))));
+    const atual = JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (atual && ids.includes(atual.rascunhoId)) localStorage.removeItem(RASCUNHO);
+  } catch {}
+  render(); avisoGeral(ids.length > 1 ? 'Rascunhos apagados deste navegador.' : 'Rascunho apagado deste navegador.', 'ok');
 }
 function estadoSalvamento() {
   const alvo = document.getElementById('estadoSalvamento'); if (!alvo) return;
@@ -204,7 +213,7 @@ function render() {
   document.body.classList.toggle('planejando',!!P.A);
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
-  if (!P.A) return limpar($('app'), telaInicio());
+  if (!P.A) return limpar($('app'), P.adm && souAdmin() ? telaAdmin() : telaInicio());
   limpar($('app'), percursoDocente(5,true), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
 }
@@ -317,9 +326,11 @@ function telaInicio() {
   const ir = destino => document.getElementById(destino)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const acao = (ilu, titulo, texto, onclick, principal) => h('button', { class: 'acao-professor' + (principal ? ' principal' : ''), 'data-sem-ico': '', onclick }, ilustra(ilu, 72), h('strong', {}, titulo), h('span', {}, texto));
   const aplicar = id => link('conduzir.html', { atividade: id });
-  const rasc = rascunhosLocais(), bib = temBiblioteca() ? P.bib : [];
+  const bib = temBiblioteca() ? P.bib : [];
+  // Rascunho de uma atividade já salva e sem mudanças é a mesma coisa que o item da biblioteca: não repete na lista.
+  const rasc = rascunhosLocais().filter(r => !(r.origem?.bibId && !r.sujo && bib.some(x => x.id === r.origem.bibId)));
   return h('div', { class: 'painel-professor' },
-    h('h1', {}, 'O que vamos fazer hoje?'),
+    h('div', { class: 'cab-professor' }, h('h1', {}, 'O que vamos fazer hoje?'), souAdmin() && h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => carregarAdmin() }, ico('geral'), 'Administração')),
     h('div', { class: 'acoes-professor' },
       acao('e_material', 'Criar com IA', 'Cole um texto ou envie um arquivo. A IA monta a proposta para você revisar.', () => abrirIA(), true),
       acao('e_conduzir', 'Aplicar em sala', 'Abra a sala com uma atividade pronta e acompanhe a turma.', () => { location.href = link('conduzir.html'); }),
@@ -329,9 +340,11 @@ function telaInicio() {
       ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
       : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
     h('section', { class: 'cartao', id: 'minhasAtividades' }, h('h2', {}, ico('biblioteca'), 'Minhas atividades'),
+      rasc.length > 1 && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn pequeno discreto', onclick: () => apagarRascunhos(rasc.map(r => r.rascunhoId), `Apagar os ${rasc.length} rascunhos deste navegador? O que estiver salvo na biblioteca continua lá.`) }, ico('apagar'), `Apagar os ${rasc.length} rascunhos`)),
       rasc.length || bib.length ? h('ul', { class: 'lista-bib' },
-        rasc.map(r => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, r.A.titulo), h('small', {}, 'Rascunho neste navegador · ' + new Date(r.salvoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))),
-          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => { abrir(r.A, r.origem, r.rascunhoId); P.sujo = !!r.sujo; salvarRascunho(); render(); } }, 'Continuar')))),
+        rasc.map(r => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, r.A.titulo), h('small', {}, (r.origem?.bibId ? 'Alterações não salvas na biblioteca · ' : 'Rascunho neste navegador · ') + new Date(r.salvoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))),
+          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => { abrir(r.A, r.origem, r.rascunhoId); P.sujo = !!r.sujo; salvarRascunho(); render(); } }, 'Continuar'),
+            h('button', { class: 'btn pequeno discreto', title: 'Apagar rascunho', 'aria-label': 'Apagar rascunho ' + r.A.titulo, onclick: () => apagarRascunhos([r.rascunhoId], `Apagar o rascunho “${r.A.titulo}” deste navegador? O que estiver salvo na biblioteca continua lá.`) }, ico('apagar'))))),
         bib.map(item => h('li', {},
           h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
           item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
@@ -360,8 +373,7 @@ function telaInicio() {
         h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulador'),
           h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados no projetor. O simulador testa a aula com uma turma fictícia.'),
           h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: link('simulador.html'), 'data-ico': 'simulador' }, 'Simulador'))),
-        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()),
-        souAdmin() && h('details',{class:'cartao'},h('summary',{},'Administrar professores autorizados'),cartaoMestres()))));
+        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()))));
 }
 
 /** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
@@ -372,7 +384,7 @@ function carregarMestres() {
 }
 
 /** Administradores: quem pode guardar na biblioteca e abrir salas on-line (config/mestres no Firestore). */
-function cartaoMestres() {
+function cartaoMestres(contaPor = null) {
   const lista = P.mestres;
   if (!Array.isArray(lista)) return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
     lista === 'erro'
@@ -391,13 +403,75 @@ function cartaoMestres() {
   };
   novo.addEventListener('keydown', ev => { if (ev.key === 'Enter') adicionar(); });
   return h('div', { class: 'cartao' }, h('h2', {}, ico('grupos'), 'Professores autorizados'),
-    h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Os administradores já têm acesso.'),
+    h('p', { class: 'sutil' }, 'Podem guardar atividades na biblioteca e abrir salas on-line. Tirar um professor corta o acesso dele; as atividades que ele já guardou continuam na lista acima até alguém apagá-las.'),
     h('ul', { class: 'lista-bib' },
         ADMINS.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), h('small', {}, 'administrador')))),
-        lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e)),
+        lista.map(e => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, e), contaPor && h('small', {}, contaPor(e) + ' atividade(s) na biblioteca')),
           h('div', { class: 'mini' }, h('button', { class: 'btn pequeno discreto', title: 'Remover', 'aria-label': 'Remover ' + e, onclick: () => { if (confirmar(`Remover ${e} da lista de professores?`)) gravar(lista.filter(x => x !== e)); } }, ico('apagar')))))),
     h('label', { for: 'novoMestre' }, 'Adicionar professor (conta Google)'), novo,
     h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', onclick: adicionar }, ico('mais'), 'Adicionar')));
+}
+
+// ============================================================ administração (só os administradores fixos)
+/* Vê e apaga tudo: atividades de todos os professores, salas abertas ou esquecidas e a lista de professores.
+   As regras do Firestore (função admin()) são o que de fato libera isso; esta tela só aparece para eles. */
+async function carregarAdmin() {
+  P.adm = { carregando: true, filtro: P.adm?.filtro || '' }; render();
+  const [bib, salas] = await Promise.allSettled([b.listarTodaBiblioteca(), b.listarSalas()]);
+  P.adm = { ...P.adm, carregando: false,
+    bib: bib.status === 'fulfilled' ? bib.value : null, salas: salas.status === 'fulfilled' ? salas.value : null,
+    erro: [bib, salas].some(x => x.status === 'rejected') ? 'O servidor recusou parte da leitura. Publique as regras novas do Firestore (firestore.rules) e confira se a sua conta é de administrador.' : '' };
+  if (!Array.isArray(P.mestres)) carregarMestres();
+  render();
+}
+const dataCurta = ms => ms ? new Date(ms).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+async function admApagarAtividade(item) {
+  if (!confirmar(`Apagar “${item.titulo}”, de ${item.autor || 'autor desconhecido'}? Isso não pode ser desfeito.`)) return;
+  try { await b.apagarBiblioteca(item.id); P.adm.bib = P.adm.bib.filter(x => x.id !== item.id); render(); avisoGeral('Atividade apagada.', 'ok'); }
+  catch (e) { avisoGeral('Não foi possível apagar: ' + e.message, 'erro'); }
+}
+async function admEncerrarSalas(codigos, pergunta) {
+  if (!confirmar(pergunta)) return;
+  let ok = 0;
+  for (const c of codigos) { try { await b.apagarSala(c); ok++; } catch {} }
+  await carregarAdmin();
+  avisoGeral(ok === codigos.length ? `${ok} sala(s) encerrada(s). Participantes, envios e pacotes foram apagados.` : `Encerradas ${ok} de ${codigos.length}. Confira as regras do Firestore.`, ok === codigos.length ? 'ok' : 'erro');
+}
+function telaAdmin() {
+  const A = P.adm || {}, agora = Date.now();
+  const voltar = h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => { P.adm = null; render(); } }, ico('voltar'), 'Minhas atividades');
+  if (A.carregando) return h('div', { class: 'painel-admin' }, voltar, h('h1', {}, 'Administração'), h('p', { class: 'sutil' }, 'Carregando…'));
+  const bib = A.bib || [], salas = A.salas || [];
+  const nomeDe = uid => bib.find(x => x.owner === uid)?.autor || 'professor (' + String(uid || '').slice(0, 6) + '…)';
+  const autores = [...new Set(bib.map(x => x.autor || '(sem e-mail)'))].sort();
+  const lista = A.filtro ? bib.filter(x => (x.autor || '(sem e-mail)') === A.filtro) : bib;
+  const vencidas = salas.filter(s => s.venceEm && s.venceEm < agora), abertas = salas.filter(s => !(s.venceEm && s.venceEm < agora));
+  const contaPor = e => bib.filter(x => x.autor === e).length;
+  const filtro = h('select', { 'aria-label': 'Filtrar por professor', onchange: ev => { P.adm.filtro = ev.target.value; render(); } },
+    h('option', { value: '' }, `Todos os professores (${bib.length})`), autores.map(a => h('option', { value: a, selected: a === A.filtro }, `${a} (${bib.filter(x => (x.autor || '(sem e-mail)') === a).length})`)));
+  const linhaSala = s => h('li', {},
+    h('div', { class: 'tit' }, h('strong', {}, `Sala ${s.codigo}` + (s.titulo ? ' · ' + s.titulo : '')),
+      h('small', {}, `${nomeDe(s.owner)} · ${s.participantes} participante(s) · aberta em ${dataCurta(s.criadaEm)} · ` + (s.venceEm && s.venceEm < agora ? 'vencida' : 'vence ' + dataCurta(s.venceEm)))),
+    h('div', { class: 'mini' }, h('button', { class: 'btn pequeno perigo', onclick: () => admEncerrarSalas([s.codigo], `Encerrar a sala ${s.codigo}? Participantes, envios e pacotes serão apagados.`) }, 'Encerrar')));
+  return h('div', { class: 'painel-admin' }, voltar,
+    h('h1', {}, 'Administração'),
+    A.erro && h('p', { class: 'aviso', 'data-tipo': 'erro' }, A.erro),
+    h('div', { class: 'adm-resumo' },
+      [[bib.length, 'atividades'], [autores.length, 'professores com atividades'], [abertas.length, 'salas abertas'], [vencidas.length, 'salas vencidas']].map(([n, t]) => h('div', { class: 'adm-num' }, h('strong', {}, n), h('span', {}, t))),
+      h('button', { class: 'btn pequeno', onclick: () => carregarAdmin() }, 'Atualizar')),
+    h('section', { class: 'cartao' }, h('h2', {}, ico('biblioteca'), 'Atividades de todos os professores'),
+      h('label', {}, 'Professor'), filtro,
+      lista.length ? h('ul', { class: 'lista-bib' }, lista.map(item => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, `${item.autor || '(sem e-mail)'} · ${dataCurta(item.atualizadoEm)}` + (item.compartilhada ? ' · compartilhada' : ''))),
+        h('div', { class: 'mini' },
+          h('button', { class: 'btn pequeno', title: 'Abre uma cópia; a original continua do professor', onclick: () => { try { abrir(JSON.parse(item.conteudo), null); P.adm = null; avisoGeral('Cópia aberta. A original continua com ' + (item.autor || 'o professor') + '.'); } catch { avisoGeral('O conteúdo desta atividade não pôde ser lido.', 'erro'); } } }, 'Abrir cópia'),
+          h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => admApagarAtividade(item) }, ico('apagar'))))))
+        : h('p', { class: 'sutil' }, 'Nenhuma atividade.')),
+    h('section', { class: 'cartao' }, h('h2', {}, ico('sala'), 'Salas'),
+      h('p', { class: 'sutil' }, 'Salas abertas agora e as esquecidas depois de vencer. Encerrar apaga participantes, envios e pacotes.'),
+      vencidas.length > 0 && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn perigo', onclick: () => admEncerrarSalas(vencidas.map(s => s.codigo), `Encerrar as ${vencidas.length} salas vencidas?`) }, `Encerrar as ${vencidas.length} salas vencidas`)),
+      salas.length ? h('ul', { class: 'lista-bib' }, [...abertas, ...vencidas].map(linhaSala)) : h('p', { class: 'sutil' }, 'Nenhuma sala.')),
+    cartaoMestres(contaPor));
 }
 
 async function abrirModelo(id) {

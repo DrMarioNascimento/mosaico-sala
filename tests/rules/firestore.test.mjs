@@ -1,7 +1,7 @@
 import { before, after, test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 if(!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Execute apenas no emulador Firestore. Nenhum projeto real será usado.');
 let env;
 const google=email=>({email,email_verified:true,firebase:{sign_in_provider:'google.com'}});
@@ -56,4 +56,45 @@ test('Gabarito na biblioteca permanece privado para aluno e professor não autor
 });
 test('Pacote órfão não autoriza escrita mesmo com owner forjado',async()=>{
  await assertFails(setDoc(doc(db('aluno'),'rooms/000000/pacotes/g1'),{owner:'aluno',conteudo:'fraude'}));
+});
+
+// ---------- Administração: os administradores fixos veem e apagam tudo; os demais continuam barrados ----------
+const ADM = () => db('admin', 'mariocnascimento@gmail.com');
+test('Administrador lê e apaga atividade privada de outro professor; professor comum não', async () => {
+ await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'biblioteca/alheia'), { owner: 'outro', autor: 'outro@exemplo.com', titulo: 'Alheia', conteudo: '{}', compartilhada: false, atualizadoEm: Timestamp.now() }); });
+ await assertFails(getDoc(doc(db('professor', 'professor@exemplo.com'), 'biblioteca/alheia')));
+ await assertFails(deleteDoc(doc(db('professor', 'professor@exemplo.com'), 'biblioteca/alheia')));
+ await assertSucceeds(getDocs(collection(ADM(), 'biblioteca')));
+ await assertSucceeds(getDoc(doc(ADM(), 'biblioteca/alheia')));
+ await assertSucceeds(deleteDoc(doc(ADM(), 'biblioteca/alheia')));
+});
+test('Administrador não edita a atividade de outra pessoa (só lê e apaga)', async () => {
+ await assertFails(updateDoc(doc(ADM(), 'biblioteca/privada'), { titulo: 'Mexida', atualizadoEm: serverTimestamp() }));
+});
+test('Só o administrador lista as salas', async () => {
+ await assertFails(getDocs(collection(db('anonimo'), 'rooms')));
+ await assertFails(getDocs(collection(db('professor', 'professor@exemplo.com'), 'rooms')));
+ await assertSucceeds(getDocs(collection(ADM(), 'rooms')));
+});
+test('Administrador encerra sala de outro professor, com membros, pacotes e envios; professor comum não', async () => {
+ await env.withSecurityRulesDisabled(async c => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'rooms/777777'), { owner: 'outro', status: 'open', createdAt: Timestamp.now(), expiresAt: Timestamp.fromMillis(Date.now() + 3600000) });
+  await setDoc(doc(d, 'rooms/777777/members/u1'), { nome: 'A', entrouEm: Timestamp.now() });
+  await setDoc(doc(d, 'rooms/777777/pacotes/g1'), { conteudo: 'x' });
+  await setDoc(doc(d, 'rooms/777777/envios/e1__u1'), { autor: 'u1' });
+ });
+ const prof = db('professor', 'professor@exemplo.com');
+ await assertFails(deleteDoc(doc(prof, 'rooms/777777')));
+ await assertFails(getDocs(collection(prof, 'rooms/777777/envios')));
+ for (const sub of ['members', 'pacotes', 'envios']) {
+  const s = await assertSucceeds(getDocs(collection(ADM(), `rooms/777777/${sub}`)));
+  for (const x of s.docs) await assertSucceeds(deleteDoc(x.ref));
+ }
+ await assertSucceeds(deleteDoc(doc(ADM(), 'rooms/777777')));
+});
+test('Administrador sem e-mail verificado não lista salas nem apaga atividades', async () => {
+ const d = env.authenticatedContext('falso', { email: 'mariocnascimento@gmail.com', email_verified: false, firebase: { sign_in_provider: 'google.com' } }).firestore();
+ await assertFails(getDocs(collection(d, 'rooms')));
+ await assertFails(deleteDoc(doc(d, 'biblioteca/privada')));
 });
