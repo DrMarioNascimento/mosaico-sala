@@ -1,5 +1,5 @@
 import { cadeadoIcone } from './lock-icons.js';
-/* MOSAICO · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
+/* Mosaico Sala · Telão (TV): só informação pública. Nunca mostra peças nem respostas antes do fim. */
 import { backend, link, EM_ENSAIO } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, iconeGrupo, contagemRegressiva, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';

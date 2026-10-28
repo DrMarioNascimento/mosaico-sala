@@ -1,4 +1,4 @@
-/* MOSAICO · Cartões de arrastar (lógica pura, testada; roda no aparelho de quem conduz)
+/* Mosaico Sala · Cartões de arrastar (lógica pura, testada; roda no aparelho de quem conduz)
 
    Um motor de arrastar e soltar, três formatos:
      ordenar     → pôr os cartões em sequência (dominó de causa e efeito)

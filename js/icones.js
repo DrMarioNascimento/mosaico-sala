@@ -1,4 +1,4 @@
-/* MOSAICO · Ícones próprios da plataforma (desenhados para o MOSAICO Sala; não vêm de nenhum outro projeto)
+/* Mosaico Sala · Ícones próprios da plataforma (desenhados para o Mosaico Sala; não vêm de nenhum outro projeto)
    ico(nome)      → ícone de linha (24×24, usa a cor do texto) para navegação e botões
    ilustra(nome)  → ilustração colorida (64×64) de cada tipo de atividade e das entradas
    Os desenhos são constantes deste arquivo (nada vindo do usuário entra no SVG). */
@@ -49,7 +49,7 @@ export const UI = {
   telaCheia: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>'
 };
 
-// Ilustrações (64×64), traço próprio: formas chapadas nas cores do logo do MOSAICO.
+// Ilustrações (64×64), traço próprio: formas chapadas nas cores do logo do Mosaico Sala.
 const C = { lar: '#ff8a3d', cia: '#3ddcff', lim: '#b7e33a', ros: '#ff5fa8', rox: '#9b6cf0', ama: '#f7c531', azu: '#4b9dff', cla: '#eef2fa', esc: '#1b2439', cin: '#8fa0bf' };
 const boneco = (x, y, cor, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})" stroke="${cor}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
   <circle cx="13" cy="5" r="5" fill="${cor}" stroke="none"/>
@@ -113,7 +113,7 @@ function svgEm(cls, svg, rotulo) {
   if (rotulo) { s.setAttribute('role', 'img'); s.setAttribute('aria-label', rotulo); } else s.setAttribute('aria-hidden', 'true');
   return s;
 }
-/* Padrão visual do MOSAICO: ícones 3D (como as formas dos grupos em assets/icones).
+/* Padrão visual do Mosaico Sala: ícones 3D (como as formas dos grupos em assets/icones).
    Quando existe a versão 3D de um ícone, ela é usada; os desenhos acima são só provisórios até a versão 3D chegar.
    Todos saem de assets/ilustracoes/3d, recortados e no mesmo tamanho óptico (origens.json diz de onde veio cada um).
    Para trocar: gerar o 3D (prompts em ICONES-3D.md), normalizar como os demais e apontar o nome aqui. */

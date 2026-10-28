@@ -1,4 +1,4 @@
-/* MOSAICO · Quadro de cartões de arrastar (celular do participante)
+/* Mosaico Sala · Quadro de cartões de arrastar (celular do participante)
    Arrastar com Pointer Events (pointerdown/move/up + setPointerCapture): a API nativa de
    arrastar do HTML5 não funciona no toque do iPhone. Alternativa sempre disponível:
    toque no cartão e depois toque no lugar (acessibilidade e quem tem dificuldade de arrastar).

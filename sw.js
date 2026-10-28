@@ -1,4 +1,4 @@
-/* MOSAICO · Service worker: deixa o app instalável e abre as páginas mesmo com a internet oscilando.
+/* Mosaico Sala · Service worker: deixa o app instalável e abre as páginas mesmo com a internet oscilando.
    Sempre tenta a rede primeiro (a versão publicada vale); só usa a cópia guardada quando a rede falha.
    Firebase e outros endereços externos passam direto, sem cópia. */
 const CACHE = 'mosaico-v1';

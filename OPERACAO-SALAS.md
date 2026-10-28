@@ -1,4 +1,4 @@
-# MOSAICO · Sala — Como as salas são apagadas
+# Mosaico Sala — Como as salas são apagadas
 
 Toda sala nasce com um prazo de 24 horas (`expiresAt`). Os dados dos alunos (nomes, envios, pacotes) não podem ficar guardados depois da aula. São três camadas, da mais rápida à mais garantida:
 

@@ -1,4 +1,4 @@
-/* MOSAICO · Tela do participante nos tipos novos (junto com participar.js)
+/* Mosaico Sala · Tela do participante nos tipos novos (junto com participar.js)
    Pares na memória · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem (mídia, perguntas e observar)
    O celular só manda a jogada; quem conduz confere e devolve o resultado. */
 

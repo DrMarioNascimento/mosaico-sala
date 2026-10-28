@@ -1,4 +1,4 @@
-/* MOSAICO · Backend de ensaio (?ensaio)
+/* Mosaico Sala · Backend de ensaio (?ensaio)
    Mesma interface do Firebase, mas tudo fica no localStorage deste navegador.
    Abas diferentes = pessoas diferentes (cada aba tem seu uid na sessionStorage).
    Avisos entre abas pelo evento 'storage'. Nada sai do computador. */
@@ -36,6 +36,7 @@ export const backend = {
   modo: 'ensaio',
   async identificar() { return meuUid(); },
   entrarGoogle() { return Promise.resolve({ uid: meuUid(), email: 'ensaio@local' }); },
+  sair() { return Promise.resolve(); },
   // No ensaio não há login de verdade: quem abre uma página de professor já está “dentro” (sem tela de entrar).
   async contaAtual() { return { uid: meuUid(), email: 'ensaio@local' }; },
 
@@ -82,12 +83,28 @@ export const backend = {
     return chaves('biblioteca/').map(k => ({ id: k.slice(11), ...ler(k), minha: true })).sort((x, y) => y.atualizadoEm - x.atualizadoEm);
   },
   async lerBiblioteca(id) { const d = ler('biblioteca/' + id); return d ? { id, ...d } : null; },
-  async salvarBiblioteca(id, { titulo, conteudo, compartilhada = false, autor = '' }) {
+  async salvarBiblioteca(id, { titulo, conteudo, compartilhada = false, autor = '', fechado = undefined, rascunho = undefined, modo = 'nova' }) {
     const novo = id || 'b' + Date.now().toString(36);
-    gravar('biblioteca/' + novo, { owner: meuUid(), autor, titulo, conteudo, compartilhada: !!compartilhada, atualizadoEm: Date.now() });
+    const atual = ler('biblioteca/' + novo) || {};
+    const corpo = modo === 'fechar'
+      ? { conteudo, fechado: conteudo, rascunho: null }
+      : modo === 'rascunho'
+        ? { conteudo: atual.conteudo || conteudo, fechado: atual.fechado || null, rascunho: rascunho ?? conteudo }
+        : { conteudo, fechado: fechado ?? null, rascunho: rascunho ?? null };
+    gravar('biblioteca/' + novo, { owner: meuUid(), autor, titulo: modo === 'rascunho' ? (atual.titulo || titulo) : titulo, compartilhada: modo === 'rascunho' ? !!atual.compartilhada : !!compartilhada, atualizadoEm: Date.now(), ...corpo });
     return novo;
   },
   async apagarBiblioteca(id) { gravar('biblioteca/' + id, null); },
+  async listarAplicacoes() {
+    return chaves('aplicacoes/').map(k => ({ id: k.slice(11), ...ler(k) })).filter(x => x.owner === meuUid()).sort((a, b) => b.atualizadoEm - a.atualizadoEm);
+  },
+  async lerAplicacao(id) { const d = ler('aplicacoes/' + id); return d ? { id, ...d } : null; },
+  async salvarAplicacao(id, dados) {
+    const novo = id || 'ap' + Date.now().toString(36);
+    gravar('aplicacoes/' + novo, { owner: meuUid(), autor: dados.autor || '', titulo: dados.titulo || '', turma: dados.turma || '', origemTipo: dados.origemTipo, origemId: dados.origemId, etapas: dados.etapas, atualizadoEm: Date.now() });
+    return novo;
+  },
+  async apagarAplicacao(id) { gravar('aplicacoes/' + id, null); },
   // manual de ensaio: só existe se alguém publicou neste navegador (Administração → Publicar manual)
   async lerManual() { return ler('manual/atual'); },
   async salvarManual({ html, versao = '', autor = '' }) { gravar('manual/atual', { html, versao, autor, atualizadoEm: Date.now() }); },

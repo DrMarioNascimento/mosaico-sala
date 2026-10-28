@@ -1,4 +1,4 @@
-/* MOSAICO · Simular
+/* Mosaico Sala · Simular
    1 · Só no PC (mais usado): escolhe a atividade e abre a simulação local (previa.html): condução, telão e
        turma fictícia lado a lado, tudo neste navegador.
    2 · Com meu celular (ensaio geral): mostra o telão e vários celulares simulados entrando na sala REAL.

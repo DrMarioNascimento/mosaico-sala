@@ -1,4 +1,4 @@
-/* MOSAICO · Catálogo de tipos de atividade (ActivityType)
+/* Mosaico Sala · Catálogo de tipos de atividade (ActivityType)
    Especificação v2, seção 12.
 
    Primeiro corte: três tipos, que juntos formam um mosaico completo

@@ -1,4 +1,4 @@
-/* MOSAICO · Peças de quebra-cabeça (navegador)
+/* Mosaico Sala · Peças de quebra-cabeça (navegador)
    Desenha cada peça em SVG com saliências/recortes que indicam o encaixe, e
    prepara as peças de uma etapa de montagem (texto ou recorte de imagem). */
 import { pecasDeTexto, gradeDoCorte, retangulos, bordas as sortearBordas, quantidadePecas } from './core/montagem.js';

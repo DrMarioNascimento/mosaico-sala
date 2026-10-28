@@ -1,4 +1,4 @@
-/* MOSAICO · Motor da sessão (lógica pura, roda no aparelho de quem conduz)
+/* Mosaico Sala · Motor da sessão (lógica pura, roda no aparelho de quem conduz)
    Especificação v2, seções 9.5, 11, 12.4, 12.6 e ADR-001.
 
    O "cérebro" da sala fica no celular de quem conduz: só ele conhece o

@@ -1,4 +1,4 @@
-# MOSAICO · Sala
+# Mosaico Sala
 
 Plataforma de atividades em grupo para a sala de aula: **cada grupo tem uma parte, ninguém tem o quadro completo, a turma junta as peças e supera a meta.** Quem conduz abre a sala; os alunos entram pelo celular, com um código ou QR, sem cadastro e sem instalar nada; o telão acompanha a aula.
 

@@ -1,4 +1,4 @@
-/* MOSAICO · Validação estrutural de uma atividade configurada
+/* Mosaico Sala · Validação estrutural de uma atividade configurada
    Especificação v2, seções 6.3, 11, 12.9 e 17.1.
 
    Recebe um objeto (já lido do JSON) e devolve diagnósticos localizados:

@@ -1,4 +1,4 @@
-/* MOSAICO · Lista de mestres (quem pode guardar atividades na biblioteca e abrir salas on-line).
+/* Mosaico Sala · Lista de mestres (quem pode guardar atividades na biblioteca e abrir salas on-line).
    ADMINS repete os e-mails fixos de firestore.rules (função fixos()): mude nos dois lugares juntos. */
 
 export const ADMINS = ['mariocnascimento@gmail.com', 'ramonmelo.com@gmail.com'];

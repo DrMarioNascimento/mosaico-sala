@@ -1,4 +1,4 @@
-/* MOSAICO · Telão dos tipos novos (junto com telao.js). Só informação pública: placar, andamento,
+/* Mosaico Sala · Telão dos tipos novos (junto com telao.js). Só informação pública: placar, andamento,
    o tabuleiro da memória entre grupos e, depois de encerrar, as respostas e os caminhos. */
 
 import { h, corDoGrupo, iconeGrupo, pl } from './ui.js';

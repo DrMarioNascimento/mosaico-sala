@@ -1,5 +1,5 @@
 rules_version = '2';
-// MOSAICO · Sala — regras do Firestore (projeto mosaico-sala, plano gratuito)
+// Mosaico Sala — regras do Firestore (projeto mosaico-sala, plano gratuito)
 // O material docente (respostas esperadas, guia) NUNCA vem para o servidor:
 // fica só no aparelho de quem conduz. Aqui ficam o estado público da sala,
 // os pacotes de cada grupo e os envios.
@@ -59,10 +59,30 @@ service cloud.firestore {
       allow delete: if admin() || (mestre() && resource.data.owner == request.auth.uid);
     }
     function bibliotecaValida(d) {
-      return d.keys().hasOnly(['owner', 'autor', 'titulo', 'conteudo', 'compartilhada', 'atualizadoEm'])
+      return d.keys().hasOnly(['owner', 'autor', 'titulo', 'conteudo', 'compartilhada', 'atualizadoEm', 'fechado', 'rascunho'])
         && d.titulo is string && d.titulo.size() <= 200
         && d.conteudo is string && d.conteudo.size() < 900000
-        && d.compartilhada is bool && d.atualizadoEm == request.time;
+        && d.compartilhada is bool && d.atualizadoEm == request.time
+        && (!('fechado' in d) || d.fechado == null || (d.fechado is string && d.fechado.size() < 900000))
+        && (!('rascunho' in d) || d.rascunho == null || (d.rascunho is string && d.rascunho.size() < 900000));
+    }
+
+    // Aplicação numa turma: só a escolha (etapas e tempos). Sem gabarito e sem o texto da atividade.
+    match /aplicacoes/{id} {
+      allow read: if mestre() && resource.data.owner == request.auth.uid;
+      allow create: if mestre() && aplicacaoValida(request.resource.data) && request.resource.data.owner == request.auth.uid;
+      allow update: if mestre() && resource.data.owner == request.auth.uid && aplicacaoValida(request.resource.data)
+        && request.resource.data.owner == resource.data.owner;
+      allow delete: if mestre() && resource.data.owner == request.auth.uid;
+    }
+    function aplicacaoValida(d) {
+      return d.keys().hasOnly(['owner', 'autor', 'titulo', 'turma', 'origemTipo', 'origemId', 'etapas', 'atualizadoEm'])
+        && d.titulo is string && d.titulo.size() <= 200
+        && d.turma is string && d.turma.size() <= 80
+        && d.origemTipo in ['biblioteca', 'caso']
+        && d.origemId is string && d.origemId.size() <= 128
+        && d.etapas is string && d.etapas.size() > 0 && d.etapas.size() < 20000
+        && d.atualizadoEm == request.time;
     }
 
     match /rooms/{c} {

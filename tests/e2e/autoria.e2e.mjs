@@ -45,8 +45,8 @@ for(const id of ['cancao-exilio-completa','citologia-completa'])test(id+': anexa
   assert.equal(await paper.locator('img').evaluateAll(imgs=>imgs.filter(im=>!im.complete||!im.naturalWidth).length),0,'Imagens carregadas no material impresso');
   await paper.emulateMedia({media:'print'});await paper.pdf({path:join(root,'tests/.downloads',id+'.pdf'),format:'A4',printBackground:true});
   await paper.close();
-  await p.getByRole('button',{name:'Minhas atividades',exact:true}).first().scrollIntoViewIfNeeded();
-  await p.getByRole('button',{name:'Minhas atividades',exact:true}).first().click();
+  await p.getByRole('button',{name:'Ajustar',exact:true}).first().click();
+  await p.getByRole('link',{name:'Criar',exact:true}).click();
   await p.locator('#arqImport').setInputFiles(sheet);await p.getByRole('button',{name:'5 Observar e descrever a imagem',exact:true}).click();
   assert.ok(await p.getByText('Imagem anexada: imagem-do-professor.webp',{exact:true}).isVisible());
   await p.screenshot({path:join(root,'tests/.downloads',id+'-anexo.png'),fullPage:true});

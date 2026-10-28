@@ -1,4 +1,4 @@
-/* MOSAICO · Navegação e ícones em todas as páginas.
+/* Mosaico Sala · Navegação e ícones em todas as páginas.
    Põe os ícones próprios (js/icones.js) em [data-ico] / [data-ilu] e nos botões, e marca a página atual na barra de fluxo. */
 import { aplicarIcones } from './icones.js';
 import { percursoDocente } from './percurso-docente.js';
@@ -13,31 +13,44 @@ export function linkDocente(pagina, hash = '') {
 }
 const ITENS_FLUXO = [
   ['inicio', 'planejar.html', 'inicio', 'Início'],
-  ['minhas', 'planejar.html', 'biblioteca', 'Minhas atividades'],
-  ['revisao', 'planejar.html', 'revisao', 'Revisar'],
-  ['', 'simulador.html', 'simulador', 'Simular'],
-  ['', 'conduzir.html', 'conduzir', 'Aplicar em sala'],
-  ['', 'telao.html', 'telao', 'Telão'],
+  ['sair', '', 'sair', 'Sair'],
+  ['criar', 'planejar.html', 'mais', 'Criar'],
+  ['ajustar', 'planejar.html', 'planejar', 'Ajustar'],
+  ['aplicar', 'planejar.html', 'conduzir', 'Aplicar'],
   ['', 'manual.html', 'atividade', 'Manual']
 ];
 for (const nav of document.querySelectorAll('nav.fluxo[data-fluxo-docente]')) {
-  nav.replaceChildren(...ITENS_FLUXO.flatMap(([hash, pag, ico, rot], i) => {
-    const a = document.createElement('a');
-    a.href = linkDocente(pag, hash); a.dataset.ico = ico; a.dataset.alvo = hash || pag.replace('.html', '');
-    if (i === 0) { a.className = 'inicio'; a.title = 'Início: painel do professor'; }
-    const r = document.createElement('span'); if (i === 0) r.className = 'rot'; r.textContent = rot; a.append(r);
-    if (i !== 0) return [a];
-    const sep = document.createElement('span'); sep.className = 'sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '›';
-    return [a, sep];
+  nav.replaceChildren(...ITENS_FLUXO.map(([hash, pag, ico, rot]) => {
+    const el = hash === 'sair' ? document.createElement('button') : document.createElement('a');
+    el.dataset.ico = ico; el.dataset.alvo = hash || 'manual';
+    if (hash === 'sair') {
+      el.type = 'button';
+      el.addEventListener('click', async () => {
+        const { backend, EM_ENSAIO } = await import('./backend.js');
+        const b = await backend();
+        try { await b.sair?.(); } catch {}
+        location.href = 'planejar.html' + (EM_ENSAIO ? '?ensaio=1' : '');
+      });
+    } else {
+      el.href = hash === '' ? linkDocente(pag) : linkDocente(pag, hash);
+      if (hash === '') { el.target = '_blank'; el.rel = 'noopener'; }
+    }
+    const r = document.createElement('span'); r.className = 'rot'; r.textContent = rot; el.append(r);
+    return el;
   }));
 }
 
 function marcarNavegacao(){
  const pagina=location.pathname.split('/').pop().replace(/\.html$/, '')||'index';
- for(const a of document.querySelectorAll('.fluxo a[href]')){
-  const href=a.getAttribute('href'),alvo=href.split('#')[0].split('?')[0].replace(/\.html$/, '');
-  // No planejamento: “Revisar” acende na revisão; “Minhas atividades” no painel (sem atividade aberta).
-  const ativo=alvo===pagina && (pagina!=='planejar' || (a.dataset.alvo==='revisao' ? location.hash==='#revisao' : a.dataset.alvo==='minhas' && !document.body.classList.contains('planejando')));
+ const hash=decodeURIComponent(location.hash.replace(/^#/, ''));
+ for(const a of document.querySelectorAll('.fluxo a[href], .fluxo button')){
+  const alvo=a.dataset.alvo;
+  let ativo=false;
+  if(pagina==='planejar'){
+    const fase=['criar','ajustar','aplicar'].includes(hash)?hash:(hash==='minhas'?'ajustar':'inicio');
+    ativo=alvo===fase && !document.body.classList.contains('planejando');
+    if(document.body.classList.contains('planejando') && alvo==='ajustar') ativo=true;
+  } else if(alvo==='aplicar' && (pagina==='conduzir' || pagina==='telao')) ativo=true;
   if(ativo)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
  }
 }

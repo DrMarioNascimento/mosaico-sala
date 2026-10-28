@@ -1,4 +1,4 @@
-/* MOSAICO · Sequência (Genius) — lógica pura, testada
+/* Mosaico Sala · Sequência (Genius) — lógica pura, testada
    A mecânica do Genius/Simon original (1978): o painel acende um botão; o aluno repete; a cada acerto o jogo
    repete toda a sequência e acrescenta mais um botão sorteado. Errou (ou demorou), acabou a partida.
    Aqui os botões são termos sorteados de um banco grande: cada partida usa um painel diferente.

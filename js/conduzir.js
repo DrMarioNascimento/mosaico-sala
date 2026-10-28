@@ -1,4 +1,4 @@
-/* MOSAICO · Painel de quem conduz (celular)
+/* Mosaico Sala · Painel de quem conduz (celular)
    O "cérebro" da sala: só este aparelho tem o material docente.
    Publica no servidor apenas o estado público da sala e o pacote de cada grupo. */
 
@@ -21,7 +21,7 @@ import { abrirImpressao } from './imprimir.js';
 import { prepararCartoes, estadoCartoes, conferirQuadro, distribuicaoTermometro, temGabaritoTermometro, respostaEsperadaTexto, quadroCompleto, conjuntosPorTrechos } from './core/cartoes.js';
 import { ligarComoCartoes } from './core/pares.js';
 import { criarTipos } from './conduzir-tipos.js';
-import { ico, ilustra } from './icones.js';
+import { escolhaInicial, alterarTempo, alterarTotal, marcarEtapa, totalMarcado, dependenciaFaltando, atividadeDaSessao, planoFechado } from './core/aplicacao.js';
 
 const b = await backend();
 // ?previa (aberta pelo Planejamento): ensaio automático com a atividade em edição.
@@ -34,7 +34,7 @@ let inscricoes = [], relogio = null;
 
 // ---------------- persistência local ----------------
 function salvar() {
-  try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias, jogo: E.jogo })); } catch {}
+  try { localStorage.setItem(GUARDA, JSON.stringify({ atividade: E.atividade, plano: E.plano, escolha: E.escolha, turma: E.turma, aplicacaoId: E.aplicacaoId, origemTipo: E.origemTipo, origemId: E.origemId, codigo: E.codigo, dispensadas: [...E.dispensadas], contingencias: E.contingencias, jogo: E.jogo })); } catch {}
 }
 /** Atividade enviada pelo botão “Dar esta aula” do Planejamento. Fica guardada até poder entrar (sem sala aberta). */
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
@@ -61,7 +61,7 @@ $('entrarGoogle').onclick = () => {
   $('entrarGoogle').disabled = true;
   p.then(iniciar).catch(e => {
     $('entrarGoogle').disabled = false;
-    const m = { 'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups e tente de novo.', 'auth/popup-closed-by-user': 'Login cancelado.', 'auth/unauthorized-domain': 'Abra pelo endereço oficial do MOSAICO para entrar com Google.', 'auth/operation-not-allowed': 'Ative o login Google no Authentication do projeto mosaico-sala.' };
+    const m = { 'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups e tente de novo.', 'auth/popup-closed-by-user': 'Login cancelado.', 'auth/unauthorized-domain': 'Abra pelo endereço oficial do Mosaico Sala para entrar com Google.', 'auth/operation-not-allowed': 'Ative o login Google no Authentication do projeto mosaico-sala.' };
     aviso($('avisoLogin'), m[e.code] || 'Não foi possível entrar. Confira a internet.', 'erro');
   });
 };
@@ -76,6 +76,7 @@ async function iniciarPrevia() {
   let a = null; try { a = JSON.parse(localStorage.getItem('mosaico-previa') || 'null'); } catch {}
   if (!a) return avisoGeral('Nada para pré-visualizar. Abra pelo Planejamento.', 'erro');
   if (!aceitar(a, 'pré-visualização')) return avisoGeral('A atividade tem erros. Corrija na Revisão do Planejamento.', 'erro');
+  if (!prepararSessao()) return;
   await abrirSala();
   mostrarAba('sala');
   const alvo = new URLSearchParams(location.search).get('etapa');
@@ -109,7 +110,8 @@ async function iniciar(conta) {
   E.conta = conta;
   $('login').hidden = true; $('abas').hidden = false;
   const g = lerGuardado();
-  if (g?.atividade) { E.atividade = g.atividade; E.dispensadas = new Set(g.dispensadas || []); E.contingencias = g.contingencias || []; E.jogo = g.jogo || {}; revalidar(); }
+  if (g?.plano) { E.plano = g.plano; E.escolha = g.escolha; E.turma = g.turma || ''; E.aplicacaoId = g.aplicacaoId || null; E.origemTipo = g.origemTipo || null; E.origemId = g.origemId || null; }
+  if (g?.atividade) { E.atividade = g.atividade; E.dispensadas = new Set(g.dispensadas || []); E.contingencias = g.contingencias || []; E.jogo = g.jogo || {}; if (!E.plano) { E.plano = g.atividade; E.escolha = escolhaInicial(g.atividade); } revalidar(); }
   if (g?.codigo) {
     try {
       const s = await b.lerSala(g.codigo);
@@ -117,14 +119,7 @@ async function iniciar(conta) {
       else { E.codigo = null; salvar(); }
     } catch { E.codigo = null; }
   }
-  const idBiblioteca=new URLSearchParams(location.search).get('atividade');
-  if(idBiblioteca && !E.codigo) {
-    try {
-      if(!/^[a-zA-Z0-9_-]{1,128}$/.test(idBiblioteca)) throw new Error('Identificador de atividade inválido.');
-      const doc=await b.lerBiblioteca(idBiblioteca); if(!doc)throw new Error('Atividade não encontrada na sua biblioteca.');
-      if(aceitar(JSON.parse(doc.conteudo),'da sua biblioteca')){mostrarAba('atividade');renderTudo();avisoGeral('Atividade pronta. Confira e abra a sala: este aparelho conduzirá a aula.','ok');return faxina();}
-    } catch(e){avisoGeral('Não foi possível recuperar a atividade. Entre com a mesma conta Google que a salvou.','erro');}
-  }
+  if (!E.codigo && await carregarPedido()) return faxina();
   if (receberDoPlanejamento()) return faxina();
   mostrarAba(E.codigo ? 'conducao' : 'atividade');
   renderTudo();
@@ -143,7 +138,7 @@ function mostrarAba(nome) {
   window.scrollTo({ top: 0 });
 }
 /** Anterior / próximo passo da condução (Atividade → Sala → Grupos → Condução), embaixo de cada aba. */
-const ABAS = [['atividade', 'Conferir'], ['sala', 'Sala'], ['grupos', 'Grupos'], ['conducao', 'Condução']];
+const ABAS = [['atividade', 'Turma'], ['sala', 'Sala'], ['grupos', 'Grupos'], ['conducao', 'Condução']];
 function renderPassos() {
   const alvo = $('passosNav'); if (!alvo) return;
   const i = ABAS.findIndex(x => x[0] === E.aba), ant = ABAS[i - 1], prox = ABAS[i + 1];
@@ -176,13 +171,89 @@ function publico() {
   };
 }
 
-function aceitar(obj, origem) {
+function aceitar(obj, origem, escolhaSalva) {
   const d = validarAtividade(obj);
   if (temErros(d)) { E.importacao = d; renderAtividade(); return false; }
-  E.atividade = obj; E.importacao = []; E.dispensadas = new Set(); E.contingencias = []; E.jogo = {};
-  revalidar(); salvar(); renderTudo();
-  avisoGeral(`Atividade “${obj.titulo}” carregada${origem ? ' (' + origem + ')' : ''}.`, 'ok');
+  E.plano = obj; E.importacao = []; E.dispensadas = new Set(); E.contingencias = []; E.jogo = {};
+  E.escolha = escolhaInicial(obj, escolhaSalva);
+  if (!E.codigo) E.atividade = null;
+  salvar(); renderTudo();
+  avisoGeral(`“${obj.titulo}” pronta para esta turma${origem ? ' (' + origem + ')' : ''}.`, 'ok');
   return true;
+}
+
+async function carregarPedido() {
+  const q = new URLSearchParams(location.search);
+  try {
+    const apId = q.get('aplicacao');
+    if (apId) {
+      const ap = await b.lerAplicacao(apId);
+      if (!ap) throw new Error('Essa turma não foi encontrada.');
+      const plano = ap.origemTipo === 'caso' ? await carregarCaso(ap.origemId) : planoFechado(await b.lerBiblioteca(ap.origemId));
+      if (!plano) throw new Error('O planejamento dessa turma não está fechado.');
+      E.aplicacaoId = ap.id; E.turma = ap.turma || ''; E.origemTipo = ap.origemTipo; E.origemId = ap.origemId;
+      let salva = []; try { salva = JSON.parse(ap.etapas || '[]'); } catch {}
+      if (aceitar(plano, 'turma salva', salva)) { mostrarAba('atividade'); return true; }
+      return false;
+    }
+    const caso = q.get('caso');
+    if (caso) {
+      E.origemTipo = 'caso'; E.origemId = caso; E.aplicacaoId = null; E.turma = '';
+      if (aceitar(await carregarCaso(caso), 'modelo')) { mostrarAba('atividade'); return true; }
+      return false;
+    }
+    const idBiblioteca = q.get('atividade');
+    if (idBiblioteca) {
+      if (!/^[a-zA-Z0-9_-]{1,128}$/.test(idBiblioteca)) throw new Error('Identificador de atividade inválido.');
+      const doc = await b.lerBiblioteca(idBiblioteca);
+      const plano = planoFechado(doc);
+      if (!plano) throw new Error('Esta atividade ainda não está fechada. Feche a revisão no planejamento.');
+      E.origemTipo = 'biblioteca'; E.origemId = idBiblioteca; E.aplicacaoId = null; E.turma = '';
+      if (aceitar(plano, 'biblioteca')) { mostrarAba('atividade'); return true; }
+      return false;
+    }
+  } catch (e) { avisoGeral(e.message || 'Não foi possível abrir a turma.', 'erro'); }
+  return false;
+}
+
+function prepararSessao() {
+  if (!E.plano || !E.escolha?.some(e => e.entra)) { avisoGeral('Marque ao menos uma etapa.', 'alerta'); return false; }
+  const faltas = dependenciaFaltando(E.plano, E.escolha);
+  if (faltas.length) { avisoGeral(faltas[0].mensagem, 'alerta'); return false; }
+  E.atividade = atividadeDaSessao(E.plano, E.escolha);
+  revalidar(); salvar();
+  if (temErros(E.diags)) { avisoGeral('A seleção ainda tem pendência de estrutura. Ajuste no planejamento.', 'erro'); return false; }
+  return true;
+}
+async function abrirComTurma() {
+  if (!prepararSessao()) return;
+  try {
+    if (E.origemId) E.aplicacaoId = await b.salvarAplicacao(E.aplicacaoId, { titulo: E.plano.titulo || '', turma: (E.turma || '').slice(0, 80), origemTipo: E.origemTipo || 'biblioteca', origemId: E.origemId, etapas: JSON.stringify(E.escolha), autor: E.conta?.email || '' });
+  } catch {}
+  await abrirSala();
+  if (E.codigo) mostrarAba('sala');
+}
+function cartaoTurma() {
+  const plano = E.plano, escolha = E.escolha || [];
+  const faltas = dependenciaFaltando(plano, escolha);
+  const marcadas = escolha.filter(e => e.entra).length;
+  const definir = fn => { E.escolha = fn(E.escolha); salvar(); renderAtividade(); };
+  return h('div', { class: 'cartao' },
+    h('span', { class: 'guia-selo' }, 'ESTA TURMA'),
+    h('h1', {}, plano.titulo || 'Atividade'),
+    h('label', { for: 'nomeTurma' }, 'Turma'),
+    h('input', { id: 'nomeTurma', maxlength: 80, value: E.turma || '', placeholder: 'Ex.: 8º ano A', oninput: ev => { E.turma = ev.target.value.slice(0, 80); salvar(); } }),
+    h('label', { for: 'totalTurma' }, 'Tempo total (min)'),
+    h('input', { id: 'totalTurma', type: 'number', min: Math.max(1, marcadas), value: totalMarcado(escolha) || '', onchange: ev => definir(xs => alterarTotal(xs, ev.target.value)) }),
+    h('p', { class: 'sutil' }, 'Marque o que entra nesta aula. Mudar o tempo de uma etapa soma o total de novo. Mudar o total redistribui as marcadas.'),
+    escolha.map(e => h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 5.5rem', gap: '8px', alignItems: 'center', margin: '8px 0' } },
+      h('label', { class: 'opcao', style: { margin: 0 } },
+        h('input', { type: 'checkbox', checked: e.entra, onchange: ev => definir(xs => marcarEtapa(xs, e.id, ev.target.checked)) }),
+        h('span', {}, e.titulo || e.id)),
+      h('input', { type: 'number', min: 1, max: 180, 'aria-label': 'Minutos de ' + (e.titulo || e.id), value: e.tempoMin ?? '', disabled: !e.entra, onchange: ev => definir(xs => alterarTempo(xs, e.id, ev.target.value)) }))),
+    faltas.map(f => h('p', { class: 'aviso', 'data-tipo': 'alerta' }, f.mensagem)),
+    !marcadas && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Marque ao menos uma etapa.'),
+    h('button', { class: 'btn primario bloco grande', disabled: !marcadas || faltas.length > 0, onclick: abrirComTurma }, 'Abrir sala'));
 }
 
 function ajustar(fn) {
@@ -202,6 +273,8 @@ function falha(e) {
 // =====================================================================
 function renderAtividade() {
   const alvo = $('aba-atividade');
+  if (!E.plano && !A()) return limpar(alvo, cartaoCarregar());
+  if (E.plano && !E.codigo) return limpar(alvo, cartaoTurma());
   if (!A()) return limpar(alvo, cartaoCarregar());
   const a = A(), salaAberta = !!E.codigo;
   const naoErros = E.diags.filter(d => d.severidade !== 'erro');
@@ -232,7 +305,7 @@ function renderAtividade() {
         h('button', { class: 'btn pequeno', onclick: () => baixar(a) }, 'Baixar arquivo'),
         h('button', { class: 'btn pequeno discreto', disabled: salaAberta, title: salaAberta ? 'Encerre a sala para trocar' : null, onclick: () => { E.atividade = null; E.diags = []; salvar(); renderTudo(); } }, 'Trocar atividade'))),
 
-    h('details', { class: 'cartao', open: !!E.ajustesAbertos, ontoggle: ev => { E.ajustesAbertos = ev.target.open; } }, h('summary', {}, h('strong', {}, 'Ajustar: tempo, competição, nomes dos grupos e meta')),
+    !E.plano && h('details', { class: 'cartao', open: !!E.ajustesAbertos, ontoggle: ev => { E.ajustesAbertos = ev.target.open; } }, h('summary', {}, h('strong', {}, 'Ajustar: tempo, competição, nomes dos grupos e meta')),
       h('h3', {}, 'Etapas'),
       etapasOrdenadas(a).map(e => {
         const t = obterTipo(e.typeId, e.typeVersion);
@@ -336,15 +409,16 @@ async function carregarMinhas(alvo) {
   let lista;
   try { lista = await b.listarBiblioteca(); } catch { return; }
   alvo.hidden = false;
-  limpar(alvo, h('h2', {}, 'Minhas atividades'),
-    lista.length ? h('div', { class: 'opcoes' }, lista.map(item => h('button', { class: 'opcao', style: { textAlign: 'left', color: 'inherit', font: 'inherit' }, onclick: async () => {
-      try { const d = item.conteudo ? item : await b.lerBiblioteca(item.id); aceitar(JSON.parse(d.conteudo), 'biblioteca'); } catch (e) { avisoGeral('Não foi possível abrir: ' + e.message, 'erro'); }
+  const prontas = lista.filter(item => planoFechado(item));
+  limpar(alvo, h('h2', {}, 'Prontas para a turma'),
+    prontas.length ? h('div', { class: 'opcoes' }, prontas.map(item => h('button', { class: 'opcao', style: { textAlign: 'left', color: 'inherit', font: 'inherit' }, onclick: async () => {
+      try { const d = item.conteudo ? item : await b.lerBiblioteca(item.id); const plano = planoFechado(d); if (!plano) throw new Error('ainda não está fechada'); E.origemTipo = 'biblioteca'; E.origemId = item.id; E.aplicacaoId = null; aceitar(plano, 'biblioteca'); } catch (e) { avisoGeral('Não foi possível abrir: ' + e.message, 'erro'); }
     } }, h('span', {}, h('strong', {}, item.titulo || '(sem título)'), h('br'), h('small', { class: 'sutil' }, item.minha ? 'sua' : 'compartilhada por ' + (item.autor || 'outro mestre')))))) : h('p', { class: 'sutil' }, 'Nenhuma atividade guardada. Monte no Planejamento, no PC.'),
     h('p', { class: 'sutil' }, 'Para criar ou editar: ', h('a', { href: link('planejar.html'), target: '_blank' }, 'Planejamento')));
 }
 
 async function usarModelo(c) {
-  try { aceitar(await carregarCaso(c.id), 'modelo pronto'); }
+  try { E.origemTipo = 'caso'; E.origemId = c.id; E.aplicacaoId = null; aceitar(await carregarCaso(c.id), 'modelo pronto'); }
   catch (e) { avisoGeral('Não foi possível carregar o modelo: ' + e.message, 'erro'); }
 }
 function importarTexto(texto, origem) {

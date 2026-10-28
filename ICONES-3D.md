@@ -1,6 +1,6 @@
-# MOSAICO · Sala — Ícones 3D para gerar
+# Mosaico Sala — Ícones 3D para gerar
 
-O padrão visual do MOSAICO são ícones **3D de plástico brilhante**, como as formas dos grupos (círculo, triângulo, quadrado, losango…) e o logo de peças. Hoje a plataforma usa desenhos provisórios onde ainda não há 3D. Cada ícone desta lista substitui um provisório.
+O padrão visual do Mosaico Sala são ícones **3D de plástico brilhante**, como as formas dos grupos (círculo, triângulo, quadrado, losango…) e o logo de peças. Hoje a plataforma usa desenhos provisórios onde ainda não há 3D. Cada ícone desta lista substitui um provisório.
 
 ## Padrão em uso (25/10/2026)
 
@@ -23,7 +23,7 @@ Pode entregar aos poucos — cada ícone entra assim que existir. Comece pelos *
 
 > 3D icon, glossy soft-plastic material like a polished toy, smooth rounded edges, subtle bevel, soft studio lighting from the top left, gentle specular highlights, vibrant saturated colors, single centered object, isolated on a fully transparent background, no text, no letters, no numbers, no ground shadow, no background scene, square 1:1, high detail, clean, same style as a set of glossy 3D shape icons (orange circle, cyan triangle, lime square, pink diamond).
 
-**Cores do MOSAICO** (use as indicadas em cada ícone): laranja #FA7309 · ciano #14C5D6 · verde-limão #A4CE2F · rosa #F83D87 · amarelo #F3BF0A · roxo #8855C3 · azul #338DEC · vermelho #DE1B1A · prata/cinza claro.
+**Cores do Mosaico Sala** (use as indicadas em cada ícone): laranja #FA7309 · ciano #14C5D6 · verde-limão #A4CE2F · rosa #F83D87 · amarelo #F3BF0A · roxo #8855C3 · azul #338DEC · vermelho #DE1B1A · prata/cinza claro.
 
 ## 1. Tipos de atividade (prioridade)
 

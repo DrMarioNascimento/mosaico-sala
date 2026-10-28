@@ -1,4 +1,4 @@
-/* Codificador de QR do MOSAICO — ISO/IEC 18004, modo byte.
+/* Codificador de QR do Mosaico Sala — ISO/IEC 18004, modo byte.
 
    O QR e como as pessoas entram na mesa. Ate aqui ele vinha de
    api.qrserver.com: um servico de terceiros, sem SLA, no caminho critico

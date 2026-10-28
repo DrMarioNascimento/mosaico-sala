@@ -1,4 +1,4 @@
-/* MOSAICO · Escalas padronizadas (autorrelato).
+/* Mosaico Sala · Escalas padronizadas (autorrelato).
    Mini-IPIP6 (Sibley et al., 2011): os Big Five do Mini-IPIP (Donnellan et al., 2006) + Honestidade-Humildade,
    o fator que distingue o modelo HEXACO. 24 itens do International Personality Item Pool (IPIP), de domínio público:
    "permission has already been automatically granted for any person to use IPIP items, scales, and inventories

@@ -1,4 +1,4 @@
-/* MOSAICO · Jogos econômicos padronizados (ética comportamental).
+/* Mosaico Sala · Jogos econômicos padronizados (ética comportamental).
    Todos usam o "método da estratégia": cada aluno decide uma vez, ao mesmo tempo, sem saber com quem joga.
    Depois, quem conduz forma os pares ao acaso (num anel: cada um joga com o próximo) e calcula os ganhos.
    O telão mostra só a distribuição da turma; cada celular vê o próprio ganho. Nada identifica ninguém. */

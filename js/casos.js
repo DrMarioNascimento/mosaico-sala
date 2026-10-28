@@ -1,4 +1,4 @@
-/* MOSAICO · Atividades prontas (pasta casos/). Servem de ponto de partida: abrir, ajustar e usar. */
+/* Mosaico Sala · Atividades prontas (pasta casos/). Servem de ponto de partida: abrir, ajustar e usar. */
 
 export const CASOS = [
   { id: 'cancao-exilio-completa', titulo: 'Canção do Exílio: ler, montar e interpretar', resumo: 'Língua Portuguesa · banco de 22 oficinas para vários encontros · imagem, quebra-cabeça, desafios e decisões com três finais' },

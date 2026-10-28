@@ -1,4 +1,4 @@
-/* MOSAICO · Montagem em peças (lógica pura, testada)
+/* Mosaico Sala · Montagem em peças (lógica pura, testada)
    Cada celular recebe uma peça (trecho de texto/conta ou recorte de imagem) no
    formato de quebra-cabeça. Só na ordem certa a turma entende o todo. Não há
    envio: a etapa vale pelo tempo, e a etapa seguinte cobra o que foi visto. */

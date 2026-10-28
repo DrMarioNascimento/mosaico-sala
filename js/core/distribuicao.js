@@ -1,4 +1,4 @@
-/* MOSAICO · Distribuição dos participantes entre grupos planejados
+/* Mosaico Sala · Distribuição dos participantes entre grupos planejados
    Especificação v2, seção 9 e ADR-001.
 
    Regras:

@@ -1,4 +1,4 @@
-// Testes do núcleo do MOSAICO · node --test tests/
+// Testes do núcleo do Mosaico Sala · node --test tests/
 // Critérios de aceitação da especificação v2 (seção 22) cobertos aqui.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

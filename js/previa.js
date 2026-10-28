@@ -1,4 +1,4 @@
-/* MOSAICO · Simular · só no PC (aberta pelo Planejamento, pela lista de atividades ou pela tela Simular)
+/* Mosaico Sala · Simular · só no PC (aberta pelo Planejamento, pela lista de atividades ou pela tela Simular)
    Tudo em modo ensaio, neste navegador: a condução (celular), o telão e uma turma
    simulada entram na mesma sala, já com a atividade escolhida. */
 import { link, EM_ENSAIO } from './backend.js';

@@ -1,4 +1,4 @@
-/* MOSAICO · Pares (lógica pura, testada)
+/* Mosaico Sala · Pares (lógica pura, testada)
    O professor define pares de conteúdo (não precisam ser duas imagens iguais): "Hemossiderina ↔ Fígado".
      ligar   → arrastar cada cartão até o seu par (usa o motor dos cartões de arrastar)
      memoria → cartas viradas; vira duas: se formam par, ficam abertas

@@ -1,4 +1,4 @@
-/* MOSAICO · Corrida (lógica pura, testada; roda no aparelho de quem conduz)
+/* Mosaico Sala · Corrida (lógica pura, testada; roda no aparelho de quem conduz)
    Cada jogador (aluno, ou o grupo pelo líder) avança na própria sequência, no próprio ritmo,
    e os pontos somam para o grupo. Três formatos:
      quiz     → perguntas de múltipla escolha (aba Perguntas), como no Quizizz

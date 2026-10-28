@@ -4,7 +4,7 @@ import { criarHistorico, recortarPrevia } from './core/ergonomia.js';
 import { abrirAutoria } from './autoria-docente.js';
 import { percursoDocente, numeroPasso } from './percurso-docente.js';
 import { painelRevisaoDocente } from './revisao-docente.js';
-/* MOSAICO · Planejamento: montar, revisar, guardar e pré-visualizar atividades.
+/* Mosaico Sala · Planejamento: montar, revisar, guardar e pré-visualizar atividades.
    - Contas da lista de mestres: biblioteca fechada no Firestore.
    - Qualquer outra conta: edita e exporta planilha (modo aberto, nada guardado). */
 
@@ -16,7 +16,7 @@ import { ligarReordenacao } from './ordenar-etapas.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
-import { abrirImpressao } from './imprimir.js';
+import { planoFechado } from './core/aplicacao.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
 import { ehAdmin, lerEmails, ADMINS } from './mestres.js';
@@ -32,7 +32,7 @@ const b = await backend();
 const RASCUNHO_BASE = 'mosaico-planejar-rascunho' + (EM_ENSAIO ? '-ensaio' : '');
 let RASCUNHO = RASCUNHO_BASE, RASCUNHOS = '', historico = null, salvoEm = null, falhaRascunho = false, rascunhoId = null;
 const PARA_CONDUZIR = 'mosaico-para-conduzir' + (EM_ENSAIO ? '-ensaio' : '');
-const P = { adm: null, mestres: null, conta: null, A: null, origem: null, secao: 'geral', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [] };
+const P = { adm: null, mestres: null, conta: null, A: null, origem: null, secao: 'geral', fase: 'entrada', sujo: false, dispensadas: new Set(), bib: null, bibErro: null, importacao: [], aplicacoes: [] };
 const NOMES_TIPO = { investigacao_fragmentos: 'Investigação por fragmentos', comparar_hipoteses: 'Comparação entre grupos', questao_individual: 'Questão individual', montagem_pecas: 'Quebra-cabeça: texto ou imagem', cadeado_grupo: 'Cadeado do grupo', quiz_grupos: 'Quiz entre grupos', cartoes_arrastar: 'Cartões de arrastar', pares: 'Pares', corrida: 'Corrida', cruzadas: 'Palavras cruzadas', sequencia: 'Sequência (Genius)', quiz_pensar: 'Quiz que faz pensar', analise_imagem: 'Análise de imagem', escala_padronizada: 'Escala padronizada', jogo_economico: 'Jogo econômico' };
 // Editores dos tipos novos: js/planejar-tipos.js
 const ED = criarEditores({ campo: (...a) => campo(...a), seletor: (...a) => seletor(...a), mudar: fn => mudar(fn), tocar: () => tocar(), novoId: (p, u) => novoId(p, u), idsDe: l => idsDe(l),
@@ -64,16 +64,21 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape')document.querySele
 const topoDocente=document.querySelector('header.topo');
 if(topoDocente && typeof ResizeObserver!=='undefined')new ResizeObserver(()=>document.documentElement.style.setProperty('--topo-docente',(topoDocente.getBoundingClientRect().height+12)+'px')).observe(topoDocente);
 let autoriaInicialAberta = false;
-window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao'); else if(['#inicio','#minhas'].includes(location.hash))irParaPainel(location.hash==='#minhas');});
+window.addEventListener('hashchange',()=>{if(P.A && location.hash==='#revisao')irPara('revisao'); else if(['#inicio','#minhas','#criar','#ajustar','#aplicar',''].includes(location.hash))irParaPainel(faseDoHash());});
 if($('marcaInicio'))$('marcaInicio').href=linkDocente('planejar.html','inicio');
-const PEDIU_PAINEL=['#inicio','#minhas'].includes(location.hash);
-/** Início e Minhas atividades (barra de cima): fecha a atividade aberta (o rascunho fica guardado) e mostra o painel. */
-function irParaPainel(lista){
+function faseDoHash(){
+  const h = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (h === 'criar' || h === 'aplicar') return h;
+  if (h === 'ajustar' || h === 'minhas') return 'ajustar';
+  return 'entrada';
+}
+/** Barra de cima: fecha a atividade aberta (o rascunho fica guardado) e abre a fase pedida. */
+function irParaPainel(fase){
   if(!P.conta)return;
   if(P.A && !voltarMinhas())return;
-  P.adm=null; render();
-  try{history.replaceState(null,'',location.pathname+location.search);}catch{}
-  if(lista)requestAnimationFrame(()=>document.getElementById('minhasAtividades')?.scrollIntoView({block:'start'})); else window.scrollTo({top:0});
+  P.adm=null; P.fase = fase || 'entrada'; render();
+  try{history.replaceState({fase:P.fase},'',location.pathname+location.search+(P.fase==='entrada'?'':'#'+P.fase));}catch{}
+  window.scrollTo({top:0});
 }
 // ============================================================ entrada
 $('entrarGoogle').textContent = EM_ENSAIO ? 'Entrar (modo ensaio)' : 'Entrar com Google';
@@ -86,13 +91,12 @@ $('entrarGoogle').onclick = () => {
 async function iniciar(conta) {
   P.conta = conta; RASCUNHO = RASCUNHO_BASE + ':' + conta.uid; RASCUNHOS = RASCUNHO + ':lista'; $('login').hidden = true; $('app').hidden = false; $('acoes').hidden = false;
   await carregarBiblioteca();
+  try { P.aplicacoes = await b.listarAplicacoes(); } catch { P.aplicacoes = []; }
   if (souAdmin()) carregarMestres();
   carregarSalasAbertas();
-  try { const r = PEDIU_PAINEL ? null : JSON.parse(localStorage.getItem(RASCUNHO) || 'null'); if (r?.A) { P.A = r.A; P.origem = r.origem; P.sujo = !!r.sujo; rascunhoId = r.rascunhoId; salvoEm = r.salvoEm; historico = criarHistorico(P.A); marcarHistorico(); avisoGeral('Rascunho retomado de onde você parou.'); } } catch {}
-  if(location.hash==='#revisao' && P.A)P.secao='revisao';
+  P.fase = faseDoHash();
+  if(!autoriaInicialAberta && new URLSearchParams(location.search).get('criar')==='texto'){autoriaInicialAberta=true;P.fase='criar';}
   render();
-  if(PEDIU_PAINEL)irParaPainel(location.hash==='#minhas');
-  if(!autoriaInicialAberta && new URLSearchParams(location.search).get('criar')==='texto'){autoriaInicialAberta=true;abrirIA();}
 }
 
 async function carregarBiblioteca() {
@@ -288,7 +292,7 @@ function irPara(secao) {
 }
 function voltarMinhas() {
   if (falhaRascunho && !confirmar('Não foi possível guardar o rascunho. Exporte uma cópia antes de voltar. Voltar mesmo assim?')) return false;
-  fechar(); try { history.replaceState(null, '', location.pathname + location.search); } catch {}
+  P.fase = 'ajustar'; fechar(); try { history.replaceState({ fase: 'ajustar' }, '', location.pathname + location.search + '#ajustar'); } catch {}
   return true;
 }
 addEventListener('popstate', ev => {
@@ -300,7 +304,7 @@ addEventListener('popstate', ev => {
 function renderMigalhas() {
   const alvo = document.getElementById('migalhas'); if (!alvo || !P.A) return;
   limpar(alvo,
-    h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), 'Minhas atividades'),
+    h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => voltarMinhas() }, ico('voltar'), 'Ajustar'),
     h('span', { class: 'sep', 'aria-hidden': 'true' }, '›'), h('strong', { class: 'tit' }, P.A.titulo || '(sem título)'),
     h('span', { class: 'sep', 'aria-hidden': 'true' }, '›'), h('span', { class: 'sutil' }, nomeSecao(P.secao)));
 }
@@ -322,7 +326,7 @@ function render() {
   dispatchEvent(new Event('mosaico-navegacao'));
   renderAcoes();
   $('statusTopo').textContent = P.A ? (P.A.titulo || '(sem título)') + (P.sujo ? ' · rascunho' : '') : (EM_ENSAIO ? 'ENSAIO' : (P.conta?.email || ''));
-  if (!P.A) return limpar($('app'), P.adm && souAdmin() ? telaAdmin() : telaInicio());
+  if (!P.A) return limpar($('app'), P.adm && souAdmin() ? telaAdmin() : telaFase());
   limpar($('app'), percursoDocente(5,true), h('div', { class: 'plan-migalhas', id: 'migalhas' }), h('nav', { class: 'plan-passos3', id: 'passos3', 'aria-label': 'Passos do planejamento' }), h('div', { class: 'plan-grade' }, h('nav', { class: 'plan-nav', id: 'nav', 'aria-label': 'Partes da atividade' }), h('section', { class: 'plan-editor', id: 'editor' })));
   renderNav(); renderEditor(); renderMigalhas();
 }
@@ -335,7 +339,7 @@ function renderAcoes() {
     h('span', { id:'estadoSalvamento', class:'estado-salvamento', role:'status', 'aria-live':'polite' }),
     h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
     h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
-    h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, numeroPasso(P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags)?8:5),P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Dar esta aula' : 'Revisar conteúdo'),
+    h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Aplicar em uma turma' : 'Revisar conteúdo'),
     h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Simular a aula no PC com uma turma fictícia', onclick:()=>previa() },numeroPasso(6), 'Simular'),
     
     h('button',{class:'btn acao-imprimir',title:'Abrir o material para impressão',onclick:()=>{document.querySelectorAll('details.acoes-mais[open]').forEach(d=>d.open=false);abrirImpressao(P.A);}},'Imprimir'),
@@ -417,12 +421,48 @@ function seletor(rotulo, valor, opcoes, aoMudar, { redesenhar = false } = {}) {
 }
 const listaTexto = v => String(v || '').split('\n').map(x => x.trim()).filter(Boolean);
 
-// ============================================================ início
-function telaInicio() {
-  let antigo; try{antigo=JSON.parse(localStorage.getItem(RASCUNHO_BASE)||'null');}catch{}
+// ============================================================ fases do professor
+function cumprimento() {
+  const hora = new Date().getHours();
+  const saud = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+  return `${saud}, professor. O que pretende fazer?`;
+}
+function telaFase() {
+  if (P.fase === 'criar') return telaCriar();
+  if (P.fase === 'ajustar') return telaAjustar();
+  if (P.fase === 'aplicar') return telaAplicar();
+  return telaEntrada();
+}
+function linhaSala() {
+  if (!P.salas?.length) return null;
+  const x = P.salas[0];
+  return h('p', { class: 'aviso' }, P.salas.length > 1 ? `Você tem ${P.salas.length} salas abertas. ` : 'Você tem uma sala aberta. ',
+    h('a', { href: link('conduzir.html') }, 'Continuar'), ' · ',
+    h('button', { class: 'btn pequeno perigo', onclick: async ev => {
+      if (!confirmar(`Encerrar a sala ${x.codigo}? Os nomes e as respostas serão apagados.`)) return;
+      ev.target.disabled = true;
+      try { await b.apagarSala(x.codigo); P.salas = P.salas.filter(y => y.codigo !== x.codigo); render(); avisoGeral('Sala ' + x.codigo + ' encerrada.', 'ok'); }
+      catch (e) { ev.target.disabled = false; avisoGeral('Não foi possível encerrar agora: ' + (e?.message || e), 'erro'); }
+    } }, 'Encerrar'));
+}
+function telaEntrada() {
+  const porta = (ilu, titulo, texto, fase) => h('button', { class: 'acao-professor', 'data-sem-ico': '', onclick: () => irParaPainel(fase) }, ilustra(ilu, 72), h('strong', {}, titulo), h('span', {}, texto));
+  return h('div', { class: 'painel-professor' },
+    linhaSala(),
+    h('div', { class: 'cab-professor' }, h('h1', {}, cumprimento())),
+    h('div', { class: 'acoes-professor' },
+      porta('e_material', 'Criar atividade', 'Comece pelo material. A atividade cai no ajuste fino.', 'criar'),
+      porta('e_planejar', 'Ajustar uma atividade', 'Em criação, em planejamento ou já pronta.', 'ajustar'),
+      porta('e_conduzir', 'Aplicar em uma turma', 'Escolha a atividade fechada, as etapas e o tempo.', 'aplicar')),
+    souAdmin() && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => carregarAdmin() }, ico('geral'), 'Administração')),
+    !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
+      ? 'Você pode criar e ajustar neste navegador. A sala on-line pede autorização do administrador.'
+      : 'Não foi possível abrir a biblioteca agora. Você ainda pode criar e exportar.'));
+}
+function telaCriar() {
   const titulo = h('input', { id: 'novoTitulo', placeholder: 'Ex.: A ciclista que voltou da altitude' });
   const nGr = h('select', { id: 'novoGrupos' }, Array.from({ length: 9 }, (_, i) => i + 2).map(n => h('option', { value: n, selected: n === 5 }, `${n} grupos`)));
-  const tipoModelo = h('select', { id: 'novoModelo' }, h('option', { value: 'mosaico' }, 'Modelo MOSAICO: investigação → comparação → questão'), h('option', { value: 'branco' }, 'Em branco (sem etapas)'));
+  const tipoModelo = h('select', { id: 'novoModelo' }, h('option', { value: 'mosaico' }, 'Investigação, comparação e questão'), h('option', { value: 'branco' }, 'Em branco (sem etapas)'));
   const arquivo = h('input', { type: 'file', id: 'arqImport', accept: '.xlsx,.json,application/json' });
   arquivo.onchange = async () => {
     const f = arquivo.files[0]; if (!f) return;
@@ -430,66 +470,118 @@ function telaInicio() {
       const r = await lerArquivoAtividade(f);
       if (!r.atividade) { P.importacao = r.diagnosticos; return render(); }
       abrir(r.atividade, null);
-      if (r.diagnosticos.length) avisoGeral(r.diagnosticos.map(d => d.mensagem).join(' '), 'alerta');
-      else avisoGeral(`“${r.atividade.titulo}” importada. Confira a Revisão.`, 'ok');
+      avisoGeral(r.diagnosticos.length ? r.diagnosticos.map(d => d.mensagem).join(' ') : `“${r.atividade.titulo}” importada. Ela está em planejamento.`, r.diagnosticos.length ? 'alerta' : 'ok');
     } catch (e) { avisoGeral('Não foi possível ler o arquivo: ' + e.message, 'erro'); }
   };
-  // Quem chega aqui já entrou: nada de tutorial. Primeiro as três ações, depois as atividades, o resto recolhido.
-  const ir = destino => document.getElementById(destino)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const acao = (ilu, titulo, texto, onclick, principal) => h('button', { class: 'acao-professor' + (principal ? ' principal' : ''), 'data-sem-ico': '', onclick }, ilustra(ilu, 72), h('strong', {}, titulo), h('span', {}, texto));
-  const aplicar = id => link('conduzir.html', { atividade: id });
-  const bib = temBiblioteca() ? P.bib : [];
-  // Rascunho de uma atividade já salva e sem mudanças é a mesma coisa que o item da biblioteca: não repete na lista.
-  const rasc = rascunhosLocais().filter(r => !(r.origem?.bibId && !r.sujo && bib.some(x => x.id === r.origem.bibId)));
   return h('div', { class: 'painel-professor' },
-    h('div', { class: 'cab-professor' }, h('h1', {}, 'O que vamos fazer hoje?'), souAdmin() && h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => carregarAdmin() }, ico('geral'), 'Administração')),
+    h('h1', {}, 'Criar atividade'),
     h('div', { class: 'acoes-professor' },
-      acao('e_material', 'Criar com IA', 'Cole um texto ou envie um arquivo. A IA monta a proposta para você revisar.', () => abrirIA(), true),
-      acao('e_conduzir', 'Aplicar em sala', 'Abra a sala com uma atividade pronta e acompanhe a turma.', () => { location.href = link('conduzir.html'); }),
-      acao('e_planejar', 'Usar um modelo', 'Comece de um exemplo e ajuste ao conteúdo da sua aula.', () => ir('modelosProntos'))),
-    avisoSalasAbertas(),
-    antigo?.A && h('p',{class:'aviso'},'Há um rascunho anterior neste navegador. ',h('button',{class:'btn pequeno',onclick:()=>{abrir(antigo.A,antigo.origem);avisoGeral('Rascunho anterior recuperado. Confira o conteúdo antes de guardar na biblioteca.');}},'Recuperar rascunho anterior')),
-    !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': P.bibErro === 'fora' ? 'alerta' : 'erro' }, P.bibErro === 'fora'
-      ? 'Você pode preparar atividades e guardar rascunhos neste navegador. Biblioteca em nuvem e salas on-line exigem autorização do administrador. Exporte uma cópia para levar a outro aparelho.'
-      : 'Não foi possível abrir a biblioteca agora. Confira a internet; você ainda pode montar e exportar a planilha.'),
-    h('section', { class: 'cartao', id: 'minhasAtividades' }, h('h2', {}, ico('biblioteca'), 'Minhas atividades'),
-      rasc.length > 1 && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn pequeno discreto', onclick: () => apagarRascunhos(rasc.map(r => r.rascunhoId), `Apagar os ${rasc.length} rascunhos deste navegador? O que estiver salvo na biblioteca continua lá.`) }, ico('apagar'), `Apagar os ${rasc.length} rascunhos`)),
-      rasc.length || bib.length ? h('ul', { class: 'lista-bib' },
-        rasc.map(r => h('li', {}, h('div', { class: 'tit' }, h('strong', {}, r.A.titulo), h('small', {}, (r.origem?.bibId ? 'Alterações não salvas na biblioteca · ' : 'Rascunho neste navegador · ') + new Date(r.salvoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))),
-          h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => { abrir(r.A, r.origem, r.rascunhoId); P.sujo = !!r.sujo; salvarRascunho(); render(); } }, 'Continuar'),
-            h('button', { class: 'btn pequeno discreto', title: 'Apagar rascunho', 'aria-label': 'Apagar rascunho ' + r.A.titulo, onclick: () => apagarRascunhos([r.rascunhoId], `Apagar o rascunho “${r.A.titulo}” deste navegador? O que estiver salvo na biblioteca continua lá.`) }, ico('apagar'))))),
-        bib.map(item => h('li', {},
-          h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, (item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '') + (item.minha ? '' : ' · de ' + (item.autor || 'outro mestre')))),
-          item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
-          h('div', { class: 'mini' },
-            h('a', { class: 'btn pequeno primario', href: aplicar(item.id) }, 'Aplicar'),
-            h('button', { class: 'btn pequeno', title: 'Simular no PC com uma turma fictícia', onclick: () => simularDaBiblioteca(item) }, 'Simular'),
-            h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false) }, 'Abrir'),
-            h('button', { class: 'btn pequeno discreto', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => abrirDaBiblioteca(item, true) }, ico('copiar')),
-            item.minha && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar'))))))
-        : h('p', { class: 'sutil' }, 'Nenhuma atividade ainda. Comece por “Criar com IA” ou por um modelo.')),
-    h('section', { class: 'cartao', id: 'modelosProntos' }, h('h2', {}, ico('abrir'), 'Modelos prontos'),
-      h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
-        h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
-        h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))),
-    h('details', { class: 'cartao mais-opcoes' }, h('summary', {}, 'Mais opções: criar do zero, importar, telão, simulador'),
+      h('button', { class: 'acao-professor principal', 'data-sem-ico': '', onclick: () => abrirIA() }, ilustra('e_material', 72), h('strong', {}, 'A partir de um material'), h('span', {}, 'Texto ou arquivo. Você revisa a proposta antes de ela ir para o ajuste.'))),
+    h('details', { class: 'cartao' }, h('summary', {}, 'Montar do zero ou importar'),
       h('div', { class: 'plan-inicio' },
-        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_planejar', 36), 'Criar do zero'),
+        h('div', { class: 'cartao' }, h('h2', {}, 'Do zero'),
           h('label', { for: 'novoTitulo' }, 'Título'), titulo,
           h('div', { class: 'campos-2' }, h('div', {}, h('label', { for: 'novoGrupos' }, 'Grupos'), nGr), h('div', {}, h('label', { for: 'novoModelo' }, 'Começar com'), tipoModelo)),
-          h('div', { class: 'linha-botoes' }, h('button', { class: 'btn primario bloco', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar'))),
-        h('div', { class: 'cartao' }, h('h2', {}, ico('importar'), 'Importar'),
-          h('p', { class: 'sutil' }, 'Planilha (.xlsx) do MOSAICO ou arquivo .json (por exemplo, o devolvido pela IA).'),
-          h('label', { for: 'arqImport' }, 'Arquivo'), campoArquivo(arquivo),
+          h('button', { class: 'btn primario', onclick: () => abrir(modelo(titulo.value.trim() || 'Nova atividade', Number(nGr.value), tipoModelo.value === 'mosaico'), null) }, 'Criar')),
+        h('div', { class: 'cartao' }, h('h2', {}, 'Importar'),
+          h('p', { class: 'sutil' }, 'Planilha (.xlsx) do Mosaico Sala ou arquivo .json.'),
+          campoArquivo(arquivo),
           P.importacao.length > 0 && h('ul', { class: 'diag' }, P.importacao.map(d => h('li', { class: d.severidade }, d.mensagem))),
-          h('div', { class: 'linha-botoes' },
-            h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo'))),
-        h('div', { class: 'cartao' }, h('h2', {}, ilustra('e_telao', 36), 'Telão e simulação'),
-          h('p', { class: 'sutil' }, 'O telão mostra o QR, o andamento e os resultados na TV. Simular mostra a aula no PC com uma turma fictícia; “Testar com meu celular” faz um ensaio geral com a sala de verdade.'),
-          h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('telao.html'), 'data-ico': 'telao' }, 'Abrir telão'), h('a', { class: 'btn', href: linkDocente('simulador.html'), 'data-ico': 'simulador' }, 'Simular'))),
-        h('details', { class: 'cartao' }, h('summary', {}, ico('ia'), 'Pedido para uma IA externa'), cartaoPrompt()))),
-    h('a', { class: 'cartao manual-atalho', href: 'manual.html', target: '_blank', rel: 'noopener' }, ilustra('e_material', 56),
-      h('div', {}, h('strong', {}, 'Manual do MOSAICO'), h('span', {}, 'Passo a passo, as 15 atividades e por que funcionam. Abre em outra aba.'))));
+          h('button', { class: 'btn discreto', onclick: () => baixarPlanilha(modelo('Modelo', 5, true)).catch(e => avisoGeral(e.message, 'erro')) }, 'Baixar planilha-modelo')))),
+    h('details', { class: 'cartao' }, h('summary', {}, 'Pedido para uma IA externa'), cartaoPrompt()));
+}
+function criacaoLocal() {
+  try {
+    const g = JSON.parse(localStorage.getItem('mosaico-autoria:' + (P.conta?.uid || 'local')) || 'null');
+    if (!g || (!g.material && !g.arquivoMaterial && !(g.cfg && (g.cfg.aprendizagem || g.cfg.publico)))) return null;
+    return { titulo: 'Material em criação', detalhe: g.arquivoMaterial?.nome || 'Texto neste navegador' };
+  } catch { return null; }
+}
+function rascunhosAjuste() {
+  const bib = temBiblioteca() ? P.bib : [];
+  return rascunhosLocais().filter(r => !(r.origem?.bibId && !r.sujo && bib.some(x => x.id === r.origem.bibId)));
+}
+function botoesCopiarApagar(onclickCopiar, onclickApagar, rotulo) {
+  return [
+    h('button', { class: 'btn pequeno', onclick: onclickCopiar }, 'Copiar'),
+    onclickApagar && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + rotulo, onclick: onclickApagar }, ico('apagar'))
+  ];
+}
+function copiarAtividade(a) {
+  const copia = JSON.parse(JSON.stringify(a));
+  copia.titulo = (copia.titulo || 'Atividade') + ' (cópia)';
+  copia.id = slug(copia.titulo);
+  if (copia.docente) delete copia.docente.revisadoEm;
+  abrir(copia, null);
+  avisoGeral('Cópia em planejamento. Salve quando quiser guardar.', 'ok');
+}
+function telaAjustar() {
+  const bib = temBiblioteca() ? P.bib : [];
+  const rasc = rascunhosAjuste();
+  const criacao = criacaoLocal();
+  const emPlan = rasc.filter(r => (r.A?.etapas || []).length);
+  const nuvemAjuste = bib.filter(item => item.rascunho || !planoFechado(item));
+  const prontas = bib.filter(item => planoFechado(item));
+  const lista = (itens, vazio) => itens.length ? h('ul', { class: 'lista-bib' }, itens) : h('p', { class: 'sutil' }, vazio);
+  const linhaRasc = r => h('li', {},
+    h('div', { class: 'tit' }, h('strong', {}, r.A.titulo || '(sem título)'), h('small', {}, (r.origem?.bibId ? 'Ajuste neste navegador · ' : 'Neste navegador · ') + new Date(r.salvoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))),
+    h('div', { class: 'mini' },
+      h('button', { class: 'btn pequeno', onclick: () => { abrir(r.A, r.origem, r.rascunhoId); P.sujo = !!r.sujo; salvarRascunho(); render(); } }, 'Continuar'),
+      (r.A?.etapas || []).length ? h('button', { class: 'btn pequeno', onclick: () => simularAtividade(r.A) }, 'Simular') : null,
+      ...botoesCopiarApagar(() => copiarAtividade(r.A), () => apagarRascunhos([r.rascunhoId], `Apagar o rascunho “${r.A.titulo}” deste navegador?`), r.A.titulo)));
+  const linhaNuvem = (item, qual) => h('li', {},
+    h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, qual === 'rascunho' ? (planoFechado(item) ? 'Ajuste ainda não fechado. A sala continua na versão anterior.' : 'Ainda não fechada') : (item.minha ? 'Pronta' : 'De ' + (item.autor || 'outro mestre')))),
+    item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
+    h('div', { class: 'mini' },
+      qual === 'pronta' && h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { atividade: item.id }) }, 'Aplicar'),
+      h('button', { class: 'btn pequeno', onclick: () => simularDaBiblioteca(item, qual) }, 'Simular'),
+      h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, false, qual) }, qual === 'pronta' ? 'Abrir' : 'Continuar'),
+      h('button', { class: 'btn pequeno', onclick: () => abrirDaBiblioteca(item, true, 'pronta') }, 'Copiar'),
+      item.minha && qual === 'pronta' && h('button', { class: 'btn pequeno discreto', title: 'Apagar', 'aria-label': 'Apagar ' + item.titulo, onclick: () => apagarDaBiblioteca(item) }, ico('apagar'))));
+  return h('div', { class: 'painel-professor' },
+    h('h1', {}, 'Ajustar uma atividade'),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Em criação'),
+      lista([
+        criacao && h('li', {}, h('div', { class: 'tit' }, h('strong', {}, criacao.titulo), h('small', {}, criacao.detalhe)), h('div', { class: 'mini' }, h('button', { class: 'btn pequeno', onclick: () => abrirIA() }, 'Continuar'))),
+        ...rasc.filter(r => !(r.A?.etapas || []).length).map(linhaRasc)
+      ].filter(Boolean), 'Nada em criação.')),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Em planejamento'),
+      lista([...emPlan.map(linhaRasc), ...nuvemAjuste.map(item => linhaNuvem(item, 'rascunho'))], 'Nada em planejamento.')),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Prontas'),
+      lista(prontas.map(item => linhaNuvem(item, 'pronta')), 'Nenhuma fechada ainda. Feche a revisão para a sala poder usar.')),
+    h('section', { class: 'cartao', id: 'modelosProntos' }, h('h2', {}, 'Modelos'),
+      h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
+        h('div', { class: 'mini' },
+          h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { caso: c.id }) }, 'Aplicar'),
+          h('button', { class: 'btn pequeno', onclick: () => simularModelo(c.id) }, 'Simular'),
+          h('button', { class: 'btn pequeno', onclick: () => abrirModelo(c.id) }, 'Abrir')))))));
+}
+function telaAplicar() {
+  const bib = temBiblioteca() ? P.bib : [];
+  const prontas = bib.filter(item => planoFechado(item));
+  const turmas = P.aplicacoes || [];
+  return h('div', { class: 'painel-professor' },
+    h('h1', {}, 'Aplicar em uma turma'),
+    !temBiblioteca() && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'A sala on-line pede autorização. Criar e ajustar continuam neste navegador.'),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Turmas já montadas'),
+      turmas.length ? h('ul', { class: 'lista-bib' }, turmas.map(t => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, (t.turma || 'Turma') + ' · ' + (t.titulo || 'Atividade')), h('small', {}, t.atualizadoEm ? new Date(t.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '')),
+        h('div', { class: 'mini' }, h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { aplicacao: t.id }) }, 'Abrir')))))
+        : h('p', { class: 'sutil' }, 'Nenhuma turma ainda. Escolha uma atividade fechada abaixo.')),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Prontas'),
+      prontas.length ? h('ul', { class: 'lista-bib' }, prontas.map(item => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, item.minha ? '' : 'De ' + (item.autor || 'outro mestre'))),
+        h('div', { class: 'mini' }, h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { atividade: item.id }) }, 'Aplicar')))))
+        : h('p', { class: 'sutil' }, 'Feche a revisão de uma atividade para ela aparecer aqui.')),
+    h('section', { class: 'cartao' }, h('h2', {}, 'Modelos'),
+      h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
+        h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
+        h('div', { class: 'mini' }, h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { caso: c.id }) }, 'Aplicar')))))));
+}
+async function simularModelo(id) {
+  try { simularAtividade(await carregarCaso(id)); }
+  catch (e) { avisoGeral('Não foi possível simular o modelo: ' + e.message, 'erro'); }
 }
 
 /** Lê a lista de mestres. Enquanto não chega (null) ou se falhou ('erro'), a lista não pode ser editada:
@@ -555,7 +647,7 @@ async function admEncerrarSalas(codigos, pergunta) {
 }
 function telaAdmin() {
   const A = P.adm || {}, agora = Date.now();
-  const voltar = h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => { P.adm = null; render(); } }, ico('voltar'), 'Minhas atividades');
+  const voltar = h('button', { class: 'btn pequeno', 'data-sem-ico': '', onclick: () => { P.adm = null; P.fase = 'entrada'; render(); } }, ico('voltar'), 'Início');
   if (A.carregando) return h('div', { class: 'painel-admin' }, voltar, h('h1', {}, 'Administração'), h('p', { class: 'sutil' }, 'Carregando…'));
   const bib = A.bib || [], salas = A.salas || [];
   const nomeDe = uid => bib.find(x => x.owner === uid)?.autor || 'professor (' + String(uid || '').slice(0, 6) + '…)';
@@ -654,12 +746,14 @@ function cartaoPrompt() {
 }
 
 // ============================================================ biblioteca
-async function abrirDaBiblioteca(item, duplicar) {
+async function abrirDaBiblioteca(item, duplicar, qual = 'pronta') {
   try {
-    const doc = item.conteudo ? item : await b.lerBiblioteca(item.id);
-    const a = JSON.parse(doc.conteudo);
-    if (duplicar || !item.minha) { a.titulo = a.titulo + ' (cópia)'; a.id = slug(a.titulo); abrir(a, null); avisoGeral(item.minha ? 'Cópia criada. Salve para guardar.' : 'Esta atividade é de outro mestre: você está editando uma cópia sua.', 'info'); }
-    else abrir(a, { bibId: item.id, compartilhada: !!item.compartilhada });
+    const doc = item.conteudo || item.fechado || item.rascunho ? item : await b.lerBiblioteca(item.id);
+    const fechado = planoFechado(doc);
+    const bruto = duplicar || qual === 'pronta' ? (doc.fechado || (fechado ? JSON.stringify(fechado) : null) || doc.conteudo) : (doc.rascunho || doc.conteudo);
+    const a = JSON.parse(bruto);
+    if (duplicar || !item.minha) { copiarAtividade(a); if (!item.minha) avisoGeral('Esta atividade é de outro professor: você está com uma cópia sua.', 'info'); return; }
+    abrir(a, { bibId: item.id, compartilhada: !!item.compartilhada, temFechado: !!fechado });
   } catch (e) { avisoGeral('Não foi possível abrir: ' + e.message, 'erro'); }
 }
 async function apagarDaBiblioteca(item) {
@@ -672,7 +766,7 @@ function painelFinalizarAtividade(erros) {
  return h('section',{class:'cartao finalizar-atividade','aria-label':'Concluir a preparação da atividade'},h('h2',{},'Depois da revisão, conclua nesta ordem'),h('div',{class:'finalizar-grade'},
   cartao(6,'Simule a atividade',liberada?'Veja no PC, com uma turma fictícia, o que você e os alunos verão. Depois volte a esta aba.':'Complete os itens de estrutura acima para simular.',h('button',{class:'btn',onclick:()=>previa()},numeroPasso(6),'Simular')),
   cartao(7,'Salve sua atividade',temBiblioteca()?'Guarde na biblioteca para recuperar em outro aparelho.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
-  cartao(8,'Leve para a sala',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A atividade está pronta para abrir a sala e receber os alunos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},numeroPasso(8),'Abrir sala e conduzir'))));
+  cartao(8,'Leve para a turma',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A versão fechada pode ser aplicada. Na turma você marca as etapas e os tempos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},'Aplicar em uma turma'))));
 }
 
 function dialogoSalvar(aposSalvar = null) {
@@ -684,10 +778,15 @@ function dialogoSalvar(aposSalvar = null) {
     h('div', { class: 'linha-botoes' },
       h('button', { class: 'btn primario', onclick: async () => {
         try {
-          if (JSON.stringify(P.A).length > 880000) throw new Error('A atividade ficou pesada demais para a biblioteca (imagens). Use imagens menores ou exporte a planilha.');
-          const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: JSON.stringify(P.A), compartilhada: comp, autor: P.conta?.email || '' });
-          P.origem = { bibId: id, compartilhada: comp }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
-          d.close(); d.remove(); render(); avisoGeral('Salvo na biblioteca. Próximo: 8 · Abrir sala e conduzir.', 'ok'); if(typeof aposSalvar === 'function') aposSalvar();
+          const json = JSON.stringify(P.A);
+          if (json.length > 880000) throw new Error('A atividade ficou pesada demais para a biblioteca (imagens). Use imagens menores ou exporte a planilha.');
+          const fecharVersao = !!P.A.docente?.revisadoEm && !temErros(validarAtividade(P.A));
+          const modo = fecharVersao ? 'fechar' : (P.origem?.temFechado ? 'rascunho' : 'nova');
+          const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: json, compartilhada: comp, autor: P.conta?.email || '', modo });
+          P.origem = { bibId: id, compartilhada: comp, temFechado: fecharVersao || !!P.origem?.temFechado }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
+          d.close(); d.remove(); render();
+          avisoGeral(fecharVersao ? 'Versão fechada. A sala passa a usar esta.' : (modo === 'rascunho' ? 'Ajuste guardado. A sala continua na versão fechada anterior.' : 'Salvo. Feche a revisão para poder aplicar.'), 'ok');
+          if(typeof aposSalvar === 'function') aposSalvar();
         } catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: confira se as regras do Firestore foram publicadas.' : 'Não foi possível salvar: ' + e.message, 'erro'); d.close(); d.remove(); }
       } }, numeroPasso(7),'Salvar'),
       h('button', { class: 'btn', onclick: () => { d.close(); d.remove(); } }, 'Cancelar')));
@@ -701,8 +800,12 @@ function baixarJSON(a) {
 
 // ============================================================ pré-visualização
 /** Simular uma atividade da biblioteca direto da lista (sem abrir para editar). */
-async function simularDaBiblioteca(item) {
-  try { const d = item.conteudo ? item : await b.lerBiblioteca(item.id); simularAtividade(JSON.parse(d.conteudo)); }
+async function simularDaBiblioteca(item, qual = 'pronta') {
+  try {
+    const d = item.conteudo || item.fechado || item.rascunho ? item : await b.lerBiblioteca(item.id);
+    const bruto = qual === 'rascunho' ? (d.rascunho || d.conteudo) : (d.fechado || d.conteudo);
+    simularAtividade(JSON.parse(bruto));
+  }
   catch (e) { avisoGeral('Não foi possível abrir a atividade para simular: ' + (e?.message || e), 'erro'); }
 }
 function simularAtividade(a) {
@@ -733,9 +836,13 @@ function continuarNoCelular() {
 }
 function abrirIA(atual=null) { if(!atual && P.A)salvarRascunho(); abrirAutoria({contaId:P.conta?.uid || 'local',atual,podeIA:temBiblioteca()||souAdmin(),aplicar:a=>{if(atual && P.A){mudar(x=>{Object.keys(x).forEach(k=>delete x[k]);Object.assign(x,a);});irPara('revisao');}else{abrir(a,null);irPara('revisao');}}}); }
 function conduzirAgora() {
-  try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a Condução.', 'erro'); }
-  const url = new URL('conduzir.html', location.href); if (EM_ENSAIO) url.search = '?ensaio=1';
-  location.href = url.href;
+  if (P.origem?.bibId && !P.sujo && (P.origem.temFechado || P.A?.docente?.revisadoEm)) {
+    location.href = link('conduzir.html', { atividade: P.origem.bibId });
+    return;
+  }
+  if (temBiblioteca() && (P.sujo || !P.origem?.bibId)) return dialogoSalvar(conduzirAgora);
+  try { localStorage.setItem(PARA_CONDUZIR, JSON.stringify(P.A)); } catch { return avisoGeral('O navegador não permitiu levar a atividade para a turma.', 'erro'); }
+  location.href = link('conduzir.html');
 }
 
 // ============================================================ Geral e meta

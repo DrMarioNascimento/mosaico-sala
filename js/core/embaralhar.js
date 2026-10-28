@@ -1,4 +1,4 @@
-/* MOSAICO · Ordem sorteada das alternativas — lógica pura, testada
+/* Mosaico Sala · Ordem sorteada das alternativas — lógica pura, testada
    Quem escreve uma lista de alternativas escreve a verdade primeiro; mostrar na ordem do autor entrega a resposta.
    A ordem é sorteada na hora de desenhar, com uma semente estável: o mesmo aluno vê sempre a mesma ordem
    (a tela redesenha a cada mudança da sala), e alunos diferentes veem ordens diferentes.

@@ -1,4 +1,4 @@
-/* MOSAICO · Formato de planilha da atividade (modo aberto e troca de arquivos)
+/* Mosaico Sala · Formato de planilha da atividade (modo aberto e troca de arquivos)
    Módulo puro: converte atividade ⇄ abas (listas de linhas). A leitura/escrita
    do arquivo .xlsx fica em js/planilha-xlsx.js (navegador).
 

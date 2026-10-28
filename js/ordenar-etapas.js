@@ -1,4 +1,4 @@
-/* MOSAICO · Arrastar etapas para mudar a ordem (lista de etapas do Planejamento)
+/* Mosaico Sala · Arrastar etapas para mudar a ordem (lista de etapas do Planejamento)
    Pointer Events + setPointerCapture, como nos Cartões de arrastar: a API nativa de arrastar do HTML5
    não funciona no toque do iPhone. Só a alça (⠿) tem touch-action: none, então a lista continua rolando.
    No PC a lista é vertical; no celular ela vira uma faixa horizontal: o eixo é detectado pela posição

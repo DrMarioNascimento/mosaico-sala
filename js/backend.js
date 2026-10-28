@@ -1,4 +1,4 @@
-/* MOSAICO · Escolha do backend
+/* Mosaico Sala · Escolha do backend
    - Normal: Firebase (projeto mosaico-sala, plano gratuito).
    - ?ensaio na URL: tudo fica neste navegador (localStorage), sem internet.
      Serve para ensaiar a aula sozinho abrindo várias abas. */

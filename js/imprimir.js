@@ -1,4 +1,4 @@
-/* MOSAICO · Versão imprimível (seção 16 da especificação)
+/* Mosaico Sala · Versão imprimível (seção 16 da especificação)
    Material de participantes por grupo + material de quem conduz em separado.
    Sem códigos visíveis nas peças. */
 
@@ -19,13 +19,13 @@ const ordem = a => [...a.etapas].sort((x, y) => x.ordem - y.ordem);
 
 export function gerarImpressao(a) {
   const partes = [], partesDocente = [];
-  const marca = `<p class="marca"><img src="${new URL('../assets/mosaico.webp', import.meta.url).href}" alt="" width="52" height="52"> <span>MOSAICO</span></p>`;
+  const marca = `<p class="marca"><img src="${new URL('../assets/mosaico.webp', import.meta.url).href}" alt="" width="52" height="52"> <span>Mosaico Sala</span></p>`;
   partes.push(`<section class="folha capa">${marca}<h1>${esc(a.titulo)}</h1>
     ${a.perguntaCentral ? `<p class="pergunta">${esc(a.perguntaCentral)}</p>` : ''}
     ${a.introducao ? `<p style="white-space:pre-line">${esc(a.introducao)}</p>` : ''}
     <p class="sutil">${esc(a.publico || '')}${a.duracaoMin ? ' · ' + esc(a.duracaoMin) + ' min' : ''}</p>
     <p class="sutil">Grupos: ${a.grupos.map(g => esc(g.nome)).join(' · ')}</p>
-    <p class="sutil" style="margin-top:2cm;font-size:9pt">Material gerado no MOSAICO · Sala (mosaico-sala.web.app). O conteúdo desta atividade pertence a quem a criou; a plataforma é © 2026 Prof. Mário César Nascimento, PhD — todos os direitos reservados (mosaico-sala.web.app/licenca).</p></section>`);
+    <p class="sutil" style="margin-top:2cm;font-size:9pt">Material gerado no Mosaico Sala (mosaico-sala.web.app). O conteúdo desta atividade pertence a quem a criou; a plataforma é © 2026 Prof. Mário César Nascimento, PhD — todos os direitos reservados (mosaico-sala.web.app/licenca).</p></section>`);
 
   for (const e of ordem(a)) {
     const cfg = e.config || {};

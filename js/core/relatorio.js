@@ -1,4 +1,4 @@
-/* MOSAICO · Relatório da aula (baixado por quem conduz ao fim da atividade).
+/* Mosaico Sala · Relatório da aula (baixado por quem conduz ao fim da atividade).
    Só números por etapa e por grupo: nenhum nome, nenhum identificador de participante (LGPD). */
 import { avaliar, calcularMeta, etapasOrdenadas } from './motor.js';
 

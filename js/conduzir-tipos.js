@@ -1,4 +1,4 @@
-/* MOSAICO · Condução dos tipos novos (roda no celular de quem conduz, junto com conduzir.js)
+/* Mosaico Sala · Condução dos tipos novos (roda no celular de quem conduz, junto com conduzir.js)
    Pares na memória · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem (perguntas e observar)
    (Os pares para ligar e a marcação na imagem usam o quadro dos cartões, em conduzir.js.)
    Como nos outros tipos: o gabarito fica aqui; os celulares mandam a jogada e recebem o resultado. */

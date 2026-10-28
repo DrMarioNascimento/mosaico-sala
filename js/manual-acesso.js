@@ -1,4 +1,4 @@
-/* MOSAICO · Manual do professor
+/* Mosaico Sala · Manual do professor
    O texto do manual NÃO está neste site nem no repositório: fica no Firestore (manual/atual), e as regras
    do servidor só deixam ler quem está na lista de mestres. Esta página é só a moldura: pede o login,
    busca o texto e mostra. Para publicar uma versão nova: Planejamento → Administração → Publicar manual. */

@@ -1,4 +1,4 @@
-/* MOSAICO · utilidades de interface compartilhadas */
+/* Mosaico Sala · utilidades de interface compartilhadas */
 
 export const $ = id => document.getElementById(id);
 /** Número com a palavra no singular ou no plural: pl(1, 'acerto') → '1 acerto'; pl(3, 'peça') → '3 peças'. */

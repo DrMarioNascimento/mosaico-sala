@@ -1,5 +1,5 @@
 import { cadeadoIcone } from './lock-icons.js';
-/* MOSAICO · Tela de quem participa (celular) */
+/* Mosaico Sala · Tela de quem participa (celular) */
 import { backend, EM_ENSAIO } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';

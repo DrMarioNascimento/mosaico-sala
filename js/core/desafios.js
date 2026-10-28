@@ -1,4 +1,4 @@
-/* MOSAICO · Cadeado do grupo e Quiz entre grupos (lógica pura, roda no aparelho de quem conduz)
+/* Mosaico Sala · Cadeado do grupo e Quiz entre grupos (lógica pura, roda no aparelho de quem conduz)
 
    Cadeado do grupo (escape room): cada aluno responde a(s) própria(s) pergunta(s) no celular.
      regra 'acertos'    → o grupo destrava quando X membros acertam.

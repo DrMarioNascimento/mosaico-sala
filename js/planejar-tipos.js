@@ -1,5 +1,5 @@
 import { painelImagem } from './midia-docente.js';
-/* MOSAICO · Editores do Planejamento para os tipos novos (junto com planejar.js)
+/* Mosaico Sala · Editores do Planejamento para os tipos novos (junto com planejar.js)
    Pares · Corrida · Palavras cruzadas · Quiz que faz pensar · Análise de imagem
    Como nos outros tipos, a resposta certa vai para docente.respostas (só quem conduz vê). */
 

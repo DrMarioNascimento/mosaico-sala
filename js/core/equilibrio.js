@@ -1,4 +1,4 @@
-/* MOSAICO · Gramática MOSAICO e sugestões de equilíbrio
+/* Mosaico Sala · Gramática e sugestões de equilíbrio
    Especificação v2, seções 7.1 a 7.4.
 
    Descreve a composição e propõe; nunca bloqueia e nunca aplica sozinho.

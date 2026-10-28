@@ -1,4 +1,4 @@
-/* MOSAICO · Palavras cruzadas (lógica pura, testada)
+/* Mosaico Sala · Palavras cruzadas (lógica pura, testada)
    O professor dá a palavra e a dica; a grade se monta sozinha (algoritmo guloso de cruzamento:
    a palavra mais longa no centro, as outras onde cruzam numa letra igual, sem encostar em outras;
    várias ordens com semente fixa, fica a grade mais compacta). Adaptado do protótipo feito no v0.

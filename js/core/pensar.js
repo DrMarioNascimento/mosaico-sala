@@ -1,4 +1,4 @@
-/* MOSAICO · Quiz que faz pensar (lógica pura, testada)
+/* Mosaico Sala · Quiz que faz pensar (lógica pura, testada)
      equipe       → em equipe (TBL): cada aluno responde sozinho; depois o grupo debate e manda a resposta do grupo
      ramificado   → tomada de decisão: cada escolha do grupo leva a um cenário diferente, até um final
      metacognicao → resposta + o quanto tem certeza (usa o motor da corrida, com confiança)

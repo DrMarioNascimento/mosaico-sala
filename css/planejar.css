@@ -1,4 +1,4 @@
-/* MOSAICO · Planejamento (pensado para o PC; funciona no celular) */
+/* Mosaico Sala · Planejamento (pensado para o PC; funciona no celular) */
 .plan-pagina { max-width: 1280px; margin: 0 auto; padding: 0 16px 96px; }
 .plan-barra { max-width: 1280px !important; flex-wrap: wrap; }
 .plan-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }

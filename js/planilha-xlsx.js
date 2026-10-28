@@ -1,4 +1,4 @@
-/* MOSAICO · Leitura e escrita da planilha .xlsx no navegador (SheetJS, carregado só quando precisa). */
+/* Mosaico Sala · Leitura e escrita da planilha .xlsx no navegador (SheetJS, carregado só quando precisa). */
 import { ABAS, ABA_IMAGENS, atividadeParaAbas, abasParaAtividade } from './core/planilha.js';
 import { lerJsonImportado } from './core/validacao.js';
 
@@ -14,7 +14,7 @@ function xlsx() {
 }
 
 const INSTRUCOES = [
-  ['MOSAICO · planilha da atividade'],
+  ['Mosaico Sala · planilha da atividade'],
   [''],
   ['Cada aba guarda uma parte da atividade. Não mude o nome das abas nem das colunas.'],
   ['Atividade: dados gerais, meta (meta_limiar em %), guia e pendências (um item por linha dentro da célula).'],

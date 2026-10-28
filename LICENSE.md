@@ -1,10 +1,10 @@
-# MOSAICO · Sala — Licença de Uso
+# Mosaico Sala — Licença de Uso
 
 Copyright © 2026 Mário César Nascimento. Todos os direitos reservados.
 
 ## Titularidade
 
-O projeto **MOSAICO · Sala**, incluindo código, interfaces de planejamento, condução, telão e participação, motor de atividades e regras de sala, tipos de atividade (investigação por fragmentos, cadeado, cartões, pares, corrida, palavras cruzadas, sequência, quiz que faz pensar, análise de imagem e demais), a gramática MOSAICO (fracionar, cooperar, competir para superar e atingir uma meta), o gerador de prompt e o guia para IA, a planilha-modelo, os casos prontos, o banco de termos de Fisiologia, textos, ícones e demais componentes originais, é criação de **Mário César Nascimento**.
+O projeto **Mosaico Sala**, incluindo código, interfaces de planejamento, condução, telão e participação, motor de atividades e regras de sala, tipos de atividade (investigação por fragmentos, cadeado, cartões, pares, corrida, palavras cruzadas, sequência, quiz que faz pensar, análise de imagem e demais), a gramática do Mosaico Sala (fracionar, cooperar, competir para superar e atingir uma meta), o gerador de prompt e o guia para IA, a planilha-modelo, os casos prontos, o banco de termos de Fisiologia, textos, ícones e demais componentes originais, é criação de **Mário César Nascimento**.
 
 A visibilidade pública do repositório ou do site não cede, transfere nem abandona direitos. Repositório público não é licença aberta.
 
@@ -23,17 +23,17 @@ Telas, regras e funcionalidades ainda podem mudar, ser suspensas ou encerradas a
 
 É permitido, sem necessidade de autorização prévia:
 
-- usar o MOSAICO · Sala pelo endereço oficial (https://mosaico-sala.web.app), dentro do acesso descrito acima, em aulas, cursos, palestras, treinamentos e eventos, presenciais ou on-line, gratuitos ou pagos;
+- usar o Mosaico Sala pelo endereço oficial (https://mosaico-sala.web.app), dentro do acesso descrito acima, em aulas, cursos, palestras, treinamentos e eventos, presenciais ou on-line, gratuitos ou pagos;
 - participar de salas abertas por contas autorizadas e projetar o telão da sala;
 - criar suas próprias atividades no Planejamento e exportar, imprimir e guardar a planilha e o material impresso que elas geram;
 - usar o prompt e o guia gerados pela plataforma para montar atividades com a IA de sua preferência, a partir do seu próprio material;
-- registrar e divulgar imagens ou vídeos de atividades, com menção ao MOSAICO e ao autor, respeitando a imagem e a privacidade dos participantes.
+- registrar e divulgar imagens ou vídeos de atividades, com menção ao Mosaico Sala e ao autor, respeitando a imagem e a privacidade dos participantes.
 
 ## Sem autorização prévia, não é permitido
 
 - copiar, baixar, modificar ou redistribuir o código, as interfaces, a arte, os ícones, os casos prontos ou o banco de termos;
 - hospedar a plataforma, ou versão modificada dela, em outro endereço, ou abrir salas sem conta autorizada por qualquer meio;
-- criar obra derivada, versão adaptada ou produto concorrente a partir dos componentes do MOSAICO · Sala, inclusive reproduzindo seus tipos de atividade e sua gramática em outro software;
+- criar obra derivada, versão adaptada ou produto concorrente a partir dos componentes do Mosaico Sala, inclusive reproduzindo seus tipos de atividade e sua gramática em outro software;
 - vender, sublicenciar ou cobrar pelo acesso à plataforma em si (cobrar pela sua aula, curso ou evento é permitido);
 - usar o código, os textos, os casos ou o banco de termos para treinar ou avaliar sistemas de inteligência artificial;
 - remover os créditos ou apresentar o projeto como criação de outra pessoa ou instituição;
@@ -52,7 +52,7 @@ Telas, regras e funcionalidades ainda podem mudar, ser suspensas ou encerradas a
 
 ## Marcas e mecânicas de referência
 
-A atividade “Sequência” segue a mecânica clássica de jogos de memória de sequência. “Genius” e “Simon” são marcas de seus respectivos titulares, citadas apenas como referência descritiva; o MOSAICO · Sala não é afiliado a eles nem por eles endossado. As referências a Quizizz e a outros produtos têm o mesmo caráter.
+A atividade “Sequência” segue a mecânica clássica de jogos de memória de sequência. “Genius” e “Simon” são marcas de seus respectivos titulares, citadas apenas como referência descritiva; o Mosaico Sala não é afiliado a eles nem por eles endossado. As referências a Quizizz e a outros produtos têm o mesmo caráter.
 
 ## Componentes de terceiros
 
@@ -66,12 +66,12 @@ Componentes de terceiros conservam seus titulares e licenças próprias, que est
 
 ## Ausência de garantia
 
-O MOSAICO · Sala é oferecido no estado em que se encontra, sem garantia de funcionamento contínuo, disponibilidade ou adequação a um fim específico. Material didático: não substitui a mediação de quem conduz a atividade nem orientação profissional em saúde.
+O Mosaico Sala é oferecido no estado em que se encontra, sem garantia de funcionamento contínuo, disponibilidade ou adequação a um fim específico. Material didático: não substitui a mediação de quem conduz a atividade nem orientação profissional em saúde.
 
 ## Identificação
 
 **Autor e titular:** Mário César Nascimento, PhD  
-**Projeto:** MOSAICO · Sala  
+**Projeto:** Mosaico Sala  
 **País:** Brasil  
 **Ano:** 2026  
 **Versão desta licença:** 25 de outubro de 2026
