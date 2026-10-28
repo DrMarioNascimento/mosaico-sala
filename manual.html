@@ -88,13 +88,13 @@
   .barra-manual { position: sticky; top: 0; z-index: 5; background: #0b0f17ee; backdrop-filter: blur(6px); border-bottom: 1px solid var(--linha); }
   .barra-manual .dentro { max-width: 980px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
   .barra-manual .marca { font-size: 1.1rem; }
-  .barra-manual .btn { margin-left: auto; min-height: 44px; }
+  .manual-nav { max-width: 980px; margin: 0 auto; padding: 0 16px; }
 
   @media print {
     @page { size: A4; margin: 14mm; }
     :root { --texto: #111; --texto-2: #444; --cartao: #fff; --cartao-2: #fff; --fundo-2: #fff; --linha: #ccc; }
     body { background: #fff !important; color: #111; font-size: 11pt; }
-    .barra-manual, .botoes-capa, .nao-imprimir { display: none !important; }
+    .barra-manual, .botoes-capa, .nao-imprimir, .manual-nav { display: none !important; }
     .manual section { break-before: page; margin: 0; }
     .capa { min-height: 250mm; }
     .sumario { break-before: page; }
@@ -112,21 +112,25 @@
 <body class="manual-fechado">
 <header class="barra-manual">
   <div class="dentro">
-    <a class="marca" href="planejar.html" title="Painel do professor" style="color:inherit;text-decoration:none"><img class="logo" src="assets/mosaico.webp" alt="" width="36" height="36">Mosaico Sala</a>
+    <a class="marca" href="/planejar" title="Painel do professor" style="color:inherit;text-decoration:none"><img class="logo" src="assets/mosaico.webp" alt="" width="36" height="36">Mosaico Sala</a>
     <span class="sutil">Manual</span>
     <button class="btn" type="button" onclick="print()">Imprimir ou salvar em PDF</button>
   </div>
 </header>
+<div class="manual-nav">
+  <nav class="fluxo" data-fluxo-docente aria-label="Navegação do professor"></nav>
+</div>
 
-<section class="manual-acesso" id="acessoManual" hidden>
+<section class="manual-acesso" id="acessoManual">
   <h1>Manual do professor</h1>
   <p>O manual fica na área do professor. Entre com a sua conta Google para ler.</p>
-  <button class="btn primario" id="entrarManual" type="button">Entrar com Google</button>
-  <p class="aviso" id="avisoManual" role="alert" hidden></p>
-  <p><a href="index.html">Voltar ao início</a></p>
+  <button class="btn primario" id="entrarManual" type="button" hidden>Entrar com Google</button>
+  <p class="aviso" id="avisoManual" role="status">Abrindo o manual…</p>
+  <p><a href="/planejar">Voltar ao painel</a></p>
 </section>
 
 <main class="manual" id="conteudoManual" aria-live="polite"></main>
 <script type="module" src="js/manual-acesso.js"></script>
+<script type="module" src="js/nav.js"></script>
 </body>
 </html>

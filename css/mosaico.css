@@ -650,10 +650,25 @@ body.com-barra-etapa .pagina { padding-bottom: 150px; }
 
 /* ---------- Ícones grandes (padrão docente) ----------
    Os 3D vêm recortados e com o mesmo tamanho óptico (assets/ilustracoes/3d), então podem crescer sem desalinhar.
-   Botões e navegação: ~28 px; ilustrações: 35% acima do tamanho pedido por cada tela, até 140 px. */
+   No menu, cada ícone ocupa a coluna inteira (até 104 px). Nas três portas do início, até 200 px. */
 img.ico.em-3d, .btn img.ico.em-3d, .abas button img.ico.em-3d, .plan-nav button img.ico.em-3d, .plan-acoes .btn img.ico.em-3d { width: 1.75em; height: 1.75em; margin-block: -.25em; }
 .ico:not(.em-3d), .btn .ico:not(.em-3d) { width: 1.4em; height: 1.4em; }
 img.ilu.em-3d { width: min(calc(var(--tam, 56px) * 1.35), 140px) !important; height: min(calc(var(--tam, 56px) * 1.35), 140px) !important; }
+/* Menu do professor: ícone em cima do nome, no maior tamanho que as 6 colunas aguentam. */
+nav.fluxo[data-fluxo-docente] { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; align-items: stretch; overflow: visible; padding: 8px 0 12px; }
+nav.fluxo[data-fluxo-docente] > a,
+nav.fluxo[data-fluxo-docente] > button { flex-direction: column; justify-content: flex-start; align-items: center; gap: 2px; min-width: 0; min-height: 0; padding: 8px 2px 7px; border-radius: 16px; white-space: normal; text-align: center; font-size: clamp(.62rem, 2.5vw, .82rem); line-height: 1.05; }
+nav.fluxo[data-fluxo-docente] .rot,
+nav.fluxo[data-fluxo-docente] .inicio .rot { display: block; }
+nav.fluxo[data-fluxo-docente] .inicio { padding: 8px 2px 7px; }
+nav.fluxo[data-fluxo-docente] > a > .ico,
+nav.fluxo[data-fluxo-docente] > button > .ico { width: min(100%, 104px) !important; height: auto !important; aspect-ratio: 1; max-height: 104px; margin: 0 !important; }
+.acao-professor > img.ilu.em-3d { width: min(42vw, 200px) !important; height: min(42vw, 200px) !important; }
+@media (max-width: 759px) { .acao-professor > img.ilu.em-3d { width: min(28vw, 128px) !important; height: min(28vw, 128px) !important; } }
+@media (max-height: 520px) {
+  nav.fluxo[data-fluxo-docente] > a > .ico,
+  nav.fluxo[data-fluxo-docente] > button > .ico { max-height: 44px; width: min(100%, 44px) !important; }
+}
 .telao .titulo-etapa img.ilu.em-3d { width: 1.8em !important; height: 1.8em !important; }
 .visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 

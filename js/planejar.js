@@ -706,11 +706,11 @@ function cartaoManual(atual) {
       carregarAdmin();
     } catch (e) { arquivo.value = ''; avisoGeral('Não foi possível publicar o manual: ' + (e?.message || e), 'erro'); }
   };
-  return h('section', { class: 'cartao' }, h('h2', {}, ico('atividade'), 'Manual do professor'),
+  return h('section', { class: 'cartao' }, h('h2', {}, ico('manual'), 'Manual do professor'),
     h('p', { class: 'sutil' }, 'O texto do manual fica guardado no servidor e só quem está na lista de mestres consegue ler. Para atualizar: edite o arquivo privado/manual-fonte.html na sua pasta do projeto (ele não vai para o GitHub) e publique aqui.'),
     estado,
     h('label', { for: 'arqManual' }, 'Publicar nova versão (arquivo .html)'), campoArquivo(arquivo),
-    h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: linkDocente('manual.html'), target: '_blank', rel: 'noopener' }, 'Ver o manual publicado')));
+    h('div', { class: 'linha-botoes' }, h('a', { class: 'btn', href: link('manual') }, 'Ver o manual publicado')));
 }
 
 async function abrirModelo(id) {

@@ -2,6 +2,7 @@
    Põe os ícones próprios (js/icones.js) em [data-ico] / [data-ilu] e nos botões, e marca a página atual na barra de fluxo. */
 import { aplicarIcones } from './icones.js';
 import { percursoDocente } from './percurso-docente.js';
+import { link } from './backend.js';
 for(const el of document.querySelectorAll('[data-percurso-docente]'))el.replaceChildren(percursoDocente(Number(el.dataset.percursoDocente)||1));
 
 /* Barra do professor (mesma em todas as páginas de quem conduz). “Início” e “Minhas atividades” levam ao painel
@@ -17,23 +18,24 @@ const ITENS_FLUXO = [
   ['criar', 'planejar.html', 'mais', 'Criar'],
   ['ajustar', 'planejar.html', 'planejar', 'Ajustar'],
   ['aplicar', 'planejar.html', 'conduzir', 'Aplicar'],
-  ['', 'manual.html', 'atividade', 'Manual']
+  ['manual', 'manual.html', 'manual', 'Manual']
 ];
 for (const nav of document.querySelectorAll('nav.fluxo[data-fluxo-docente]')) {
   nav.replaceChildren(...ITENS_FLUXO.map(([hash, pag, ico, rot]) => {
     const el = hash === 'sair' ? document.createElement('button') : document.createElement('a');
-    el.dataset.ico = ico; el.dataset.alvo = hash || 'manual';
+    el.dataset.ico = ico; el.dataset.alvo = hash;
     if (hash === 'sair') {
       el.type = 'button';
       el.addEventListener('click', async () => {
-        const { backend, EM_ENSAIO } = await import('./backend.js');
+        const { backend } = await import('./backend.js');
         const b = await backend();
         try { await b.sair?.(); } catch {}
-        location.href = 'planejar.html' + (EM_ENSAIO ? '?ensaio=1' : '');
+        location.href = link('planejar.html');
       });
+    } else if (hash === 'manual') {
+      el.href = link('manual');
     } else {
-      el.href = hash === '' ? linkDocente(pag) : linkDocente(pag, hash);
-      if (hash === '') { el.target = '_blank'; el.rel = 'noopener'; }
+      el.href = link(pag) + '#' + hash;
     }
     const r = document.createElement('span'); r.className = 'rot'; r.textContent = rot; el.append(r);
     return el;
@@ -50,7 +52,8 @@ function marcarNavegacao(){
     const fase=['criar','ajustar','aplicar'].includes(hash)?hash:(hash==='minhas'?'ajustar':'inicio');
     ativo=alvo===fase && !document.body.classList.contains('planejando');
     if(document.body.classList.contains('planejando') && alvo==='ajustar') ativo=true;
-  } else if(alvo==='aplicar' && (pagina==='conduzir' || pagina==='telao')) ativo=true;
+  } else if(pagina==='manual') ativo=alvo==='manual';
+  else if(alvo==='aplicar' && (pagina==='conduzir' || pagina==='telao')) ativo=true;
   if(ativo)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
  }
 }

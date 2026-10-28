@@ -129,6 +129,7 @@ export const EM_3D = {
   // botões e navegação
   ui_inicio: 'inicio', ui_voltar: 'voltar', ui_avancar: 'avancar', ui_planejar: 'planejar', ui_conduzir: 'conduzir',
   ui_telao: 'telao', ui_simulador: 'simulador', ui_participar: 'participar', ui_sair: 'sair', ui_atividade: 'atividade',
+  ui_manual: 'material',
   ui_sala: 'sala', ui_grupos: 'grupos', ui_etapas: 'montar', ui_ia: 'ia', ui_fontes: 'material', ui_revisao: 'revisar',
   ui_biblioteca: 'biblioteca', ui_abrir: 'material', ui_meta: 'meta', ui_relogio: 'relogio', ui_trofeu: 'trofeu',
   ui_play: 'play', ui_parar: 'parar', ui_previa: 'olho', ui_olho: 'olho', ui_apagar: 'apagar', ui_fechar: 'fechar',
