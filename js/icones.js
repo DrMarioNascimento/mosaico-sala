@@ -120,7 +120,7 @@ function svgEm(cls, svg, rotulo) {
 export const EM_3D = {
   // entradas e fluxo
   e_planejar: 'planejar', e_conduzir: 'conduzir', e_telao: 'telao', e_participar: 'participar', e_simulador: 'simulador',
-  e_material: 'material', e_ia: 'ia', e_revisar: 'revisar',
+  e_material: 'material', e_ia: 'ia', e_revisar: 'revisar', e_criar: 'montar',
   // tipos de atividade
   investigacao_fragmentos: 'investigar', comparar_hipoteses: 'comparar', montagem_pecas: 'montar', cadeado_grupo: 'cadeado',
   quiz_grupos: 'quiz-grupos', cartoes_arrastar: 'cartoes', pares: 'pares', corrida: 'corrida', cruzadas: 'cruzadas',
@@ -133,7 +133,8 @@ export const EM_3D = {
   ui_sala: 'sala', ui_grupos: 'grupos', ui_etapas: 'montar', ui_ia: 'ia', ui_fontes: 'material', ui_revisao: 'revisar',
   ui_biblioteca: 'biblioteca', ui_abrir: 'material', ui_meta: 'meta', ui_relogio: 'relogio', ui_trofeu: 'trofeu',
   ui_play: 'play', ui_parar: 'parar', ui_previa: 'olho', ui_olho: 'olho', ui_apagar: 'apagar', ui_fechar: 'fechar',
-  ui_enviar: 'enviar', ui_baixar: 'baixar', ui_licenca: 'licenca'
+  ui_enviar: 'enviar', ui_baixar: 'baixar', ui_licenca: 'licenca',
+  ui_criar: 'montar'   // Criar: as peças de quebra-cabeça do Fracionar (o "+" segue em Nova etapa e Adicionar)
 };
 const url3d = nome => `assets/ilustracoes/3d/${EM_3D[nome]}.webp`;
 function img3d(cls, nome, tam, rotulo) {
@@ -158,7 +159,7 @@ export function ilustra(nome, tam = 56, rotulo) {
 const POR_ROTULO = [
   [/^(Iniciar etapa|Começar|Iniciar|Simular)\b/, 'play'], [/^Encerrar (etapa|a sala|sala)/, 'parar'], [/^Abrir (a )?sala/, 'sala'], [/^Abrir telão|^Abrir o telão|^Mostrar$/, 'telao'],
   [/^Gerar atividade com IA|^Propor ajustes com IA|^Inserir texto/, 'ia'], [/^Revisar conteúdo|^Abrir proposta/, 'revisao'], [/^Ver como fica/, 'previa'], [/^Planilha$|planilha-modelo/i, 'planilha'], [/^JSON$/, 'json'], [/^Imprimir/, 'imprimir'], [/^Salvar|^Salvo/, 'salvar'], [/^Fechar$/, 'fechar'],
-  [/^Criar$/, 'mais'], [/^＋|^\+ /, null], [/^Abrir$/, 'abrir'], [/^Abrir o caso piloto|^Usar o caso piloto/, 'abrir'], [/^Gerar prompt/, 'ia'], [/^Baixar/, 'baixar'], [/^Copiar$/, 'copiar'],
+  [/^Criar$/, 'criar'], [/^＋|^\+ /, null], [/^Abrir$/, 'abrir'], [/^Abrir o caso piloto|^Usar o caso piloto/, 'abrir'], [/^Gerar prompt/, 'ia'], [/^Baixar/, 'baixar'], [/^Copiar$/, 'copiar'],
   [/^Revelar/, 'revelar'], [/^Sortear/, 'sortear'], [/^Entrar com Google|^Entrar \(modo ensaio/, 'sair'], [/^Entrar$|^Entrar com código|^Entrar na sala/, 'participar'], [/^Enviar|^Confirmar/, 'enviar'],
   [/^Próxima pergunta|^Passar para o grupo|^Ir para /, 'avancar'], [/^Recomeçar/, 'sortear'], [/^Área de condução/, 'conduzir'], [/^Planejar atividade/, 'planejar'], [/^Simulador/, 'simulador']
 ];

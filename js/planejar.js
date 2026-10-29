@@ -451,7 +451,7 @@ function telaEntrada() {
     linhaSala(),
     h('div', { class: 'cab-professor' }, h('h1', {}, cumprimento())),
     h('div', { class: 'acoes-professor' },
-      porta('e_material', 'Criar atividade', 'Comece pelo material. A atividade cai no ajuste fino.', 'criar'),
+      porta('e_criar', 'Criar atividade', 'Comece pelo material. A atividade cai no ajuste fino.', 'criar'),
       porta('e_planejar', 'Ajustar uma atividade', 'Em criação, em planejamento ou já pronta.', 'ajustar'),
       porta('e_conduzir', 'Aplicar em uma turma', 'Escolha a atividade fechada, as etapas e o tempo.', 'aplicar')),
     souAdmin() && h('div', { class: 'linha-botoes' }, h('button', { class: 'btn', 'data-sem-ico': '', onclick: () => carregarAdmin() }, ico('geral'), 'Administração')),

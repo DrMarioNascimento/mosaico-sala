@@ -15,7 +15,7 @@ export function linkDocente(pagina, hash = '') {
 const ITENS_FLUXO = [
   ['inicio', 'planejar.html', 'inicio', 'Início'],
   ['sair', '', 'sair', 'Sair'],
-  ['criar', 'planejar.html', 'mais', 'Criar'],
+  ['criar', 'planejar.html', 'criar', 'Criar'],
   ['ajustar', 'planejar.html', 'planejar', 'Ajustar'],
   ['aplicar', 'planejar.html', 'conduzir', 'Aplicar'],
   ['manual', 'manual.html', 'manual', 'Manual']
