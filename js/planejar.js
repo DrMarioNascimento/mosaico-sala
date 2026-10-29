@@ -16,6 +16,7 @@ import { ligarReordenacao } from './ordenar-etapas.js';
 import { TIPOS, obterTipo } from './core/tipos.js';
 import { etapasOrdenadas } from './core/motor.js';
 import { gerarPrompt, gerarGuiaMd } from './core/prompt.js';
+import { abrirImpressao } from './imprimir.js';
 import { planoFechado } from './core/aplicacao.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';

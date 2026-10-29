@@ -21,6 +21,7 @@ import { abrirImpressao } from './imprimir.js';
 import { prepararCartoes, estadoCartoes, conferirQuadro, distribuicaoTermometro, temGabaritoTermometro, respostaEsperadaTexto, quadroCompleto, conjuntosPorTrechos } from './core/cartoes.js';
 import { ligarComoCartoes } from './core/pares.js';
 import { criarTipos } from './conduzir-tipos.js';
+import { ico, ilustra } from './icones.js';
 import { escolhaInicial, alterarTempo, alterarTotal, marcarEtapa, totalMarcado, dependenciaFaltando, atividadeDaSessao, planoFechado } from './core/aplicacao.js';
 
 const b = await backend();
