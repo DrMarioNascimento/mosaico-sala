@@ -2,6 +2,8 @@
    Tudo em modo ensaio, neste navegador: a condução (celular), o telão e uma turma
    simulada entram na mesma sala, já com a atividade escolhida. */
 import { link, EM_ENSAIO } from './backend.js';
+import { carregarCaso } from './casos.js';
+import { validarAtividade } from './core/validacao.js';
 
 if (!EM_ENSAIO) { const u = new URL(location.href); u.searchParams.set('ensaio', '1'); location.replace(u.href); }
 const $ = id => document.getElementById(id);
@@ -11,7 +13,15 @@ if (new URLSearchParams(location.search).get('de') === 'simulador') {
   const v = $('voltar'); v.href = DEMO ? 'simulador.html?ensaio=1&demonstracao=1' : 'simulador.html'; v.lastChild.textContent = 'Escolher outra atividade';
 }
 // “Testar com meu celular” é o ensaio geral, com sala de verdade (fora do modo ensaio). Na demonstração não existe.
-if (DEMO) $('comCelular').hidden = true;
+if (DEMO) {
+  $('comCelular').hidden = true;
+  if (new URLSearchParams(location.search).get('de') !== 'simulador') {
+    $('voltar').href = 'index.html';
+    $('voltar').removeAttribute('data-fechar');
+    $('voltar').title = 'Voltar ao início';
+    $('voltar').textContent = 'Voltar ao início';
+  }
+}
 let codigo = null, esperaSala = null;
 const ETAPA = new URLSearchParams(location.search).get('etapa');   // “Ver esta etapa”: a condução já começa nela
 // Os iframes focam campos e o navegador rola a página até eles; enquanto a turma entra, a página fica no topo.
@@ -56,5 +66,27 @@ addEventListener('message', async e => {
 });
 
 $('auto').onchange = e => { for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} } };
-$('recomecar').onclick = iniciar;
-iniciar();
+// A entrada pública sempre prepara o exemplo: não depende de uma atividade
+// deixada no armazenamento por outra simulação nem chama a geração com IA.
+async function abrirDemonstracao() {
+  $('recomecar').disabled = true;
+  try {
+    $('info').textContent = 'Preparando a demonstração…';
+    const atividade = await carregarCaso('demonstracao-cones');
+    if (validarAtividade(atividade).some(x => x.severidade === 'erro')) {
+      throw new Error('A atividade de demonstração precisa de revisão.');
+    }
+    localStorage.setItem('mosaico-previa', JSON.stringify(atividade));
+    document.title = 'Mosaico Sala · Demonstração: ' + atividade.titulo;
+    iniciar();
+  } catch (e) {
+    $('info').textContent = 'Não foi possível preparar a demonstração. Use Recomeçar para tentar novamente.';
+    $('turma').textContent = 'A demonstração ainda não foi iniciada.';
+  } finally {
+    $('recomecar').disabled = false;
+  }
+}
+const entradaPublica = DEMO && new URLSearchParams(location.search).get('de') !== 'simulador';
+$('recomecar').onclick = entradaPublica ? abrirDemonstracao : iniciar;
+if (entradaPublica) await abrirDemonstracao();
+else iniciar();
