@@ -1,0 +1,283 @@
+{
+  "schemaVersion": "mosaico-atividade-0.1",
+  "id": "demonstracao-cones",
+  "titulo": "O mistério dos cones desaparecidos",
+  "publico": "Demonstração para estudantes e professores",
+  "duracaoMin": 12,
+  "regime": "simulacao",
+  "perguntaCentral": "Onde estão os oito cones que estavam na quadra?",
+  "introducao": "Situação inteiramente fictícia: às 9h havia oito cones numerados na quadra. Às 9h20, nenhum estava lá. A atividade seguinte depende deles. Cada grupo recebeu registros diferentes: compartilhem as pistas antes de concluir.",
+  "objetivos": [
+    "Distinguir uma possibilidade de uma conclusão apoiada em evidências.",
+    "Combinar informações distribuídas entre grupos.",
+    "Escolher uma ação proporcional ao que foi confirmado."
+  ],
+  "fontes": [],
+  "grupos": [
+    {
+      "id": "g_horarios",
+      "nome": "Horários",
+      "ordemAlocacao": 1,
+      "funcao": "Agenda das atividades"
+    },
+    {
+      "id": "g_quadra",
+      "nome": "Quadra",
+      "ordemAlocacao": 2,
+      "funcao": "Registros do espaço"
+    },
+    {
+      "id": "g_materiais",
+      "nome": "Materiais",
+      "ordemAlocacao": 3,
+      "funcao": "Inventário dos equipamentos"
+    },
+    {
+      "id": "g_apoio",
+      "nome": "Apoio",
+      "ordemAlocacao": 4,
+      "funcao": "Recados da equipe"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "e_misterio",
+      "ordem": 1,
+      "titulo": "Uma parte da história",
+      "typeId": "investigacao_fragmentos",
+      "typeVersion": "1.0.0",
+      "tempoMin": 3,
+      "instrucao": "Leiam apenas os registros do seu grupo. Escolham a hipótese mais sustentada e marquem as pistas usadas. A escolha inicial pode mudar.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "desligada"
+      },
+      "config": {
+        "pergunta": "Qual hipótese os registros do seu grupo apoiam melhor?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_guardados",
+            "texto": "Os cones foram guardados no depósito para liberar a quadra."
+          },
+          {
+            "id": "h_emprestados",
+            "texto": "Os cones foram emprestados à turma da sala vizinha."
+          },
+          {
+            "id": "h_perdidos",
+            "texto": "Os cones foram descartados por engano com os resíduos."
+          }
+        ],
+        "minEvidencias": 1,
+        "justificativa": "opcional"
+      }
+    },
+    {
+      "id": "e_juntando",
+      "ordem": 2,
+      "titulo": "O quadro completo",
+      "typeId": "comparar_hipoteses",
+      "typeVersion": "1.0.0",
+      "tempoMin": 4,
+      "instrucao": "Comparem os registros dos quatro grupos. Escolham a explicação que melhor combina com o conjunto e justifiquem com duas pistas de grupos diferentes.",
+      "participacao": {
+        "organizacao": "grupos",
+        "envio": "representante",
+        "competicao": "meta"
+      },
+      "config": {
+        "pergunta": "Qual explicação é sustentada pelo conjunto dos registros?",
+        "hipotesesCandidatas": [
+          {
+            "id": "h_guardados",
+            "texto": "Os cones foram guardados no depósito para liberar a quadra."
+          },
+          {
+            "id": "h_emprestados",
+            "texto": "Os cones foram emprestados à turma da sala vizinha."
+          },
+          {
+            "id": "h_perdidos",
+            "texto": "Os cones foram descartados por engano com os resíduos."
+          }
+        ],
+        "aceitaParcial": false,
+        "justificativa": "obrigatoria"
+      }
+    },
+    {
+      "id": "e_voce",
+      "ordem": 3,
+      "titulo": "O próximo passo",
+      "typeId": "questao_individual",
+      "typeVersion": "1.0.0",
+      "tempoMin": 2,
+      "instrucao": "Agora responda individualmente: o que fazer com base no que foi confirmado?",
+      "participacao": {
+        "organizacao": "individual",
+        "envio": "individual",
+        "competicao": "meta"
+      },
+      "config": {
+        "enunciado": "Depois de reunir os registros, qual é a ação mais adequada para recuperar os cones?",
+        "alternativas": [
+          {
+            "id": "a",
+            "texto": "Pedir à equipe de apoio a abertura do depósito e conferir os oito números."
+          },
+          {
+            "id": "b",
+            "texto": "Acusar a turma vizinha de ter levado os cones."
+          },
+          {
+            "id": "c",
+            "texto": "Comprar oito cones sem verificar o depósito."
+          },
+          {
+            "id": "d",
+            "texto": "Afirmar que os cones foram descartados porque não estão na quadra."
+          }
+        ]
+      }
+    }
+  ],
+  "pecas": [
+    {
+      "id": "p_demo_1",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_horarios"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Às 9h10, estava prevista a limpeza da quadra, sem atividades durante vinte minutos."
+    },
+    {
+      "id": "p_demo_2",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_horarios"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "A turma vizinha usou a sala de leitura das 9h às 9h30; não havia empréstimo de material agendado."
+    },
+    {
+      "id": "p_demo_3",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_quadra"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Às 9h12, um registro mostra uma pessoa da equipe de apoio levando um carrinho coberto da quadra até o corredor do depósito. O conteúdo não aparece."
+    },
+    {
+      "id": "p_demo_4",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_quadra"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O recipiente de resíduos permaneceu lacrado no mesmo lugar entre 9h e 9h30."
+    },
+    {
+      "id": "p_demo_5",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_materiais"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Os oito cones da quadra tinham as etiquetas C01 a C08."
+    },
+    {
+      "id": "p_demo_6",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_materiais"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O inventário das 9h18 registra: depósito, oito cones C01 a C08, íntegros."
+    },
+    {
+      "id": "p_demo_7",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_apoio"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "O recado das 9h11 diz: retirar os materiais móveis da quadra para a limpeza; guardar no depósito."
+    },
+    {
+      "id": "p_demo_8",
+      "etapaId": "e_misterio",
+      "destinatarios": [
+        "g_apoio"
+      ],
+      "origem": {
+        "natureza": "sintetico"
+      },
+      "conteudo": "Às 9h19, a equipe registrou a tarefa como concluída e informou que a chave do depósito estava na recepção."
+    }
+  ],
+  "conexoes": [
+    {
+      "id": "c_hipoteses",
+      "de": {
+        "etapaId": "e_misterio",
+        "portId": "hipotese_grupo"
+      },
+      "para": {
+        "etapaId": "e_juntando",
+        "portId": "hipoteses_recebidas"
+      },
+      "agregacao": "colecao_uma_por_grupo_planejado"
+    }
+  ],
+  "pendencias": [],
+  "meta": {
+    "ativa": true,
+    "descricao": "A turma vence se acertar pelo menos 70% das respostas da comparação e da questão individual.",
+    "etapas": [
+      "e_juntando",
+      "e_voce"
+    ],
+    "limiar": 0.7
+  },
+  "docente": {
+    "respostas": {
+      "e_juntando": {
+        "corretaId": "h_guardados",
+        "explicacao": "O inventário localiza os mesmos oito números no depósito. O recado explica a retirada para a limpeza, e o registro da equipe confirma a execução. O carrinho sozinho não permitiria identificar o conteúdo."
+      },
+      "e_voce": {
+        "corretaId": "a",
+        "explicacao": "A ação verifica os itens no local registrado e usa a informação sobre a chave. Nenhum registro sustenta acusação, descarte ou necessidade de compra."
+      }
+    },
+    "guia": [
+      "Abertura (1 min): apresente a situação fictícia e explique a distribuição das pistas.",
+      "Uma parte da história (3 min): observe as hipóteses sem antecipar o resultado.",
+      "O quadro completo (4 min): compare pistas; peça duas evidências de grupos diferentes.",
+      "O próximo passo (2 min): acompanhe as respostas individuais.",
+      "Fechamento (2 min): discuta por que o carrinho coberto, isoladamente, não prova o destino dos cones."
+    ],
+    "pontosDeDiscussao": [
+      "Qual registro mudou sua conclusão?",
+      "O que é observado diretamente e o que é inferido?",
+      "Por que uma ausência não autoriza uma acusação?"
+    ]
+  }
+}
