@@ -26,6 +26,7 @@ for (const nav of document.querySelectorAll('nav.fluxo[data-fluxo-docente]')) {
     el.dataset.ico = ico; el.dataset.alvo = hash;
     if (hash === 'sair') {
       el.type = 'button';
+      el.hidden = true;
       el.addEventListener('click', async () => {
         const { backend } = await import('./backend.js');
         const b = await backend();
@@ -57,6 +58,17 @@ function marcarNavegacao(){
   if(ativo)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
  }
 }
+async function atualizarSaida() {
+  const botoes = document.querySelectorAll('.fluxo button[data-alvo="sair"]');
+  if (!botoes.length) return;
+  try {
+    const { backend } = await import('./backend.js');
+    const conta = await (await backend()).contaAtual();
+    botoes.forEach(el => { el.hidden = !conta; });
+  } catch { botoes.forEach(el => { el.hidden = true; }); }
+}
+atualizarSaida();
+window.addEventListener('mosaico-navegacao', atualizarSaida);
 marcarNavegacao();window.addEventListener('hashchange',marcarNavegacao);window.addEventListener('mosaico-navegacao',marcarNavegacao);
 aplicarIcones(document);
 // A prévia abre em outra aba: “voltar” fecha esta aba e volta ao planejamento que a abriu.
