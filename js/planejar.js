@@ -427,7 +427,7 @@ const listaTexto = v => String(v || '').split('\n').map(x => x.trim()).filter(Bo
 function cumprimento() {
   const hora = new Date().getHours();
   const saud = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
-  return `${saud}, professor. O que pretende fazer?`;
+  return `${saud}, professor(a). O que pretende fazer?`;
 }
 function telaFase() {
   if (P.fase === 'criar') return telaCriar();
