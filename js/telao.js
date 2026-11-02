@@ -109,8 +109,8 @@ function desenhar() {
     return limpar(c,
       h('h1', {}, m ? (m.atingida ? 'A turma atingiu a meta!' : 'Meta não atingida desta vez') : 'Atividade concluída'),
       m && h('p', {}, `${pl(m.acertos, 'acerto')} em ${pl(m.total, 'resposta')} · meta de ${Math.round(m.limiar * 100)}%`),
-      h('div', { style: { display: 'grid', gap: '.8em', overflow: 'auto' } },
-        (f.explicacoes || []).map(e => h('div', { class: 'explicacao' }, h('strong', {}, e.titulo + ': '), e.resposta && h('span', {}, e.resposta + ' — '), e.explicacao))));
+      h('div', { class: 'resultado-etapas', tabindex: 0, 'aria-label': 'Conclusões e justificativas das etapas' },
+        (f.explicacoes || []).map(e => h('article', { class: 'explicacao resultado-etapa' }, h('h2', {}, e.titulo), e.resposta && h('p', {class:'resultado-resposta'}, e.resposta), e.explicacao && h('details', {}, h('summary', {}, 'Ver justificativa'), h('p', {}, e.explicacao))))));
   }
   limpar(c);
 }

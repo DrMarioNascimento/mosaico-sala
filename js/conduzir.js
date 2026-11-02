@@ -255,6 +255,11 @@ function cartaoTurma() {
       h('input', { type: 'number', min: 1, max: 180, 'aria-label': 'Minutos de ' + (e.titulo || e.id), value: e.tempoMin ?? '', disabled: !e.entra, onchange: ev => definir(xs => alterarTempo(xs, e.id, ev.target.value)) }))),
     faltas.map(f => h('p', { class: 'aviso', 'data-tipo': 'alerta' }, f.mensagem)),
     !marcadas && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Marque ao menos uma etapa.'),
+    h('section', {class:'conferencia-aula','aria-label':'Conferência antes da aula'},
+      h('h2',{},'Antes de abrir a sala'),
+      h('ul',{},h('li',{},'Atividade: ' + (plano.titulo || 'Sem título')),h('li',{},`${marcadas} etapas selecionadas · ${totalMarcado(escolha)} min de atividades`),h('li',{},faltas.length ? 'Há dependências entre etapas a corrigir acima.' : 'Seleção de etapas sem dependências pendentes.')),
+      h('p',{class:'sutil'},'Reserve tempo para entrada e discussão. Depois de abrir a sala, a aba Sala mostrará o código, o QR e o botão Abrir telão.'),
+      h('a',{class:'btn',href:link('telao.html'),target:'_blank',rel:'noopener'},'Conferir acesso ao telão')),
     h('button', { class: 'btn primario bloco grande', disabled: !marcadas || faltas.length > 0, onclick: abrirComTurma }, 'Abrir sala'));
 }
 

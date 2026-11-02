@@ -65,7 +65,13 @@ addEventListener('message', async e => {
     : `Sala ${codigo} com ${n} participantes simulados. A primeira etapa começa automaticamente. Use Condução no painel do professor para encerrar a etapa e avançar.`;
 });
 
-$('auto').onchange = e => { for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} } };
+$('auto').onchange = e => {
+  for (const f of document.querySelectorAll('#turma iframe')) { try { f.contentWindow.mosaicoAuto?.(e.target.checked); } catch {} }
+  const guia = $('guiaDemonstracao');
+  if (guia) guia.textContent = e.target.checked
+    ? 'A turma responde automaticamente. No painel Condução, você encerra a etapa e inicia a próxima. Ao terminar, revele o resultado final.'
+    : 'Piloto automático desligado: responda nos celulares da turma simulada. No painel Condução, você encerra a etapa e inicia a próxima.';
+};
 // A entrada pública sempre prepara o exemplo: não depende de uma atividade
 // deixada no armazenamento por outra simulação nem chama a geração com IA.
 async function abrirDemonstracao() {

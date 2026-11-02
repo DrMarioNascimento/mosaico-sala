@@ -720,3 +720,16 @@ dialog.ampliar-imagem::backdrop { background: #000c; }
   .topo .barra > * { min-width: 0; overflow-wrap: anywhere; }
 }
 nav.fluxo[data-fluxo-docente] > [hidden] { display: none !important; }
+
+/* Orientação e preparação da primeira aula. */
+.guia-demonstracao { margin: 12px 16px 0; padding: 12px 16px; border-left: 3px solid var(--acento-2); border-radius: 12px; background: var(--cartao); color: var(--texto); line-height: 1.5; }
+.pendencias-aplicacao { scroll-margin-top: calc(var(--topo-docente, 100px) + 16px); border-left: 4px solid var(--acento); }
+.pendencias-aplicacao li { margin: 12px 0; line-height: 1.6; }
+.resumo-biblioteca { display: block; margin-top: 5px; overflow-wrap: anywhere; }
+.conferencia-aula { margin: 18px 0; padding: 16px; background: var(--fundo-2); border: 1px solid var(--linha); border-radius: var(--raio); }
+.conferencia-aula h2 { font-size: 1.2rem; }
+.telao .resultado-etapas { display: grid; gap: 16px; overflow: auto; max-height: 58vh; min-height: 0; padding: 4px; text-align: left; }
+.telao .resultado-etapa { font-size: clamp(18px, 1.8vw, 30px); }
+.telao .resultado-etapa h2 { font-size: 1.1em; color: var(--acento-2); margin: 0 0 .4em; }
+.telao .resultado-resposta { font-size: 1.15em; font-weight: 700; margin: .4em 0; }
+.telao .resultado-etapa summary { cursor: pointer; padding: .5em 0; font-size: .85em; }
