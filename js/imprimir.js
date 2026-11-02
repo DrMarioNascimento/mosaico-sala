@@ -30,6 +30,7 @@ export function gerarImpressao(a) {
 
   for (const e of ordem(a)) {
     const cfg = e.config || {};
+    if(e.typeId==='montagem_pecas'&&cfg.dinamica==='duas_fases') partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · montagem em duas fases</h3><p>No celular: ${num(cfg.pecasPorCelular,3)} peças por aluno, formando um bloco que será reunido aos dos colegas. A versão em papel abaixo usa recortes da imagem; a interação individual por toque ou arraste acontece na versão digital.</p></div>`);
     if (e.typeId === 'investigacao_fragmentos') {
       for (const g of [...a.grupos].sort((x, y) => x.ordemAlocacao - y.ordemAlocacao)) {
         const pecas = a.pecas.filter(p => p.etapaId === e.id && p.destinatarios.includes(g.id));

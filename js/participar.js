@@ -3,6 +3,7 @@ import { cadeadoIcone } from './lock-icons.js';
 import { backend, EM_ENSAIO } from './backend.js';
 import { $, h, limpar, aviso, corDoGrupo, chipGrupo, iconeGrupo, explicar, escalaVisual, pl } from './ui.js';
 import { svgPeca } from './quebra-cabeca.js';
+import { jogoBlocoImagem } from './bloco-imagem.js';
 import { quadroCartoes, arrastando, definirAoSoltar, lugarAoAcaso } from './arrastar.js';
 import { aplicarMovimento } from './core/cartoes.js';
 import { criarTelas } from './participar-tipos.js';
@@ -259,14 +260,16 @@ function renderTarefa() {
 function montagemExpirou() {
   const i = sala?.etapaInfo;
   if (!i || i.typeId !== 'montagem_pecas' || !i.ocultarAoFim || !i.tempoMin || !i.inicio) return false;
-  return Date.now() > i.inicio + i.tempoMin * 60e3;
+  return (i.pausadoEm || Date.now()) > i.inicio + i.tempoMin * 60e3;
 }
 setInterval(() => { if (sala?.etapaInfo?.typeId === 'montagem_pecas') render(); }, 1000);
 
 function tarefaMontagem(info) {
   const pk = pacotes[uid];
-  explicar('mont-' + sala.etapaAtual, info.titulo, ['Seu celular mostra uma peça de quebra-cabeça. As saliências e os recortes indicam quem fica ao lado de quem.', 'Juntem os celulares na ordem certa para entender o todo. Não há botão de envio: prestem atenção, a próxima etapa depende do que vocês virem.']);
   if (pk === undefined) return carregando();
+  explicar('mont-' + sala.etapaAtual, info.titulo, pk?.montagemLocal
+    ? ['Primeiro monte seu bloco no celular: arraste as peças ou toque na peça e depois no espaço.', 'Confira o bloco. Quando estiver montado, reúna seu celular aos dos colegas para descobrir a imagem completa. O professor conduz o tempo; não há envio nem pontuação individual.']
+    : ['Seu celular mostra uma peça de quebra-cabeça. As saliências e os recortes indicam quem fica ao lado de quem.', 'Juntem os celulares na ordem certa para entender o todo. Não há botão de envio: prestem atenção, a próxima etapa depende do que vocês virem.']);
   const caixa = h('div', { class: 'cartao' }, h('h2', {}, info.titulo), info.instrucao && info.instrucao !== info.titulo && h('p', {}, info.instrucao));
   if (montagemExpirou()) { caixa.append(h('p', { class: 'aviso', 'data-tipo': 'alerta' }, 'Tempo esgotado: as peças foram recolhidas. Guarde o que vocês montaram.')); return caixa; }
   if (!pk || pk.etapaId !== sala.etapaAtual) { caixa.append(h('p', { class: 'aviso' }, 'As peças já foram distribuídas. Ajude seu grupo a colocar os celulares na ordem.')); return caixa; }
@@ -277,6 +280,7 @@ function tarefaMontagem(info) {
     return caixa;
   }
   const g = grupoDe(sala), cor = g ? corDoGrupo(sala.publico.grupos, g) : '#ff8a3d';
+  if (pk.montagemLocal) { caixa.append(jogoBlocoImagem(pk,{chave:`${codigo}:${uid}:${sala.etapaAtual}`,armazenamento:GUARDA,cor})); return caixa; }
   caixa.append(h('p', { class: 'sutil montagem-aviso' }, pk.pecas.length > 1 ? `Você tem ${pk.pecas.length} peças: deslize para ver todas.` : 'Esta é a sua peça. Coloquem os celulares lado a lado, na ordem certa.'),
     h('div', { class: 'pecas-carrossel' }, pk.pecas.map(p => h('div', {}, svgPeca(p, { cor })))));
   return caixa;
@@ -291,6 +295,7 @@ const agora = () => Date.now();
 const liberado = t => t.estado !== 'certa' && agora() >= (t.liberaEm || 0);
 
 function chaveDesafio() {
+  if(sala?.etapaInfo?.typeId==='montagem_pecas') return pacotes[uid]?.blocoId || '';
   const i = sala?.etapaInfo;
   if (sala?.fase !== 'etapa' || !i) return null;
   if (i.typeId === 'cadeado_grupo') {

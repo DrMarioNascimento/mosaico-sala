@@ -21,7 +21,7 @@ import { planoFechado } from './core/aplicacao.js';
 import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
 import { ehAdmin, lerEmails, ADMINS } from './mestres.js';
-import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
+import { svgPeca, comprimirImagem, montarPecasEtapa, montarBlocosImagem } from './quebra-cabeca.js';
 import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta, gradeDoCorte } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
 import { cartoesDoTexto, prepararCartoes } from './core/cartoes.js';
@@ -1167,11 +1167,15 @@ function blocoMontagem(e) {
   setTimeout(atualizar, 0);
   return h('div', {},
     h('div', { class: 'cartao' }, h('h3', {}, 'Quebra-cabeça: o que vira peças'),
-      h('p',{},'Escolha Texto ou Imagem. Cada celular recebe uma peça; o grupo aproxima os aparelhos para reconstruir o todo. Para arrastar cartões na tela, escolha Cartões de arrastar.'),
-      h('div',{class:'linha-botoes'},...['texto','imagem'].map(m=>h('button',{class:'btn '+(c.modo===m?'primario':''),'aria-pressed':String(c.modo===m),onclick:()=>mudar(()=>{c.modo=m;if(m==='imagem')c.corte||={tipo:'grade',n:6,colunas:3};})},m==='imagem'?'Quebra-cabeça de imagem':'Montar texto ou conta'))),
+      h('p',{},'Escolha Texto ou Imagem. No modo direto, o grupo aproxima os aparelhos para reconstruir o todo. Em imagens, você também pode pedir que cada aluno monte seu bloco no celular antes de reuni-lo aos colegas.'),
+      h('div',{class:'linha-botoes'},...['texto','imagem'].map(m=>h('button',{class:'btn '+(c.modo===m?'primario':''),'aria-pressed':String(c.modo===m),onclick:()=>mudar(()=>{c.modo=m;if(m==='texto')delete c.dinamica;if(m==='imagem')c.corte||={tipo:'grade',n:6,colunas:3};})},m==='imagem'?'Quebra-cabeça de imagem':'Montar texto ou conta'))),
       h('div', { class: 'campos-2' },
-        seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; if(v==='imagem')c.corte||={tipo:'grade',n:6,colunas:3}; }, { redesenhar: true }),
-        seletor('Quantidade de peças', c.quantidade || 'fixa', [['fixa', 'As que eu definir'], ['celulares', 'Uma por celular presente']], v => { c.quantidade = v; }, { redesenhar: true })),
+        seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; if(v==='texto')delete c.dinamica; if(v==='imagem')c.corte||={tipo:'grade',n:6,colunas:3}; }, { redesenhar: true }),
+        c.dinamica !== 'duas_fases' && seletor('Quantidade de peças', c.quantidade || 'fixa', [['fixa', 'As que eu definir'], ['celulares', 'Uma por celular presente']], v => { c.quantidade = v; }, { redesenhar: true })),
+      c.modo === 'imagem' && seletor('Forma de montagem', c.dinamica || 'direta', [['direta','Reunir as peças dos celulares (modo atual)'],['duas_fases','Montar no celular e reunir com os colegas']],v=>{c.dinamica=v;if(v==='duas_fases'){c.quantidade='celulares';c.pecasPorCelular ??= 3;}},{redesenhar:true}),
+      c.modo === 'imagem' && c.dinamica === 'duas_fases' && h('div',{},
+        seletor('Peças por celular',String(c.pecasPorCelular ?? 3),[['2','2 peças (inicial)'],['3','3 peças (padrão)'],['4','4 peças (maior desafio)']],v=>{c.pecasPorCelular=Number(v);},{redesenhar:true}),
+        h('p',{class:'sutil'},'Cada celular presente recebe um bloco da imagem. Primeiro monta suas peças por arraste ou toque; depois vê o bloco ampliado para reunir com os demais. A imagem completa só é mostrada se você escolher revelá-la ao encerrar. Não há envio nem pontuação individual.')),
       c.modo === 'texto' ? h('div', {},
         c.quantidade !== 'celulares' && seletor('Peças de texto (2 a 20)', String(c.pecasTexto || 0), [['0','Uma peça por trecho marcado (manter cortes)'], ...Array.from({length:19},(_,i)=>[String(i+2),`${i+2} peças`])],v=>{if(Number(v))c.pecasTexto=Number(v);else delete c.pecasTexto;},{redesenhar:true}),
         h('p',{class:'sutil'},'A quantidade escolhida agrupa trechos consecutivos e preserva a ordem. Marque pelo menos esse número de trechos; o sistema não corta palavras ou fórmulas automaticamente.'),
@@ -1202,6 +1206,13 @@ async function desenharPreviaMontagem(e, alvo, nSim) {
   try {
     if (c.modo === 'texto' && unidadesDoTexto(c.texto).length < 2) return limpar(alvo, h('p', { class: 'sutil' }, 'Marque pelo menos um corte para ver as peças.'));
     if (c.modo === 'imagem' && !c.imagem?.dados) return limpar(alvo, h('p', { class: 'sutil' }, 'Envie uma imagem para ver as peças.'));
+    if(c.modo==='imagem' && c.dinamica==='duas_fases') {
+      const blocos=await montarBlocosImagem(c,nSim);if(alvo._marca!==marca)return;
+      const primeiro=blocos[0];
+      return limpar(alvo,h('p',{},`${blocos.length} blocos, um por celular · ${c.pecasPorCelular ?? 3} peças dentro de cada bloco`),
+        h('h4',{},'Fase 1 · Peças de um celular (embaralhadas)'),h('div',{class:'previa-fragmentos'},primeiro.local.fragmentos.map(f=>h('img',{src:f.src,alt:'Fragmento do bloco de exemplo'}))),
+        h('h4',{},'Fase 2 · Blocos reunidos (vista do professor)'),h('div',{class:'pecas-fila'},blocos.map(b=>svgPeca(b.peca))));
+    }
     const pecas = await montarPecasEtapa(c, nSim);
     if (alvo._marca !== marca) return;
     const rep = c.modo === 'texto' ? pecasRepetidas(pecas.map(p => p.texto)) : [];
