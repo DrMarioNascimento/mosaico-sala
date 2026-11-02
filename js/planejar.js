@@ -22,7 +22,7 @@ import { lerArquivoAtividade, baixarPlanilha } from './planilha-xlsx.js';
 import { CASOS, carregarCaso } from './casos.js';
 import { ehAdmin, lerEmails, ADMINS } from './mestres.js';
 import { svgPeca, comprimirImagem, montarPecasEtapa } from './quebra-cabeca.js';
-import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta } from './core/montagem.js';
+import { unidadesDoTexto, sugerirCortes, pecasRepetidas, embaralharSemOrdemCerta, gradeDoCorte } from './core/montagem.js';
 import { LETRAS, fragmentosDoTexto, prepararCadeado } from './core/desafios.js';
 import { cartoesDoTexto, prepararCartoes } from './core/cartoes.js';
 import { criarEditores } from './planejar-tipos.js';
@@ -1173,6 +1173,8 @@ function blocoMontagem(e) {
         seletor('Tipo de conteúdo', c.modo, [['texto', 'Texto ou conta'], ['imagem', 'Imagem']], v => { c.modo = v; if(v==='imagem')c.corte||={tipo:'grade',n:6,colunas:3}; }, { redesenhar: true }),
         seletor('Quantidade de peças', c.quantidade || 'fixa', [['fixa', 'As que eu definir'], ['celulares', 'Uma por celular presente']], v => { c.quantidade = v; }, { redesenhar: true })),
       c.modo === 'texto' ? h('div', {},
+        c.quantidade !== 'celulares' && seletor('Peças de texto (2 a 20)', String(c.pecasTexto || 0), [['0','Uma peça por trecho marcado (manter cortes)'], ...Array.from({length:19},(_,i)=>[String(i+2),`${i+2} peças`])],v=>{if(Number(v))c.pecasTexto=Number(v);else delete c.pecasTexto;},{redesenhar:true}),
+        h('p',{class:'sutil'},'A quantidade escolhida agrupa trechos consecutivos e preserva a ordem. Marque pelo menos esse número de trechos; o sistema não corta palavras ou fórmulas automaticamente.'),
         h('label', { for: 'mtTexto' }, 'Texto (marque os cortes com | ou com − entre espaços; use hífen "-" para subtração dentro de uma peça)'), areaTexto,
         h('div', { class: 'linha-botoes' },
           h('button', { class: 'btn pequeno', onclick: () => aplicarCorte('sinais') }, 'Cortar nos sinais (= + × ÷)'),
@@ -1184,8 +1186,8 @@ function blocoMontagem(e) {
         h('label', { for: 'mtImg' }, c.imagem ? 'Trocar a imagem' : 'Enviar a imagem (ela é reduzida e comprimida automaticamente)'), campoArquivo(arquivo),
         h('div', { class: 'campos-3' },
           seletor('Como cortar', c.corte?.tipo || 'colunas', [['colunas', 'Faixas lado a lado'], ['linhas', 'Faixas empilhadas'], ['grade', 'Grade']], v => { c.corte = { ...(c.corte || {}), tipo: v }; }, { redesenhar: true }),
-          c.quantidade !== 'celulares' ? campo('Número de peças', c.corte?.n ?? 4, v => { c.corte = { ...(c.corte || {}), n: Math.max(2, Math.min(20, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'),
-          c.corte?.tipo === 'grade' ? campo('Colunas da grade', c.corte?.colunas ?? 3, v => { c.corte = { ...(c.corte || {}), colunas: Math.max(2, Math.min(6, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'))),
+          c.quantidade !== 'celulares' ? seletor('Peças da imagem (2 a 20)', String(c.corte?.n ?? 4), Array.from({length:19},(_,i)=>[String(i+2),`${i+2} peças`]), v => { c.corte = { ...(c.corte || {}), n: Number(v) }; }, { redesenhar: true }) : h('div'),
+          c.corte?.tipo === 'grade' ? campo('Colunas preferidas (ajustadas ao total)', c.corte?.colunas ?? 3, v => { c.corte = { ...(c.corte || {}), colunas: Math.max(2, Math.min(6, Math.round(v || 2))) }; atualizar(); }, { tipo: 'number' }) : h('div'))),
       h('div', { class: 'opcoes', style: { marginTop: '10px' } },
         h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: c.ocultarAoFim !== false, onchange: ev => { c.ocultarAoFim = ev.target.checked; tocar(); } }), h('span', {}, 'As peças somem dos celulares quando o tempo acaba')),
         h('label', { class: 'opcao' }, h('input', { type: 'checkbox', checked: !!c.revelarAoEncerrar, onchange: ev => { c.revelarAoEncerrar = ev.target.checked; tocar(); } }), h('span', {}, 'Ao encerrar a etapa, o telão mostra o todo montado')))),
@@ -1206,10 +1208,10 @@ async function desenharPreviaMontagem(e, alvo, nSim) {
     const fila = lista => h('div', { class: 'pecas-fila' }, lista.map(p => svgPeca(p)));
     const grade = c.modo === 'imagem' && c.corte?.tipo !== 'colunas';
     const naOrdem = grade
-      ? h('div', { style: { display: 'grid', gridTemplateColumns: `repeat(${c.corte.tipo === 'linhas' ? 1 : (c.corte.colunas || Math.ceil(Math.sqrt(pecas.length)))}, 120px)`, gap: '6px' } }, pecas.map(p => svgPeca(p)))
+      ? h('div', { style: { display: 'grid', gridTemplateColumns: `repeat(${c.corte.tipo === 'linhas' ? 1 : gradeDoCorte('grade', pecas.length, c.corte.colunas).colunas}, 120px)`, gap: '6px' } }, pecas.map(p => svgPeca(p)))
       : fila(pecas);
     limpar(alvo,
-      h('p', {}, h('strong', {}, `${pecas.length} peças · na ordem certa`)), naOrdem,
+      h('p', {}, h('strong', {}, `${pecas.length} peças · na ordem certa`)), c.modo === 'imagem' && c.corte?.tipo === 'grade' && h('p', {class:'sutil'}, `${gradeDoCorte('grade',pecas.length,c.corte.colunas).linhas} linhas × ${gradeDoCorte('grade',pecas.length,c.corte.colunas).colunas} colunas. A grade se ajusta para manter exatamente o total de peças.`), naOrdem,
       h('p', { style: { marginTop: '14px' } }, h('strong', {}, 'Como a turma recebe (embaralhado, sem números)')), fila(embaralharSemOrdemCerta(pecas)),
       rep.length > 0 && h('p', { class: 'aviso', 'data-tipo': 'alerta' }, `Peças repetidas (${rep.join(', ')}): a ordem entre elas fica ambígua. As saliências ajudam, mas considere juntar ou reescrever.`));
   } catch (err) { limpar(alvo, h('p', { class: 'aviso', 'data-tipo': 'erro' }, 'Não foi possível desenhar a prévia: ' + err.message)); }

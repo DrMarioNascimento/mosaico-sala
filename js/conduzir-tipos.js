@@ -341,7 +341,8 @@ export function criarTipos(ctx) {
     async encerrar(e) { if (tipoDe(e) === 'jogo') { revelarJogo(e); await publicarJogoEconomico(e); } if (tipoDe(e) === 'equipe') { const j = E.jogo[e.id]; if (j.fases[j.q] && j.fases[j.q].r === undefined) { j.fases[j.q].r = Date.now(); ctx.salvar(); } } },
     jogoFinal(e) {
       const t = tipoDe(e), j = E.jogo[e.id]; if (!j) return null;
-      const pares = (e.config.pares || []).map(p => ({ a: p.a, b: p.b }));
+      const idsMemoria = j.prep?.cartas ? new Set(j.prep.cartas.map(c => c.par)) : null;
+      const pares = (e.config.pares || []).filter(p => !idsMemoria || idsMemoria.has(p.id)).map(p => ({ a: p.a, b: p.b }));
       if (t === 'corrida') {
         const est = estadoC(e);
         return limpo({ tipo: 'corrida', etapaId: e.id, final: true, formato: j.cfg.formato, placar: Object.fromEntries(Object.entries(est.grupos).map(([g, G]) => [g, G.total])),
@@ -382,7 +383,7 @@ export function criarTipos(ctx) {
     },
     respostaTexto(e) {
       const c = e.config, r = resp(e);
-      if (e.typeId === 'pares') return (c.pares || []).map(p => `${p.a} ↔ ${p.b}`).join(' · ');
+      if (e.typeId === 'pares') { const cartas = E.jogo[e.id]?.prep?.cartas; const ids = cartas ? new Set(cartas.map(x=>x.par)) : null; return (c.pares || []).filter(p=>!ids || ids.has(p.id)).map(p => `${p.a} ↔ ${p.b}`).join(' · '); }
       if (e.typeId === 'cruzadas') return (c.palavras || []).map(p => p.palavra).join(', ');
       if (e.typeId === 'sequencia') return `Memória: vale o recorde de cada aluno (meta: ${c.meta ?? 6} passos). Banco: ${(c.termos || []).length} termos.`;
       if (e.typeId === 'corrida' && c.formato === 'corrente') return [c.gatilho, ...(c.elos || []).map(x => x.consequencia)].join(' → ');
