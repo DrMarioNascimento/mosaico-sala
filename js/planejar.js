@@ -531,7 +531,7 @@ function telaAjustar() {
       (r.A?.etapas || []).length ? h('button', { class: 'btn pequeno', onclick: () => simularAtividade(r.A) }, 'Simular') : null,
       ...botoesCopiarApagar(() => copiarAtividade(r.A), () => apagarRascunhos([r.rascunhoId], `Apagar o rascunho “${r.A.titulo}” deste navegador?`), r.A.titulo)));
   const linhaNuvem = (item, qual) => h('li', {},
-    h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, qual === 'rascunho' ? (planoFechado(item) ? 'Ajuste ainda não fechado. A sala continua na versão anterior.' : 'Ainda não fechada') : (item.minha ? 'Pronta' : 'De ' + (item.autor || 'outro mestre')))),
+    h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, qual === 'rascunho' ? (planoFechado(item) ? 'Ajuste ainda não fechado. A sala continua na versão anterior.' : 'Revisão e salvamento final pendentes') : (item.minha ? 'Pronta' : 'De ' + (item.autor || 'outro mestre')))),
     item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
     h('div', { class: 'mini' },
       qual === 'pronta' && h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { atividade: item.id }) }, 'Aplicar'),
@@ -547,9 +547,11 @@ function telaAjustar() {
         ...rasc.filter(r => !(r.A?.etapas || []).length).map(linhaRasc)
       ].filter(Boolean), 'Nada em criação.')),
     h('section', { class: 'cartao' }, h('h2', {}, 'Em planejamento'),
+      h('p', { class: 'sutil' }, 'Atividades em ajuste. Para deixá-las prontas: abra Continuar → Revisar conteúdo, confira as etapas, marque a confirmação geral e salve na biblioteca.'),
       lista([...emPlan.map(linhaRasc), ...nuvemAjuste.map(item => linhaNuvem(item, 'rascunho'))], 'Nada em planejamento.')),
     h('section', { class: 'cartao' }, h('h2', {}, 'Prontas'),
-      lista(prontas.map(item => linhaNuvem(item, 'pronta')), 'Nenhuma fechada ainda. Feche a revisão para a sala poder usar.')),
+      h('p', { class: 'sutil' }, 'Versões revisadas e salvas para aplicar. Um ajuste ainda não concluído não substitui a versão que já está pronta.'),
+      lista(prontas.map(item => linhaNuvem(item, 'pronta')), 'Nenhuma pronta ainda. Conclua a revisão e salve na biblioteca.')),
     h('section', { class: 'cartao', id: 'modelosProntos' }, h('h2', {}, 'Modelos'),
       h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
         h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
@@ -571,10 +573,11 @@ function telaAplicar() {
         h('div', { class: 'mini' }, h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { aplicacao: t.id }) }, 'Abrir')))))
         : h('p', { class: 'sutil' }, 'Nenhuma turma ainda. Escolha uma atividade fechada abaixo.')),
     h('section', { class: 'cartao' }, h('h2', {}, 'Prontas'),
+      h('p', { class: 'sutil' }, 'Versões revisadas e salvas para aplicar. Um ajuste ainda não concluído não substitui a versão que já está pronta.'),
       prontas.length ? h('ul', { class: 'lista-bib' }, prontas.map(item => h('li', {},
         h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, item.minha ? '' : 'De ' + (item.autor || 'outro mestre'))),
         h('div', { class: 'mini' }, h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { atividade: item.id }) }, 'Aplicar')))))
-        : h('p', { class: 'sutil' }, 'Feche a revisão de uma atividade para ela aparecer aqui.')),
+        : h('p', { class: 'sutil' }, 'Em Ajustar, abra a atividade, revise o conteúdo, marque a confirmação geral e salve na biblioteca. Ela aparecerá aqui como pronta.')),
     h('section', { class: 'cartao' }, h('h2', {}, 'Modelos'),
       h('ul', { class: 'lista-bib' }, CASOS.map(c => h('li', {},
         h('div', { class: 'tit' }, h('strong', {}, c.titulo), h('small', {}, c.resumo)),
@@ -766,7 +769,7 @@ function painelFinalizarAtividade(erros) {
  const cartao=(n,t,descricao,botao)=>h('article',{class:'finalizar-passo'},h('h3',{},numeroPasso(n),t),h('p',{},descricao),botao);
  return h('section',{class:'cartao finalizar-atividade','aria-label':'Concluir a preparação da atividade'},h('h2',{},'Depois da revisão, conclua nesta ordem'),h('div',{class:'finalizar-grade'},
   cartao(6,'Simule a atividade',liberada?'Veja no PC, com uma turma fictícia, o que você e os alunos verão. Depois volte a esta aba.':'Complete os itens de estrutura acima para simular.',h('button',{class:'btn',onclick:()=>previa()},numeroPasso(6),'Simular')),
-  cartao(7,'Salve sua atividade',temBiblioteca()?'Guarde na biblioteca para recuperar em outro aparelho.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
+  cartao(7,'Salve sua atividade',temBiblioteca()?'Depois de conferir as etapas e marcar a confirmação geral acima, salve na biblioteca para concluir a versão e deixá-la pronta para aplicar.':'Baixe uma cópia; o rascunho automático fica apenas neste navegador.',h('button',{class:'btn',onclick:()=>temBiblioteca()?dialogoSalvar():baixarJSON(P.A)},numeroPasso(7),temBiblioteca()?'Salvar na biblioteca':'Baixar cópia da atividade')),
   cartao(8,'Leve para a turma',!liberada?'Complete os itens de estrutura acima para continuar.':!revisada?'Marque a revisão do conteúdo acima antes de aplicar.':!temBiblioteca()?'Sua conta precisa de autorização para abrir salas on-line.':'A versão fechada pode ser aplicada. Na turma você marca as etapas e os tempos.',h('button',{class:'btn primario',disabled:!liberada||!revisada||!temBiblioteca(),onclick:()=>conduzirAgora()},'Aplicar em uma turma'))));
 }
 
@@ -774,6 +777,7 @@ function dialogoSalvar(aposSalvar = null) {
   let comp = !!P.origem?.compartilhada;
   const d = h('dialog', { class: 'explica' },
     h('h2', {}, numeroPasso(7),'Salvar na biblioteca'),
+    h('p', { class: 'sutil' }, P.A.docente?.revisadoEm && !temErros(validarAtividade(P.A)) ? 'Ao salvar, esta versão revisada ficará pronta para aplicar.' : 'Você está salvando um rascunho. Para deixá-lo pronto, confira o conteúdo em Revisar conteúdo, marque a confirmação geral e salve novamente.'),
     h('p', { class: 'sutil' }, 'A biblioteca é fechada: só contas da lista de mestres entram. Ela guarda a atividade (incluindo o gabarito), nunca dados de participantes.'),
     h('label', { class: 'opcao', style: { marginTop: '8px' } }, h('input', { type: 'checkbox', checked: comp, onchange: e => { comp = e.target.checked; } }), h('span', {}, 'Compartilhar com os outros mestres (eles podem ver e duplicar; só você edita)')),
     h('div', { class: 'linha-botoes' },
@@ -786,7 +790,7 @@ function dialogoSalvar(aposSalvar = null) {
           const id = await b.salvarBiblioteca(P.origem?.bibId || null, { titulo: P.A.titulo || '(sem título)', conteudo: json, compartilhada: comp, autor: P.conta?.email || '', modo });
           P.origem = { bibId: id, compartilhada: comp, temFechado: fecharVersao || !!P.origem?.temFechado }; P.sujo = false; salvarRascunho(); await carregarBiblioteca();
           d.close(); d.remove(); render();
-          avisoGeral(fecharVersao ? 'Versão fechada. A sala passa a usar esta.' : (modo === 'rascunho' ? 'Ajuste guardado. A sala continua na versão fechada anterior.' : 'Salvo. Feche a revisão para poder aplicar.'), 'ok');
+          avisoGeral(fecharVersao ? 'Versão fechada. A sala passa a usar esta.' : (modo === 'rascunho' ? 'Ajuste guardado. A sala continua na versão fechada anterior.' : 'Rascunho salvo. Confira as etapas em Revisar conteúdo, marque a confirmação geral e salve novamente para deixar a atividade pronta.'), 'ok');
           if(typeof aposSalvar === 'function') aposSalvar();
         } catch (e) { avisoGeral(/permission/i.test(e?.code || e?.message || '') ? 'O servidor recusou: confira se as regras do Firestore foram publicadas.' : 'Não foi possível salvar: ' + e.message, 'erro'); d.close(); d.remove(); }
       } }, numeroPasso(7),'Salvar'),

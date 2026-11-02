@@ -711,3 +711,12 @@ dialog.ampliar-imagem::backdrop { background: #000c; }
 .salas-abertas { border: 2px solid var(--alerta, #f5b14c); }
 .salas-abertas h2 { display: flex; align-items: center; gap: 8px; }
 .sim-modo .etiqueta { font: 700 .72rem var(--fonte); letter-spacing: .06em; text-transform: uppercase; background: var(--acento); color: #1a0d00; border-radius: 999px; padding: 2px 10px; }
+
+/* As quatro abas precisam caber também no celular da demonstração. */
+@media (max-width: 480px) {
+  .abas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; gap: 4px; }
+  .abas button { min-width: 0; min-height: 52px; padding: 6px 2px; flex-direction: column; white-space: normal; overflow-wrap: anywhere; font-size: .78rem; line-height: 1.15; }
+  .abas button img.ico.em-3d { width: 1.5em; height: 1.5em; margin: 0; }
+  .topo .barra > * { min-width: 0; overflow-wrap: anywhere; }
+}
+nav.fluxo[data-fluxo-docente] > [hidden] { display: none !important; }

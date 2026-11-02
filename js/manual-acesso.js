@@ -3,6 +3,7 @@
    do servidor só deixam ler quem está na lista de mestres. Esta página é só a moldura: pede o login,
    busca o texto e mostra. Para publicar uma versão nova: Planejamento → Administração → Publicar manual. */
 import { backend } from './backend.js';
+import { atualizarFluxoManual } from './manual-fluxo.js';
 
 const $ = id => document.getElementById(id);
 const aviso = (t, botao = true) => {
@@ -25,6 +26,7 @@ async function abrir() {
   if (!m?.html) return aviso('O manual ainda não foi publicado. Administradores: Planejamento → Administração → Publicar manual.', false);
   const molde = document.createElement('template'); molde.innerHTML = m.html;
   molde.content.querySelectorAll('script, iframe, object, embed').forEach(x => x.remove());   // só texto e imagens
+  atualizarFluxoManual(molde.content);
   $('conteudoManual').replaceChildren(molde.content);
   document.body.classList.remove('manual-fechado'); $('acessoManual').hidden = true;
   if (location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
