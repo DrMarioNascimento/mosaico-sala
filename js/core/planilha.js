@@ -35,11 +35,11 @@ import { LETRAS, fragmentosDoTexto } from './desafios.js';
 export const ABAS = {
   Atividade: ['campo', 'valor'],
   Grupos: ['ordem', 'id', 'nome', 'funcao'],
-  Etapas: ['ordem', 'id', 'titulo', 'tipo', 'organizacao', 'envio', 'competicao', 'tempo_min', 'instrucao', 'pergunta', 'enunciado', 'justificativa', 'min_evidencias', 'aceita_parcial', 'recebe_de', 'explicacao', 'montagem_modo', 'montagem_texto', 'montagem_corte', 'montagem_pecas', 'montagem_colunas', 'montagem_quantidade', 'montagem_ocultar', 'montagem_revelar',
+  Etapas: ['ordem', 'id', 'titulo', 'tipo', 'organizacao', 'envio', 'competicao', 'tempo_min', 'instrucao', 'pergunta', 'enunciado', 'justificativa', 'min_evidencias', 'aceita_parcial', 'recebe_de', 'explicacao', 'montagem_modo', 'montagem_texto', 'montagem_corte', 'montagem_pecas', 'montagem_colunas', 'montagem_quantidade', 'montagem_pecas_texto', 'montagem_ocultar', 'montagem_revelar',
     'cadeado_regra', 'cadeado_distribuicao', 'cadeado_min_acertos', 'cadeado_fragmentos', 'cadeado_codigo', 'cadeado_espera', 'cadeado_mensagem',
     'quiz_ao_errar', 'quiz_segundos', 'quiz_pergunta_no_telao', 'quiz_mostrar_resposta',
     'cartoes_formato', 'cartoes_polo_esquerda', 'cartoes_polo_direita', 'cartoes_margem', 'cartoes_distribuicao', 'cartoes_tentativas', 'cartoes_espera', 'cartoes_conferencia', 'cartoes_revelar', 'cartoes_modo',
-    'pares_formato', 'pares_distribuicao', 'pares_tentativas', 'pares_espera', 'pares_segundos', 'pares_revelar',
+    'pares_formato', 'pares_quantidade', 'pares_distribuicao', 'pares_tentativas', 'pares_espera', 'pares_segundos', 'pares_revelar',
     'corrida_formato', 'corrida_gatilho', 'corrida_ao_quebrar', 'corrida_segundos', 'corrida_embaralhar', 'corrida_power_ups', 'corrida_sequencia',
     'cruzadas_dicas', 'cruzadas_grade',
     'sequencia_botoes', 'sequencia_velocidade', 'sequencia_partidas', 'sequencia_placar', 'sequencia_meta',
@@ -103,7 +103,7 @@ export function atividadeParaAbas(a) {
       recebe_de: conexao ? conexao.de.etapaId : '', explicacao: r[e.id]?.explicacao || '',
       ...(e.typeId === 'montagem_pecas' ? {
         montagem_modo: c.modo || '', montagem_texto: c.texto || '', montagem_corte: c.corte?.tipo || '', montagem_pecas: c.corte?.n ?? '',
-        montagem_colunas: c.corte?.colunas ?? '', montagem_quantidade: c.quantidade || 'fixa',
+        montagem_colunas: c.corte?.colunas ?? '', montagem_quantidade: c.quantidade || 'fixa', montagem_pecas_texto: c.pecasTexto ?? '',
         montagem_ocultar: c.ocultarAoFim === false ? 'não' : 'sim', montagem_revelar: c.revelarAoEncerrar ? 'sim' : 'não'
       } : {}),
       ...(e.typeId === 'cadeado_grupo' ? {
@@ -117,7 +117,7 @@ export function atividadeParaAbas(a) {
         cartoes_revelar: c.revelarAoEncerrar === false ? 'não' : 'sim', cartoes_modo: c.modo || ''
       } : {}),
       ...(e.typeId === 'pares' ? {
-        enunciado: c.enunciado || '', pares_formato: c.formato || '', pares_distribuicao: c.distribuicao || 'todos', pares_tentativas: c.tentativas || 'repetir',
+        enunciado: c.enunciado || '', pares_formato: c.formato || '', pares_quantidade: c.quantidadePares ?? '', pares_distribuicao: c.distribuicao || 'todos', pares_tentativas: c.tentativas || 'repetir',
         pares_espera: c.espera ?? 15, pares_segundos: c.segundos ?? 30, pares_revelar: c.revelarAoEncerrar === false ? 'não' : 'sim'
       } : {}),
       ...(e.typeId === 'corrida' ? {
@@ -262,6 +262,7 @@ export function abasParaAtividade(abas) {
         config.corte = { tipo: txt(l.montagem_corte) || 'colunas', n: num(l.montagem_pecas) ?? 4, ...(num(l.montagem_colunas) ? { colunas: num(l.montagem_colunas) } : {}) };
       }
       config.quantidade = txt(l.montagem_quantidade) || 'fixa';
+      if (num(l.montagem_pecas_texto) != null) config.pecasTexto = num(l.montagem_pecas_texto);
       config.ocultarAoFim = !/^(nao|não|n|false|0)$/i.test(txt(l.montagem_ocultar) || 'sim');
       config.revelarAoEncerrar = sim(l.montagem_revelar);
     } else if (typeId === 'cadeado_grupo' || typeId === 'quiz_grupos') {
@@ -317,6 +318,7 @@ export function abasParaAtividade(abas) {
       respostas[id] = resp;
     } else if (typeId === 'pares') {
       config.formato = txt(l.pares_formato) || 'ligar';
+      if (num(l.pares_quantidade) != null) config.quantidadePares = num(l.pares_quantidade);
       if (txt(l.enunciado)) config.enunciado = txt(l.enunciado);
       config.pares = (tab.pares || []).filter(x => txt(x.etapa) === id).map((x, k) => ({ id: txt(x.id) || 'p' + (k + 1), a: txt(x.lado_a), b: txt(x.lado_b) }));
       if (config.formato === 'ligar') { config.distribuicao = txt(l.pares_distribuicao) || 'todos'; config.tentativas = txt(l.pares_tentativas) || 'repetir'; config.espera = num(l.pares_espera) ?? 15; }

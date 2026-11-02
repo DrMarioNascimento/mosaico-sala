@@ -266,7 +266,7 @@ export function criarTelas(ctx) {
   // O jogo roda inteiro neste celular (luz, som, tempo); o elemento fica vivo entre os redesenhos da tela,
   // para a sequência não ser interrompida quando chega um pacote novo. Ao fim de cada partida, manda só o resultado.
   let audio = null, mudo = false, jogoSeq = null;
-  const CORES_SEQ = ['#2dd4bf', '#fbbf24', '#fb7185', '#38bdf8', '#a3e635', '#a78bfa'];
+  const CORES_SEQ = ['#2dd4bf', '#fbbf24', '#fb7185', '#38bdf8', '#a3e635', '#a78bfa', '#fb923c', '#e879f9'];
   function somPronto() {
     try {
       if (navigator.audioSession) navigator.audioSession.type = 'playback';   // iPhone: toca mesmo com a chave do silencioso

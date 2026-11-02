@@ -105,6 +105,7 @@ export const TIPOS = {
       texto: 'no modo texto: o texto completo, com os cortes marcados por | ou por − entre espaços',
       imagem: 'no modo imagem: {dados: data URL (webp/png/jpeg, leve), largura, altura}',
       corte: "no modo imagem: {tipo: 'colunas'|'linhas'|'grade', n: quantidade de peças, colunas?: para grade}",
+      pecasTexto: 'texto em quantidade fixa: inteiro de 2 a 20, até o número de trechos marcados; agrupa trechos consecutivos sem alterar o texto',
       quantidade: "'fixa' (as peças definidas) | 'celulares' (uma por celular presente)",
       ocultarAoFim: 'booleano (padrão true): as peças somem quando o tempo acaba',
       revelarAoEncerrar: 'booleano (padrão false): ao encerrar a etapa, o telão mostra o todo montado'
@@ -121,6 +122,7 @@ export const TIPOS = {
       if (!['texto', 'imagem'].includes(c.modo)) d.push(erro('config.modo', "Escolha o modo: 'texto' ou 'imagem'."));
       if (c.modo === 'texto') {
         const n = String(c.texto || '').split(/\r?\n/).flatMap(l => l.split(/\s*\|\s*|\s+[−–]\s+/)).map(s => s.trim()).filter(Boolean).length;
+        if (c.quantidade !== 'celulares' && c.pecasTexto != null && (!Number.isInteger(c.pecasTexto) || c.pecasTexto < 2 || c.pecasTexto > 20 || c.pecasTexto > n)) d.push(erro('config.pecasTexto', `Escolha de 2 a 20 peças de texto, sem exceder os ${n} trechos marcados. Marque mais cortes ou reduza a quantidade.`));
         if (n < 2) d.push(erro('config.texto', 'Marque ao menos um corte no texto (use | ou − entre espaços).'));
         if (n > 30) d.push(aviso('config.texto', `São ${n} peças; acima de 20 fica difícil de montar.`));
       }
@@ -309,6 +311,7 @@ export const TIPOS = {
     configuracao: {
       formato: "'ligar' | 'memoria'",
       enunciado: 'texto opcional: o comando para o grupo',
+      quantidadePares: 'memória: inteiro de 2 a 12; sorteia essa quantidade do banco por sessão; omitido = todos',
       pares: 'lista (2 a 12) de {id, a, b}: os dois lados de cada par (texto)',
       distribuicao: "ligar: 'todos' | 'fracionado' (cada celular segura alguns cartões)",
       tentativas: "ligar: 'uma' | 'repetir' (padrão)", espera: 'ligar: segundos de espera depois de errar (padrão 15)',
@@ -329,6 +332,7 @@ export const TIPOS = {
         const lados = ps.flatMap(x => [String(x.a || '').trim().toLowerCase(), String(x.b || '').trim().toLowerCase()]).filter(Boolean);
         if (new Set(lados).size !== lados.length) d.push(aviso('config.pares', 'Há textos repetidos entre os pares: a correspondência pode ficar ambígua.'));
       }
+      if (c.formato === 'memoria' && c.quantidadePares != null && (!Number.isInteger(c.quantidadePares) || c.quantidadePares < 2 || c.quantidadePares > 12 || c.quantidadePares > (ps?.length || 0))) d.push(erro('config.quantidadePares', 'Escolha de 2 a 12 pares e preencha pelo menos essa quantidade no banco.'));
       if (c.formato === 'ligar' && !['todos', 'fracionado'].includes(c.distribuicao || 'todos')) d.push(erro('config.distribuicao', "Distribuição: 'todos' ou 'fracionado'."));
       if (c.formato === 'memoria' && etapa.participacao?.organizacao === 'representantes') { const sg = c.segundos ?? 30; if (!(sg >= 10 && sg <= 300)) d.push(erro('config.segundos', 'Tempo de cada vez entre 10 e 300 segundos.')); }
       return d;
@@ -428,8 +432,8 @@ export const TIPOS = {
     nome: 'Sequência (Genius)',
     descricao: 'A mecânica do Genius: o painel acende um termo com luz e som; o aluno repete; a cada acerto a sequência cresce mais um. Os botões são termos sorteados de um banco grande (ex.: Renina, Néfron, Miosina): cada partida monta um painel diferente. Cada aluno joga no próprio celular; vale o recorde, que soma para o grupo.',
     configuracao: {
-      termos: 'banco (de 4 a 300) de {id, termo, definicao?}; a definição aparece ao fim de cada partida',
-      botoes: '4 (padrão, como o original) | 6',
+      termos: 'banco (de 2 a 300) de {id, termo, definicao?}; a definição aparece ao fim de cada partida',
+      botoes: 'inteiro de 2 a 8; padrão 4 (clássico)',
       velocidade: "'classica' (tempos do Genius original, 3 s por toque) | 'calma'",
       partidas: 'máximo de partidas por aluno (0 = sem limite enquanto a etapa estiver aberta)',
       placar: "'soma' (padrão) | 'media' dos recordes do grupo",
@@ -440,8 +444,8 @@ export const TIPOS = {
     completionPolicy: 'tempo', assessmentPolicy: 'gabarito_docente', contingencyPolicy: ['aguardar'], usaPecas: false,
     validar(etapa) {
       const d = [], c = etapa.config || {}, ts = c.termos, n = Number(c.botoes ?? 4);
-      if (![4, 6].includes(n)) d.push(erro('config.botoes', 'O painel tem 4 ou 6 botões.'));
-      if (!Array.isArray(ts) || ts.length < Math.max(4, n) || ts.length > 300) d.push(erro('config.termos', `O banco precisa de ${Math.max(4, n)} a 300 termos.`));
+      if (!Number.isInteger(n) || n < 2 || n > 8) d.push(erro('config.botoes', 'Escolha de 2 a 8 botões no painel.'));
+      if (!Array.isArray(ts) || ts.length < Math.max(2, n) || ts.length > 300) d.push(erro('config.termos', `O banco precisa de ${Math.max(2, n)} a 300 termos.`));
       else {
         if (new Set(ts.map(x => x.id)).size !== ts.length || ts.some(x => !ID_CURTO.test(String(x.id)))) d.push(erro('config.termos', 'IDs de termo ausentes ou repetidos.'));
         ts.forEach((x, i) => { if (!texto(x.termo, 40)) d.push(erro(`config.termos[${i}]`, `Termo ${i + 1}: de 1 a 40 caracteres.`)); if (x.definicao && String(x.definicao).length > 200) d.push(erro(`config.termos[${i}]`, `Termo ${i + 1}: definição com até 200 caracteres.`)); });

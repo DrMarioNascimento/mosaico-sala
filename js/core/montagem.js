@@ -42,7 +42,14 @@ export function dividirEmN(unidades, n) {
 export function gradeDoCorte(tipo, n, colunasGrade) {
   n = Math.max(2, Math.round(n || 2));
   if (tipo === 'linhas') return { linhas: n, colunas: 1 };
-  if (tipo === 'grade') { const c = Math.max(2, Math.round(colunasGrade || Math.ceil(Math.sqrt(n)))); return { linhas: Math.max(1, Math.ceil(n / c)), colunas: c }; }
+  if (tipo === 'grade') {
+    // A preferência de colunas não pode acrescentar peças à quantidade pedida.
+    const alvo = Math.max(1, Math.min(6, Math.round(colunasGrade || Math.sqrt(n))));
+    const divisores = Array.from({length:Math.min(6,n)},(_,i)=>i+1).filter(c=>n%c===0);
+    divisores.sort((a,b)=>Math.abs(a-alvo)-Math.abs(b-alvo)||Math.abs(a-Math.sqrt(n))-Math.abs(b-Math.sqrt(n)));
+    const c = divisores[0];
+    return { linhas: n / c, colunas: c };
+  }
   return { linhas: 1, colunas: n };
 }
 
@@ -99,13 +106,17 @@ export function distribuirPecas(nPecas, uids, aleatorio = Math.random) {
 export function quantidadePecas(config, nCelulares) {
   const base = config.modo === 'imagem' ? (config.corte?.n || 4) : unidadesDoTexto(config.texto).length;
   if (config.quantidade === 'celulares') return Math.max(2, config.modo === 'imagem' ? nCelulares : Math.min(nCelulares, base));
-  return base;
+  return config.modo === 'texto' ? pecasDeTexto(config, nCelulares).length : base;
 }
 
 /** Peças de texto finais (já agrupadas, se for "uma por celular"). */
 export function pecasDeTexto(config, nCelulares) {
   const u = unidadesDoTexto(config.texto);
-  return config.quantidade === 'celulares' ? dividirEmN(u, Math.max(2, nCelulares)) : u;
+  if (config.quantidade === 'celulares') return dividirEmN(u, Math.max(2, nCelulares));
+  if (config.pecasTexto == null) return u;
+  const n = config.pecasTexto;
+  if (!Number.isInteger(n) || n < 2 || n > 20 || n > u.length) throw new RangeError(`Escolha de 2 a 20 peças, até os ${u.length} trechos marcados.`);
+  return dividirEmN(u, n);
 }
 
 /** Aviso: peças iguais (a ordem entre elas fica ambígua). */

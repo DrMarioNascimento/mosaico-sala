@@ -8,6 +8,7 @@ import { pecasDeTexto, bordas, embaralharSemOrdemCerta, gradeDoCorte } from './c
 import { respostaEsperadaTexto } from './core/cartoes.js';
 import { montarGrade } from './core/cruzadas.js';
 import { respostaCerta } from './core/desafios.js';
+import { prepararMemoria } from './core/pares.js';
 
 const icone = (a, gid, tam = 44) => `<img src="${new URL(urlIcone(formaDoGrupo(a, gid).forma), location.href).href}" alt="" width="${tam}" height="${tam}" style="vertical-align:middle;margin-right:8px">`;
 /* Imagem só entra no HTML impresso se for, do começo ao fim, uma data URI de imagem em base64 válida. */
@@ -89,7 +90,8 @@ export function gerarImpressao(a) {
       const resp = respostaEsperadaTexto(cfg, rp);
       partesDocente.push(`<div class="questao"><h3>${esc(e.titulo)} · cartões (${{ ordenar: 'ordenar', classificar: 'classificar', termometro: 'termômetro' }[cfg.formato] || ''})</h3><p>${resp ? '<strong>' + esc(resp) + '</strong>' : 'Só debate (sem posição esperada).'}</p>${rp.explicacao ? `<p>${esc(rp.explicacao)}</p>` : ''}</div>`);
     } else if (e.typeId === 'pares') {
-      const ps = cfg.pares || [];
+      const selecionados = cfg.formato === 'memoria' ? new Set(prepararMemoria(cfg, []).cartas.map(c => c.par)) : null;
+      const ps = (cfg.pares || []).filter(p => !selecionados || selecionados.has(p.id));
       const cartas = cfg.formato === 'memoria' ? embaralharSemOrdemCerta(ps.flatMap(p => [p.a, p.b])) : null;
       partes.push(`<section class="folha"><p class="cab">${esc(e.titulo)} · ${cfg.formato === 'memoria' ? 'cartas para recortar (viradas para baixo)' : 'cartões para recortar e ligar'}</p><h2>${esc(e.titulo)}</h2>
         <p>${esc(e.instrucao || cfg.enunciado || '')}</p>

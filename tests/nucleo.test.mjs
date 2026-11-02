@@ -812,8 +812,8 @@ test('Sequência: validação e planilha ida e volta', () => {
   a.etapas.push(et({ termos: lerTermos('Renina\nNéfron\nMiosina'), botoes: 4, velocidade: 'classica', partidas: 0, placar: 'soma', meta: 6 }));
   assert.ok(erros(validarAtividade(a)).some(x => /4 a 300 termos/.test(x.mensagem)));
   a.etapas.at(-1).config.termos = lerTermos(BANCO_FISIOLOGIA).slice(0, 10);
-  a.etapas.at(-1).config.botoes = 5;
-  assert.ok(erros(validarAtividade(a)).some(x => /4 ou 6 botões/.test(x.mensagem)));
+  a.etapas.at(-1).config.botoes = 9;
+  assert.ok(erros(validarAtividade(a)).some(x => /2 a 8 botões/.test(x.mensagem)));
   a.etapas.at(-1).config.botoes = 6; a.etapas.at(-1).config.velocidade = 'calma'; a.etapas.at(-1).config.partidas = 3; a.etapas.at(-1).config.placar = 'media';
   a.docente.respostas.sq = {};
   assert.deepEqual(erros(validarAtividade(a)), []);

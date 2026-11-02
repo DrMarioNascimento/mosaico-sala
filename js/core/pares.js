@@ -25,7 +25,10 @@ export function ligarComoCartoes(config, rng = Math.random) {
 
 /** Prepara os tabuleiros da memória: 2 cartas por par, em posições sorteadas (iguais para todos os tabuleiros). */
 export function prepararMemoria(config, conjuntos, rng = Math.random) {
-  const cartas = embaralhar((config.pares || []).flatMap(p => [{ par: p.id, lado: 'a' }, { par: p.id, lado: 'b' }]), rng);
+  const banco = config.pares || [], n = config.quantidadePares ?? banco.length;
+  if (!Number.isInteger(n) || n < 2 || n > 12 || n > banco.length) throw new RangeError('A quantidade de pares precisa estar entre 2 e 12 e caber no banco.');
+  const escolhidos = n === banco.length ? banco : embaralhar(banco, rng).slice(0, n);
+  const cartas = embaralhar(escolhidos.flatMap(p => [{ par: p.id, lado: 'a' }, { par: p.id, lado: 'b' }]), rng);
   const quadros = {}, conjDoUid = {}, conjDoGrupo = {};
   for (const c of conjuntos) {
     if (!c.uids?.length) continue;
@@ -42,7 +45,7 @@ export function prepararMemoria(config, conjuntos, rng = Math.random) {
  */
 export function estadoMemoria(config, prep, envios) {
   const ord = [...envios].sort((x, y) => (x.t - y.t) || String(x.id).localeCompare(String(y.id)));
-  const total = (config.pares || []).length, E = {};
+  const total = new Set(prep.cartas.map(c => c.par)).size, E = {};
   for (const c of Object.keys(prep.quadros || {})) E[c] = { achados: {}, tentativas: 0, ultima: null, concluido: false, concluidoEm: null, total };
   for (const e of ord) {
     const c = prep.conjDoUid?.[e.autor], S = E[c];
@@ -76,7 +79,7 @@ function ordenarConclusao(E) {
  */
 export function estadoMemoriaTelao(config, prep, envios, inicio = 0) {
   const ord = [...envios].sort((x, y) => (x.t - y.t) || String(x.id).localeCompare(String(y.id)));
-  const total = (config.pares || []).length, fila = prep.ordemGrupos || [];
+  const total = new Set(prep.cartas.map(c => c.par)).size, fila = prep.ordemGrupos || [];
   const S = { achados: {}, tentativas: 0, ultima: null, concluido: false, concluidoEm: null, total, vez: fila[0] ?? null, vezDesde: inicio, placar: Object.fromEntries(fila.map(g => [g, 0])), jogadas: 0 };
   const proximo = () => { if (!fila.length) return; S.vez = fila[(fila.indexOf(S.vez) + 1) % fila.length]; };
   for (const e of ord) {

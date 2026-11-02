@@ -22,6 +22,7 @@ function respostaLegivel(e,r) {
   if(r?.colunaDe) partes.push(h('ul',{},(c.colunas||[]).map(col=>h('li',{},h('strong',{},col.titulo+': '),Object.keys(r.colunaDe).filter(k=>r.colunaDe[k]===col.id).map(txt).join(', ')||'nenhum cartão'))));
   if(r?.posicao) partes.push(Object.keys(r.posicao).length?h('ul',{},Object.entries(r.posicao).map(([id,n])=>h('li',{},`${txt(id)}: ${n} de 100`))):h('p',{},'Etapa só de debate: não há posição certa nem nota.'));
   if(r?.posicoes) partes.push(h('ul',{},(c.marcadores||[]).map(m=>h('li',{},`${m.rotulo}: marcado na imagem (${Math.round(r.posicoes[m.id]?.x??0)}% da largura, ${Math.round(r.posicoes[m.id]?.y??0)}% da altura)`))));
+  if(e.typeId==='pares'&&c.formato==='memoria') partes.push(h('p',{},`${c.quantidadePares || c.pares?.length || 0} pares por tabuleiro (${2*(c.quantidadePares || c.pares?.length || 0)} cartas). O banco completo é preservado.`));
   if(c.pares?.length) partes.push(h('ul',{},c.pares.map(p=>h('li',{},`${p.a} ↔ ${p.b}`))));
   if(c.palavras?.length) partes.push(h('ul',{},c.palavras.map(p=>h('li',{},h('strong',{},p.palavra),' — '+p.dica))));
   if(c.elos?.length) partes.push(h('ol',{},[c.gatilho,...c.elos.map(x=>x.consequencia)].filter(Boolean).map(t=>h('li',{},t))),h('small',{class:'sutil'},'Os distratores de cada elo ficam no editor.'));

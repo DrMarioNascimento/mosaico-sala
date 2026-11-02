@@ -442,7 +442,7 @@ body.telao:fullscreen .btn-tela-cheia, :fullscreen .btn-tela-cheia { opacity: .3
 .seq-btn.aceso::after { background: #fff; box-shadow: 0 0 8px #fff; }
 .seq-btn.errado { border-color: var(--erro); box-shadow: 0 0 0 3px var(--erro), 0 0 30px rgba(255, 107, 107, .6); }
 .seq-btn:focus-visible { outline: 3px solid var(--acento-2); outline-offset: 3px; }
-.seq-painel[data-n="6"] .seq-btn { min-height: clamp(78px, 21vw, 130px); font-size: clamp(.92rem, 3.8vw, 1.25rem); }
+.seq-painel[data-n="5"] .seq-btn, .seq-painel[data-n="6"] .seq-btn, .seq-painel[data-n="7"] .seq-btn, .seq-painel[data-n="8"] .seq-btn { min-height: clamp(78px, 21vw, 130px); font-size: clamp(.92rem, 3.8vw, 1.25rem); }
 .seq-jogo:not(.sua-vez) .seq-btn { cursor: default; }
 .seq-acoes { display: grid; gap: 6px; margin-top: 12px; text-align: center; }
 .seq-fim:empty { display: none; }

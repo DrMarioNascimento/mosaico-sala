@@ -20,10 +20,10 @@ export function duracaoTom(tamanho, velocidade = 'classica') {
 }
 
 /** Frequências (Hz) dos botões. 4 botões: as notas do Genius original (sol#3, si3, ré#4, sol#4 — um acorde
- *  que soa bem em qualquer ordem). 6 botões: escala pentatônica de dó (também sem notas que brigam). */
+ *  que soa bem em qualquer ordem). 5 a 8 botões: notas da escala de dó (também sem notas que brigam). */
 export function frequencias(n) {
   if (n <= 4) return [415.3, 310.0, 252.0, 209.0].slice(0, n);
-  return [261.63, 293.66, 329.63, 392.0, 440.0, 523.25].slice(0, n);
+  return [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25].slice(0, n);
 }
 export const TOM_ERRO = 42;   // o "zumbido" grave do Genius quando se erra
 
