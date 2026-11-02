@@ -14,7 +14,7 @@ import { etapasOrdenadas, projecaoGrupo, prontidaoEtapa, calcularMeta, escalaDes
 import { obterTipo } from './core/tipos.js';
 import { gerarPrompt } from './core/prompt.js';
 import { lerArquivoAtividade } from './planilha-xlsx.js';
-import { montarPecasEtapa } from './quebra-cabeca.js';
+import { montarPecasEtapa, montarBlocosImagem } from './quebra-cabeca.js';
 import { distribuirPecas } from './core/montagem.js';
 import { prepararCadeado, estadoCadeado, sortearGrupo, respostaCerta } from './core/desafios.js';
 import { abrirImpressao } from './imprimir.js';
@@ -826,6 +826,17 @@ async function prepararMontagem(e) {
     : A().grupos.map(g => ({ nome: g.id, uids: s.composicao?.[g.id] || [] })).filter(x => x.uids.length);
   const comPeca = new Set();
   for (const conj of conjuntos) {
+    if (c.modo === 'imagem' && c.dinamica === 'duas_fases') {
+      const blocos = await montarBlocosImagem(c,conj.uids.length);
+      const mapa = distribuirPecas(blocos.length,conj.uids);
+      for (const [uid,indices] of mapa) {
+        const bloco=blocos[indices[0]];
+        if (!bloco) continue;
+        comPeca.add(uid);
+        await b.gravarPacote(E.codigo,uid,{etapaId:e.id,titulo:e.titulo,instrucao:e.instrucao||'',tipo:'montagem',conjunto:conj.nome,total:blocos.length,pecas:[bloco.peca],montagemLocal:bloco.local,blocoId:crypto.randomUUID()});
+      }
+      continue;
+    }
     const pecas = await montarPecasEtapa(c, conj.uids.length);
     const mapa = distribuirPecas(pecas.length, conj.uids);
     for (const [uid, idx] of mapa) {

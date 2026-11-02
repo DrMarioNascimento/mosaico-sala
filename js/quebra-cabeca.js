@@ -1,7 +1,8 @@
 /* Mosaico Sala · Peças de quebra-cabeça (navegador)
    Desenha cada peça em SVG com saliências/recortes que indicam o encaixe, e
    prepara as peças de uma etapa de montagem (texto ou recorte de imagem). */
-import { pecasDeTexto, gradeDoCorte, retangulos, bordas as sortearBordas, quantidadePecas } from './core/montagem.js';
+import { pecasDeTexto, gradeDoCorte, retangulos, bordas as sortearBordas, quantidadePecas, embaralharSemOrdemCerta } from './core/montagem.js';
+import { gradeLocal, gradeDosBlocos } from './core/bloco-imagem.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
@@ -94,6 +95,10 @@ export async function montarPecasEtapa(config, nCelulares, aleatorio = Math.rand
   }
   const n = quantidadePecas(config, nCelulares);
   const grade = gradeDoCorte(config.corte?.tipo || 'colunas', n, config.corte?.colunas);
+  return recortarPecasImagem(config, grade, aleatorio);
+}
+
+async function recortarPecasImagem(config, grade, aleatorio) {
   const rects = retangulos(grade), bs = sortearBordas(grade, aleatorio);
   const img = await carregar(config.imagem.dados);
   const IW = img.naturalWidth, IH = img.naturalHeight;
@@ -110,5 +115,26 @@ export async function montarPecasEtapa(config, nCelulares, aleatorio = Math.rand
     c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
     let src = c.toDataURL('image/webp', 0.8); if (!src.startsWith('data:image/webp')) src = c.toDataURL('image/jpeg', 0.8);
     return { bordas: b, aspecto: ph / pw, imagem: { src, ext } };
+  });
+}
+
+/** Um bloco por celular; cada pacote contém somente a região daquele aparelho. */
+export async function montarBlocosImagem(config, nCelulares, aleatorio = Math.random) {
+  const n = Math.max(1, Math.round(nCelulares || 1));
+  const grade = gradeDosBlocos(n,config.corte?.colunas);
+  const pecas = await recortarPecasImagem(config,grade,aleatorio);
+  const img = await carregar(config.imagem.dados), rects = retangulos(grade);
+  return pecas.map((peca,i)=>{
+    const bloco = rects[i], local = gradeLocal(config.pecasPorCelular ?? 3, peca.aspecto);
+    const fragmentos = retangulos(local).map((r,k)=>{
+      const sx=(bloco.x+r.x*bloco.w)*img.naturalWidth, sy=(bloco.y+r.y*bloco.h)*img.naturalHeight;
+      const sw=r.w*bloco.w*img.naturalWidth, sh=r.h*bloco.h*img.naturalHeight;
+      const escala=Math.min(1,640/Math.max(sw,sh));
+      const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(sw*escala));canvas.height=Math.max(1,Math.round(sh*escala));
+      canvas.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
+      let src=canvas.toDataURL('image/webp',.8);if(!src.startsWith('data:image/webp'))src=canvas.toDataURL('image/jpeg',.8);
+      return {id:'f'+k,src};
+    });
+    return {peca,local:{...local,aspecto:peca.aspecto,ordem:fragmentos.map(f=>f.id),fragmentos:embaralharSemOrdemCerta(fragmentos,aleatorio)}};
   });
 }

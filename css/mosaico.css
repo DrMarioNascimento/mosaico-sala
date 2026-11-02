@@ -733,3 +733,23 @@ nav.fluxo[data-fluxo-docente] > [hidden] { display: none !important; }
 .telao .resultado-etapa h2 { font-size: 1.1em; color: var(--acento-2); margin: 0 0 .4em; }
 .telao .resultado-resposta { font-size: 1.15em; font-weight: 700; margin: .4em 0; }
 .telao .resultado-etapa summary { cursor: pointer; padding: .5em 0; font-size: .85em; }
+
+/* Quebra-cabeça em duas fases: montar um bloco e reunir os aparelhos. */
+.bloco-local { min-width: 0; }
+.bloco-quadro { display:grid; width:100%; min-height:140px; max-height:46vh; gap:3px; background:var(--linha); padding:4px; border-radius:14px; }
+.bloco-slot { position:relative; min-width:0; min-height:48px; padding:0; border:2px dashed var(--linha); background:var(--fundo-2); color:var(--texto-2); overflow:visible; }
+.bloco-slot img { display:block; width:100%;height:100%;object-fit:fill; pointer-events:none; }
+.bloco-slot > span { font-size:2rem; }
+.bloco-bandeja,.previa-fragmentos { display:flex;gap:10px;flex-wrap:wrap;margin:16px 0; }
+.bloco-fragmento { width:calc(50% - 5px); min-height:74px; background:var(--cartao-2);padding:5px;border:2px solid var(--linha);border-radius:12px;box-shadow:0 4px 0 #0006; }
+.bloco-fragmento img,.previa-fragmentos img { display:block;width:100%;height:100px;object-fit:contain;pointer-events:none; }
+.previa-fragmentos img { width:120px; }
+.bloco-fragmento,.bloco-slot:has(img) { touch-action:none; cursor:grab; }
+.bloco-local .escolhido { outline:3px solid var(--acento-2);outline-offset:2px; }
+.bloco-arrastando { position:relative;z-index:20;opacity:.75;pointer-events:none; }
+.bloco-reunir { position:fixed;inset:0;z-index:1000;background:var(--fundo);display:flex;flex-direction:column;padding:8px;gap:8px;overflow:auto; }
+.bloco-comandos { display:flex;justify-content:flex-start;flex:none; }
+.bloco-recado { font-size:.85rem;text-align:center;flex:none;margin:0; }
+.bloco-imagem-pronta { flex:1;min-height:0;display:flex;align-items:center;justify-content:center; }
+.bloco-imagem-pronta .peca-qc { width:100%;height:100%;max-height:82dvh; }
+.bloco-pronto .bloco-imagem-pronta { min-height:180px; }

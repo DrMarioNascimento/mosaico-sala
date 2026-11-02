@@ -105,6 +105,8 @@ export const TIPOS = {
       texto: 'no modo texto: o texto completo, com os cortes marcados por | ou por − entre espaços',
       imagem: 'no modo imagem: {dados: data URL (webp/png/jpeg, leve), largura, altura}',
       corte: "no modo imagem: {tipo: 'colunas'|'linhas'|'grade', n: quantidade de peças, colunas?: para grade}",
+      dinamica: "imagem: 'direta' (padrão) | 'duas_fases' (montar no celular e reunir os blocos)",
+      pecasPorCelular: 'duas_fases: 2, 3 (padrão) ou 4 peças locais; um bloco por celular, quantidade deve ser celulares',
       pecasTexto: 'texto em quantidade fixa: inteiro de 2 a 20, até o número de trechos marcados; agrupa trechos consecutivos sem alterar o texto',
       quantidade: "'fixa' (as peças definidas) | 'celulares' (uma por celular presente)",
       ocultarAoFim: 'booleano (padrão true): as peças somem quando o tempo acaba',
@@ -131,6 +133,12 @@ export const TIPOS = {
         else if (c.imagem.dados.length > 950000) d.push(erro('config.imagem', 'Imagem pesada demais. Envie de novo para ser reduzida.'));
         if (!['colunas', 'linhas', 'grade'].includes(c.corte?.tipo)) d.push(erro('config.corte', 'Escolha como cortar a imagem.'));
         if (c.quantidade !== 'celulares' && !(Number.isInteger(c.corte?.n) && c.corte.n >= 2 && c.corte.n <= 20)) d.push(erro('config.corte', 'A imagem precisa de 2 a 20 peças.'));
+      }
+      if (!['direta','duas_fases'].includes(c.dinamica || 'direta')) d.push(erro('config.dinamica','Escolha montagem direta ou em duas fases.'));
+      if (c.dinamica === 'duas_fases') {
+        if(c.modo !== 'imagem')d.push(erro('config.dinamica','A montagem em duas fases está disponível para imagens.'));
+        if(c.quantidade !== 'celulares')d.push(erro('config.quantidade','Em duas fases, cada celular recebe um bloco: escolha uma por celular presente.'));
+        if(![2,3,4].includes(c.pecasPorCelular ?? 3))d.push(erro('config.pecasPorCelular','Escolha 2, 3 ou 4 peças por celular.'));
       }
       if (!['fixa', 'celulares'].includes(c.quantidade || 'fixa')) d.push(erro('config.quantidade', "Quantidade deve ser 'fixa' ou 'celulares'."));
       if (!etapa.tempoMin) d.push(aviso('tempoMin', 'A montagem vale pelo tempo: defina o tempo da etapa.'));
