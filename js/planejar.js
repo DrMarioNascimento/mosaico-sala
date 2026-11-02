@@ -341,6 +341,7 @@ function renderAcoes() {
     h('button', { class:'btn pequeno', disabled:!historico?.podeDesfazer, onclick:()=>restaurarHistorico() }, 'Desfazer'),
     h('button', { class:'btn pequeno', disabled:!historico?.podeRefazer, onclick:()=>restaurarHistorico(true) }, 'Refazer'),
     h('button', { class:'btn primario', onclick:()=>P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? conduzirAgora() : irPara('revisao') }, P.A.docente?.revisadoEm && temBiblioteca() && !temErros(diags) ? 'Aplicar em uma turma' : 'Revisar conteúdo'),
+    h('button', { class:'btn', onclick:()=>{irPara('revisao');document.getElementById('pendenciasAplicacao')?.scrollIntoView({block:'start'});} }, 'O que falta para aplicar?'),
     h('button', { class:'btn', title:temErros(diags)?'Veja o que falta completar para simular':'Simular a aula no PC com uma turma fictícia', onclick:()=>previa() },numeroPasso(6), 'Simular'),
     
     h('button',{class:'btn acao-imprimir',title:'Abrir o material para impressão',onclick:()=>{document.querySelectorAll('details.acoes-mais[open]').forEach(d=>d.open=false);abrirImpressao(P.A);}},'Imprimir'),
@@ -516,6 +517,14 @@ function copiarAtividade(a) {
   abrir(copia, null);
   avisoGeral('Cópia em planejamento. Salve quando quiser guardar.', 'ok');
 }
+function resumoBiblioteca(item, qual) {
+  let a = null;
+  try { a = JSON.parse((qual === 'rascunho' ? item.rascunho : item.fechado) || item.conteudo || 'null'); } catch {}
+  const etapas = a?.etapas || [];
+  const resumo = etapas.length ? `${etapas.length} etapas · ${etapas.slice(0, 3).map(e => e.titulo || 'Sem título').join(' → ')}${etapas.length > 3 ? '…' : ''}` : 'Abra para conferir as etapas';
+  const data = Number(item.atualizadoEm);
+  return (data > 0 ? 'Alterada em ' + new Date(data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' : '') + resumo;
+}
 function telaAjustar() {
   const bib = temBiblioteca() ? P.bib : [];
   const rasc = rascunhosAjuste();
@@ -531,7 +540,7 @@ function telaAjustar() {
       (r.A?.etapas || []).length ? h('button', { class: 'btn pequeno', onclick: () => simularAtividade(r.A) }, 'Simular') : null,
       ...botoesCopiarApagar(() => copiarAtividade(r.A), () => apagarRascunhos([r.rascunhoId], `Apagar o rascunho “${r.A.titulo}” deste navegador?`), r.A.titulo)));
   const linhaNuvem = (item, qual) => h('li', {},
-    h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, qual === 'rascunho' ? (planoFechado(item) ? 'Ajuste ainda não fechado. A sala continua na versão anterior.' : 'Revisão e salvamento final pendentes') : (item.minha ? 'Pronta' : 'De ' + (item.autor || 'outro mestre')))),
+    h('div', { class: 'tit' }, h('strong', {}, item.titulo || '(sem título)'), h('small', {}, qual === 'rascunho' ? (planoFechado(item) ? 'Ajuste ainda não fechado. A sala continua na versão anterior.' : 'Revisão e salvamento final pendentes') : (item.minha ? 'Pronta' : 'De ' + (item.autor || 'outro mestre'))), h('small', { class: 'resumo-biblioteca' }, resumoBiblioteca(item, qual))),
     item.compartilhada && h('span', { class: 'etiqueta' }, 'compartilhada'),
     h('div', { class: 'mini' },
       qual === 'pronta' && h('a', { class: 'btn pequeno primario', href: link('conduzir.html', { atividade: item.id }) }, 'Aplicar'),
@@ -763,6 +772,14 @@ async function abrirDaBiblioteca(item, duplicar, qual = 'pronta') {
 async function apagarDaBiblioteca(item) {
   if (!confirmar(`Apagar “${item.titulo}” da biblioteca? Isso não pode ser desfeito.`)) return;
   try { await b.apagarBiblioteca(item.id); await carregarBiblioteca(); render(); avisoGeral('Apagada.', 'ok'); } catch (e) { avisoGeral('Não foi possível apagar: ' + e.message, 'erro'); }
+}
+function painelPendenciasAplicacao() {
+  const erros = validarAtividade(P.A).filter(d => d.severidade === 'erro');
+  const itens = erros.map(d => h('li', {}, d.mensagem, ' ', h('button', { class: 'btn pequeno', onclick: () => irPara(secaoDoLocal(d.local)) }, 'Corrigir em ' + onde(d.local))));
+  if (!P.A.docente?.revisadoEm) itens.push(h('li', {}, 'Confirmar a revisão do conteúdo e das respostas. ', h('button', { class: 'btn pequeno', onclick: () => { const el = document.getElementById('confirmarRevisaoGeral'); el?.scrollIntoView({block:'center'}); el?.focus(); } }, 'Ir para a confirmação da revisão')));
+  if (!temBiblioteca()) itens.push(h('li', {}, 'A aplicação on-line pede autorização da conta. Você pode simular ou exportar enquanto isso.', h('button', { class:'btn pequeno', onclick:()=>previa() }, 'Simular')));
+  else if (P.sujo || !P.origem?.bibId || !P.origem?.temFechado) itens.push(h('li', {}, 'Salvar a versão revisada na biblioteca. ', h('button', {class:'btn pequeno', disabled:!!erros.length || !P.A.docente?.revisadoEm, onclick:()=>dialogoSalvar()}, 'Salvar versão pronta')));
+  return h('section', {class:'cartao pendencias-aplicacao',id:'pendenciasAplicacao','aria-label':'O que falta para aplicar'}, h('h2',{},'O que falta para aplicar?'), itens.length ? h('ul',{},itens) : h('p',{},'Esta versão está revisada e salva. Você já pode escolher a turma e os tempos.'), h('p',{class:'sutil'},'A confirmação de conteúdo é feita por você. Simular ajuda a conferir o fluxo antes da aula.'));
 }
 function painelFinalizarAtividade(erros) {
  const revisada=!!P.A.docente?.revisadoEm,liberada=!erros.length;
@@ -1476,7 +1493,8 @@ function editorRevisao() {
   const a = P.A, d = validarAtividade(a), g = avisoGramatica(a), s = sugerirEquilibrio(a, { dispensadas: P.dispensadas });
   const erros = d.filter(x => x.severidade === 'erro'), outros = d.filter(x => x.severidade !== 'erro');
   return h('div', {},
-    painelRevisaoDocente(a,{editar:id=>irPara('etapa:'+id),guardar:()=>{P.sujo=true;salvarRascunho();historico?.registrar(P.A);},atualizar:()=>{renderAcoes();renderNav();const painel=document.querySelector('.finalizar-atividade');if(painel)painel.replaceWith(painelFinalizarAtividade(validarAtividade(P.A).filter(d=>d.severidade==='erro')));}}),
+    painelPendenciasAplicacao(),
+    painelRevisaoDocente(a,{editar:id=>irPara('etapa:'+id),guardar:()=>{P.sujo=true;salvarRascunho();historico?.registrar(P.A);},atualizar:()=>{renderAcoes();renderNav();document.getElementById('pendenciasAplicacao')?.replaceWith(painelPendenciasAplicacao());const painel=document.querySelector('.finalizar-atividade');if(painel)painel.replaceWith(painelFinalizarAtividade(validarAtividade(P.A).filter(d=>d.severidade==='erro')));}}),
     h('div', { class: 'cartao' + (erros.length ? '' : ' destaque') }, h('h2', {}, erros.length ? `${erros.length} itens a completar ou corrigir` : 'Estrutura completa'),
       erros.length ? h('ul', { class: 'diag' }, erros.map(linhaDiag)) : h('p', {}, 'A estrutura está completa. Confira o conteúdo, as fontes e as respostas esperadas; depois experimente a aula.')),
     (outros.length > 0 || g) && h('div', { class: 'cartao' }, h('h3', {}, 'Avisos'), g && h('p', { class: 'aviso' }, g.mensagem), h('ul', { class: 'diag' }, outros.map(linhaDiag))),
